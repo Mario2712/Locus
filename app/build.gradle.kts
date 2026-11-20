@@ -15,7 +15,12 @@ val releaseKeystore: String? = System.getenv("LOCUS_KEYSTORE_PATH")
 
 android {
     namespace = "io.github.mario2712.locus"
-    compileSdk = 37
+    compileSdk {
+        // Compose 1.13 verlangt mindestens Android-API 37.1 (Minor-SDK-Release).
+        version = release(37) {
+            minorApiLevel = 2
+        }
+    }
 
     defaultConfig {
         applicationId = "io.github.mario2712.locus"
