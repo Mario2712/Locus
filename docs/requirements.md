@@ -1,6 +1,6 @@
-# Locus – Requirements (Entwurf v0.2)
+# Locus – Requirements (v0.3)
 
-Stand: 2026-11-20 · Status: in Abstimmung (offene Punkte siehe Abschnitt 9)
+Stand: 2026-11-20 · Status: abgestimmt, Umsetzung läuft (M0)
 
 Locus ist eine persönliche Android-App, die festhält, **wo ich wann war** – im Alltag
 (Homeoffice, Büro, Freizeit) ebenso wie auf Reisen – und daraus Karte, Länderpunkte
@@ -51,7 +51,7 @@ Jede Art gehört zu einer Gruppe: ARBEIT / FREI / URLAUB / SONSTIGES.
 | Frei / Zuhause | FREI | ja |
 | Ausflug | FREI | ja |
 | Urlaub | URLAUB | ja |
-| Anreise / Unterwegs | SONSTIGES | ja |
+| Anreise / Unterwegs | SONSTIGES | **nein** |
 | Transit (z. B. Umstieg am Flughafen) | SONSTIGES | **nein** |
 | Krank | SONSTIGES | ja |
 
@@ -62,7 +62,9 @@ Ein **Besuch** ist ein konkreter, bemerkenswerter Ort an einem Datum (optional m
 Sehenswürdigkeit, Restaurant, Gipfel, Konzert, Einkauf … Er hat eine Kategorie, eine Notiz,
 optional eine Bewertung und optional einen Foto-Verweis.
 Kategorien: Sehenswürdigkeit, Restaurant/Café, Bar, Natur/Wandern, Gipfel, Konzert/Event,
-Museum, Einkaufen, Sport, Unterkunft, Sonstiges.
+Museum, Einkaufen, Sport, Unterkunft, **Rast/Tankstopp**, Sonstiges.
+Kategorien sind konfigurierbar. Jede Kategorie legt fest, ob sie für Länderpunkte zählt;
+„Rast/Tankstopp“ zählt standardmäßig nicht. Ein einzelner Besuch kann diese Regel überschreiben.
 Alltägliches wie „Einkaufen Oberalm“ ist erlaubt, wird auf der Karte aber standardmäßig ausgeblendet.
 
 ### 2.4 Reise
@@ -73,15 +75,17 @@ Davor liegende Aufenthalte am selben Tag (Fr vormittags Büro) bleiben erhalten.
 ### 2.5 Personen
 „Ich“ und „Johanna“. Jeder Aufenthalt und jeder Besuch hat eine Teilnehmermenge: nur ich, nur Johanna oder beide.
 Standard für neue Einträge: nur ich. Für Reisen ist „beide“ vorbelegt.
+Auch Johannas Alltag kann erfasst werden (Aufenthalte mit Teilnehmerin „nur Johanna“).
 
 ### 2.6 Länderpunkte
 - Ein Land zählt für eine Person, sobald es mindestens einen Aufenthalt oder Besuch gibt, an dem die Person teilnimmt, der im Land liegt und dessen Art für Länderpunkte zählt.
   - Umstieg in Toronto als „Transit“ erfasst: **kein** Punkt für Kanada.
   - Einreise in Peking und Besuch der Chinesischen Mauer während einer 10-stündigen Zwischenlandung: **Punkt** für China.
+  - Durchfahrt durch Slowenien als „Anreise/Unterwegs“ mit Tankstopp: **kein** Punkt. Isst man dort richtig in einem Restaurant oder besichtigt etwas: **Punkt**.
 - **Gemeinsam** = beide waren zur selben Zeit im Land. Zusätzlich wird angezeigt, welche Länder beide schon besucht haben, aber zu unterschiedlichen Zeiten.
 - Länderliste: 193 UN-Staaten plus Kosovo, Vatikan und Taiwan. Gebiete werden dem Mutterland zugeordnet.
 - **Wunschländer** werden auf der Karte separat (z. B. schraffiert) dargestellt.
-- **Regionen sammeln** (z. B. Bundesländer): pro Land in den Einstellungen aktivierbar.
+- **Regionen sammeln** (z. B. Bundesländer): pro Land in den Einstellungen aktivierbar. Zuerst für Österreich und Deutschland.
 
 ---
 
@@ -146,7 +150,7 @@ Standard für neue Einträge: nur ich. Für Reisen ist „beide“ vorbelegt.
 | 7 | Nächte außer Haus | später |
 | 8 | Kontinent-Fortschritt | später |
 
-**Zählregel bei geteilten Tagen** (Entwurf, siehe offene Punkte):
+**Zählregel bei geteilten Tagen** (bestätigt):
 - Ein Tag zählt in jeder Art, die an ihm vorkommt („Tage mit Büro“).
 - Zusätzlich wird eine Hauptart ermittelt: der längste Aufenthalt, bei fehlenden Uhrzeiten der erste.
 - Der Homeoffice-Report zählt nur Tage, die **ausschließlich** Homeoffice sind.
@@ -204,6 +208,9 @@ Länderpunkte, Übernachtungsort und Statistiken werden berechnet, nicht gespeic
 - **Karte**: MapLibre Native, OSM-basierte Kacheln, Länder-Layer offline.
 - **System**: WorkManager für Erinnerung und Backup, Notifications, FusedLocation nur bei Bedarf.
 - **DI**: Hilt. **Build**: Gradle Kotlin DSL, Version Catalog, KSP.
+- **Versionen (Stand M0)**: AGP 9.5.1 (eingebautes Kotlin), Gradle 9.6.0, Kotlin 2.4.21, Compose BOM 2026.11.01,
+  minSdk 31, compileSdk/targetSdk 37 (Android 17).
+- **Module**: `:app` (Android, UI) und `:core:domain` (reines Kotlin, Regeln und Tests). Ab M1 kommt `:core:data` (Room) dazu.
 - **Tests**:
   - JUnit für die Domain
   - Room-Tests (instrumentiert oder Robolectric)
@@ -227,9 +234,11 @@ Länderpunkte, Übernachtungsort und Statistiken werden berechnet, nicht gespeic
 
 ---
 
-## 9. Offene Punkte
+## 9. Entscheidungen aus der Abstimmung
 
-1. Zählregel für geteilte Tage bestätigen (Abschnitt 4).
-2. Für welche Länder sollen Regionen zuerst verfügbar sein (z. B. AT, DE, IT)?
-3. Soll für Johanna auch Alltag erfasst werden, oder vorerst nur Reisen/Freizeit?
-4. Soll „Anreise/Unterwegs“ für Länderpunkte zählen, z. B. Durchfahrt Slowenien auf dem Weg nach Kroatien mit Tankstopp?
+| Thema | Entscheidung |
+|---|---|
+| Zählregel geteilter Tage | „Tage mit X“ zählt jede vorkommende Art; Hauptart = längster Aufenthalt; Homeoffice-Report zählt nur reine Homeoffice-Tage |
+| Regionen | Zuerst AT und DE |
+| Johanna | Alltag und Reisen erfassbar |
+| Durchfahrt/Anreise | Kein Länderpunkt; Punkt erst durch Restaurant, Sehenswürdigkeit o. Ä. |
