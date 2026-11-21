@@ -22,24 +22,34 @@ import io.github.mario2712.locus.R
 import io.github.mario2712.locus.ui.theme.LocusTheme
 
 @Composable
-fun MoreScreen(onOpenSettings: () -> Unit, onOpenProfile: () -> Unit, viewModel: MoreViewModel = hiltViewModel()) {
+fun MoreScreen(
+    onOpenSettings: () -> Unit,
+    onOpenProfile: () -> Unit,
+    onOpenTimeline: () -> Unit,
+    onOpenTrips: () -> Unit,
+    onOpenPlaces: () -> Unit,
+    viewModel: MoreViewModel = hiltViewModel(),
+) {
     val status by viewModel.status.collectAsStateWithLifecycle()
-    MoreContent(status, onOpenSettings, onOpenProfile)
+    MoreContent(status, listOf(
+        R.string.timeline_title to onOpenTimeline,
+        R.string.trips_title to onOpenTrips,
+        R.string.places_title to onOpenPlaces,
+        R.string.profile_title to onOpenProfile,
+        R.string.settings_title to onOpenSettings,
+    ))
 }
 
 @Composable
-private fun MoreContent(status: DataStatus, onOpenSettings: () -> Unit, onOpenProfile: () -> Unit) {
+private fun MoreContent(status: DataStatus, entries: List<Pair<Int, () -> Unit>>) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(stringResource(R.string.more_title), style = MaterialTheme.typography.headlineMedium)
         Text(stringResource(R.string.more_placeholder), style = MaterialTheme.typography.bodyLarge)
-        Button(onClick = onOpenProfile, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.profile_title))
-        }
-        Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.settings_title))
+        entries.forEach { (label, onClick) ->
+            Button(onClick = onClick, modifier = Modifier.fillMaxWidth()) { Text(stringResource(label)) }
         }
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -62,6 +72,6 @@ private fun MoreContent(status: DataStatus, onOpenSettings: () -> Unit, onOpenPr
 @Composable
 private fun MorePreview() {
     LocusTheme(dynamicColor = false) {
-        MoreContent(DataStatus(persons = listOf("Ich", "Johanna"), stayTypes = 9, visitCategories = 12), onOpenSettings = {}, onOpenProfile = {})
+        MoreContent(DataStatus(persons = listOf("Ich", "Johanna"), stayTypes = 9, visitCategories = 12), entries = emptyList())
     }
 }

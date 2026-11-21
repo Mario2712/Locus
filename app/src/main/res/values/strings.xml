@@ -65,7 +65,7 @@
     <string name="place_country">Land</string>
     <string name="place_region_optional">Bundesland (optional)</string>
     <string name="place_favorite">Als Favorit merken</string>
-    <string name="place_search_hint">Die Ortssuche über OpenStreetMap mit Koordinaten folgt in einer späteren Version.</string>
+    <string name="place_search_hint">Tipp: Mit „Online suchen“ findest du Orte samt Koordinaten über OpenStreetMap – manuell angelegte Orte lassen sich später unter „Orte“ verknüpfen.</string>
 
     <string name="fill_title">%1$s – %2$s festlegen</string>
     <string name="fill_skip_weekends">Wochenenden und Feiertage überspringen</string>
@@ -184,13 +184,63 @@
     <string name="profile_birthday_entry">%1$d · %2$d Jahre · %3$s</string>
     <string name="profile_privacy">Geburtsdaten bleiben lokal auf deinem Gerät und sind nicht Teil des Codes auf GitHub.</string>
 
+    <!-- Ortssuche -->
+    <string name="search_online">Online suchen</string>
+    <string name="search_here">📍 Hier</string>
+    <string name="search_loading">Suche …</string>
+    <string name="search_saved">Gespeichert</string>
+    <string name="search_online_results">OpenStreetMap</string>
+    <string name="search_no_results">Nichts gefunden.</string>
+    <string name="search_offline">Suche gerade nicht möglich – keine Internetverbindung?</string>
+    <string name="search_no_location">Standort nicht verfügbar – ist die Standortermittlung eingeschaltet?</string>
+    <string name="search_no_permission">Ohne Standort-Berechtigung geht „Hier“ nicht – du kannst den Ort aber suchen.</string>
+    <string name="search_attribution">Daten © OpenStreetMap-Mitwirkende (ODbL), Suche über Photon</string>
+
+    <!-- Orte -->
+    <string name="places_title">Orte</string>
+    <string name="places_days">%1$d Tage</string>
+    <string name="places_last">zuletzt %1$s</string>
+    <string name="places_no_coordinates">ohne Koordinaten</string>
+    <string name="place_coordinates">%1$s, %2$s</string>
+    <string name="place_edit">Bearbeiten</string>
+    <string name="place_link_osm">Mit OSM verknüpfen</string>
+    <string name="place_make_homebase">Als Homebase festlegen</string>
+    <string name="place_record">Orts-Akte</string>
+    <string name="place_record_days">An %1$d Tagen hier</string>
+    <string name="place_record_range">erstmals %1$s · zuletzt %2$s</string>
+    <string name="place_record_visits">Besuche: %1$d</string>
+    <string name="place_record_dates">Tage</string>
+    <string name="place_delete_confirm">Ort löschen? Bestehende Einträge zeigen ihn dann als „?“.</string>
+
+    <!-- Reisen -->
+    <string name="trips_title">Reisen</string>
+    <string name="trips_add_past">+ Alte Reise nachtragen</string>
+    <string name="trips_empty">Noch keine Reisen. Starte eine über „Reise starten …“ am Heute-Screen oder trage alte Reisen nach.</string>
+    <string name="trips_year">%1$d · %2$d Reisen</string>
+    <string name="trips_days">%1$d Tage</string>
+    <string name="trips_ongoing">läuft gerade</string>
+    <string name="trips_entries">Einträge</string>
+    <string name="trips_days_title">Tag für Tag</string>
+    <string name="trips_day_n">Tag %1$d</string>
+    <string name="trips_destinations">Ziele</string>
+    <string name="trips_add_destination">+ weiteres Ziel</string>
+    <string name="trips_when">Wann?</string>
+    <string name="trips_exact">Genaues Datum</string>
+    <string name="trips_month">Monat</string>
+    <string name="trips_year_only">Nur Jahr</string>
+    <string name="trips_year_label">Jahr</string>
+
+    <!-- Timeline -->
+    <string name="timeline_title">Timeline</string>
+    <string name="timeline_empty">Noch keine Einträge.</string>
+
     <!-- Platzhalter (bis M3/M4) -->
     <string name="map_title">Karte</string>
     <string name="map_placeholder">Weltkarte mit besuchten Ländern, Städten und Orten.</string>
     <string name="countries_title">Länder</string>
     <string name="countries_placeholder">Deine Länderpunkte – Ich, Johanna und gemeinsam.</string>
     <string name="more_title">Mehr</string>
-    <string name="more_placeholder">Timeline, Reisen, Statistik, Orte, Wunschliste und Einstellungen.</string>
+    <string name="more_placeholder">Rückblick, Orte und Einstellungen.</string>
 
     <!-- Datenbank-Status -->
     <string name="data_status_title">Datenbank</string>

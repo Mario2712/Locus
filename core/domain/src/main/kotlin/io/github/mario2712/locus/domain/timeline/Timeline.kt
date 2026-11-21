@@ -45,14 +45,21 @@ object Timeline {
 
     /**
      * Aktuelle Basis der [person] am Ende von [date] (Übernachtungsort), `null` = Homebase.
+     * Eine laufende Basis endet in [resolve] „heute“; an [today] gilt sie daher weiterhin als Basis.
      */
-    fun baseAtEnd(date: LocalDate, person: PersonId, resolved: List<Stay>, homebaseId: String?): Stay? {
-        val today = resolved
+    fun baseAtEnd(
+        date: LocalDate,
+        person: PersonId,
+        resolved: List<Stay>,
+        homebaseId: String?,
+        today: LocalDate? = null,
+    ): Stay? {
+        val dayStays = resolved
             .filter { person in it.participants && it.precision == DatePrecision.DAY && it.startDate == date }
             .sortedWith(chronological)
-        val lastChange = today.lastOrNull { it.overnight || it.placeId == homebaseId }
+        val lastChange = dayStays.lastOrNull { it.overnight || it.placeId == homebaseId }
         return when {
-            lastChange == null -> baseAtStart(date, person, resolved)?.takeIf { it.endDate > date }
+            lastChange == null -> baseAtStart(date, person, resolved)?.takeIf { it.endDate > date || date == today }
             lastChange.overnight -> lastChange
             else -> null
         }

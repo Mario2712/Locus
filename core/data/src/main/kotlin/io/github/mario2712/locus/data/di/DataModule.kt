@@ -22,11 +22,13 @@ import io.github.mario2712.locus.data.repository.RoomStayRepository
 import io.github.mario2712.locus.data.repository.RoomTripRepository
 import io.github.mario2712.locus.data.repository.RoomVisitRepository
 import io.github.mario2712.locus.data.repository.RoomWishRepository
+import io.github.mario2712.locus.data.places.PhotonPlaceSearch
 import io.github.mario2712.locus.data.settings.DataStoreSettingsRepository
 import io.github.mario2712.locus.data.sync.DeviceIdProvider
 import io.github.mario2712.locus.data.sync.SharedPrefsDeviceIdProvider
 import io.github.mario2712.locus.data.sync.SyncMetaFactory
 import io.github.mario2712.locus.data.sync.TimeProvider
+import io.github.mario2712.locus.domain.places.PlaceSearch
 import io.github.mario2712.locus.domain.repository.CatalogRepository
 import io.github.mario2712.locus.domain.repository.DayTemplateRepository
 import io.github.mario2712.locus.domain.repository.PatternRuleRepository
@@ -50,6 +52,9 @@ object DatabaseModule {
     @Provides @Singleton
     fun settingsDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
         PreferenceDataStoreFactory.create { context.preferencesDataStoreFile("settings") }
+
+    @Provides @Singleton
+    fun placeSearch(): PlaceSearch = PhotonPlaceSearch(userAgent = "Locus-Android/1.0")
 
     @Provides @Singleton
     fun timeProvider(): TimeProvider = TimeProvider(System::currentTimeMillis)

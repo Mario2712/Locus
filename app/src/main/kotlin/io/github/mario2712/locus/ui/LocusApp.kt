@@ -19,6 +19,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import io.github.mario2712.locus.ui.calendar.CalendarScreen
 import io.github.mario2712.locus.ui.day.DayScreen
 import io.github.mario2712.locus.ui.more.MoreScreen
@@ -27,7 +28,17 @@ import io.github.mario2712.locus.ui.navigation.CountriesRoute
 import io.github.mario2712.locus.ui.navigation.DayRoute
 import io.github.mario2712.locus.ui.navigation.MapRoute
 import io.github.mario2712.locus.ui.navigation.MoreRoute
+import io.github.mario2712.locus.ui.navigation.PlaceRoute
+import io.github.mario2712.locus.ui.navigation.PlacesRoute
 import io.github.mario2712.locus.ui.navigation.ProfileRoute
+import io.github.mario2712.locus.ui.navigation.TimelineRoute
+import io.github.mario2712.locus.ui.navigation.TripRoute
+import io.github.mario2712.locus.ui.navigation.TripsRoute
+import io.github.mario2712.locus.ui.places.PlaceDetailScreen
+import io.github.mario2712.locus.ui.places.PlacesScreen
+import io.github.mario2712.locus.ui.timeline.TimelineScreen
+import io.github.mario2712.locus.ui.trips.TripDetailScreen
+import io.github.mario2712.locus.ui.trips.TripsScreen
 import io.github.mario2712.locus.ui.navigation.SettingsRoute
 import io.github.mario2712.locus.ui.navigation.TodayRoute
 import io.github.mario2712.locus.ui.navigation.TopLevelDestination
@@ -75,11 +86,25 @@ fun LocusApp() {
                 MoreScreen(
                     onOpenSettings = { navController.navigate(SettingsRoute) },
                     onOpenProfile = { navController.navigate(ProfileRoute) },
+                    onOpenTimeline = { navController.navigate(TimelineRoute) },
+                    onOpenTrips = { navController.navigate(TripsRoute) },
+                    onOpenPlaces = { navController.navigate(PlacesRoute) },
                 )
             }
             composable<DayRoute> { DayScreen(onBack = { navController.popBackStack() }) }
             composable<SettingsRoute> { SettingsScreen(onBack = { navController.popBackStack() }) }
             composable<ProfileRoute> { ProfileScreen(onBack = { navController.popBackStack() }) }
+            composable<TimelineRoute> { TimelineScreen(onBack = { navController.popBackStack() }, onOpenDay = openDay) }
+            composable<TripsRoute> {
+                TripsScreen(onBack = { navController.popBackStack() }, onOpenTrip = { navController.navigate(TripRoute(it)) })
+            }
+            composable<TripRoute> { entry ->
+                TripDetailScreen(entry.toRoute<TripRoute>().id, onBack = { navController.popBackStack() }, onOpenDay = openDay)
+            }
+            composable<PlacesRoute> {
+                PlacesScreen(onBack = { navController.popBackStack() }, onOpenPlace = { navController.navigate(PlaceRoute(it)) })
+            }
+            composable<PlaceRoute> { PlaceDetailScreen(onBack = { navController.popBackStack() }, onOpenDay = openDay) }
         }
     }
 }

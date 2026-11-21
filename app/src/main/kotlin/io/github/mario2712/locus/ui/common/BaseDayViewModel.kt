@@ -93,7 +93,7 @@ abstract class BaseDayViewModel(
             .sortedWith(compareBy({ if (it.startDate < date) 0 else 1 }, { it.sortIndex }))
         val own = raw.filter { me in it.participants }
         val baseAtStart = Timeline.baseAtStart(date, me, resolved)
-        val baseAtEnd = Timeline.baseAtEnd(date, me, resolved, homeId)
+        val baseAtEnd = Timeline.baseAtEnd(date, me, resolved, homeId, today)
         val tripBase = baseAtEnd ?: baseAtStart
         val dayVisits = input.visits.filter { it.date == date }.sortedBy { it.time }
 

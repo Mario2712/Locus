@@ -1,5 +1,8 @@
 package io.github.mario2712.locus.ui.editor
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,11 +11,13 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,7 +47,10 @@ import io.github.mario2712.locus.domain.model.Person
 import io.github.mario2712.locus.domain.model.PersonId
 import io.github.mario2712.locus.domain.model.Place
 import io.github.mario2712.locus.domain.model.StayType
+import io.github.mario2712.locus.domain.places.PlaceCandidate
 import io.github.mario2712.locus.domain.reference.ReferenceData
+import io.github.mario2712.locus.places.LocalPlaceSearch
+import io.github.mario2712.locus.places.SearchResult
 import io.github.mario2712.locus.ui.common.Format
 import io.github.mario2712.locus.ui.common.PlaceDraft
 import io.github.mario2712.locus.ui.common.TypeDot
@@ -103,6 +111,17 @@ fun PlaceField(
     }
 }
 
+private sealed interface OnlineState {
+    data object Idle : OnlineState
+    data object Loading : OnlineState
+    data class Results(val items: List<PlaceCandidate>) : OnlineState
+    data class Error(val message: Int) : OnlineState
+}
+
+/**
+ * Ortsauswahl: gespeicherte Orte, Online-Suche (OpenStreetMap) und „Hier“ (aktueller Standort).
+ * Ein Online-Treffer wird erst bei Auswahl gespeichert; bestehende Orte werden dabei ergänzt.
+ */
 @Composable
 fun PlacePickerDialog(
     places: List<Place>,
@@ -110,11 +129,31 @@ fun PlacePickerDialog(
     onSelect: (String) -> Unit,
     onCreatePlace: suspend (PlaceDraft) -> Place,
 ) {
+    val controller = LocalPlaceSearch.current
+    val scope = rememberCoroutineScope()
     var query by remember { mutableStateOf("") }
     var showCreate by remember { mutableStateOf(false) }
+    var online by remember { mutableStateOf<OnlineState>(OnlineState.Idle) }
     val filtered = places.filter {
         query.isBlank() || it.displayName.contains(query, ignoreCase = true) || it.name.contains(query, ignoreCase = true)
     }
+
+    fun show(result: SearchResult<List<PlaceCandidate>>) {
+        online = when (result) {
+            is SearchResult.Ok -> if (result.value.isEmpty()) OnlineState.Error(R.string.search_no_results) else OnlineState.Results(result.value)
+            SearchResult.Offline -> OnlineState.Error(R.string.search_offline)
+            SearchResult.NoLocation -> OnlineState.Error(R.string.search_no_location)
+        }
+    }
+    fun runNearby() {
+        val c = controller ?: return
+        online = OnlineState.Loading
+        scope.launch { show(c.nearby()) }
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
+        if (granted.values.any { it }) runNearby() else online = OnlineState.Error(R.string.search_no_permission)
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.editor_choose_place)) },
@@ -124,26 +163,90 @@ fun PlacePickerDialog(
                     value = query, onValueChange = { query = it }, singleLine = true,
                     label = { Text(stringResource(R.string.editor_search)) }, modifier = Modifier.fillMaxWidth(),
                 )
-                LazyColumn(Modifier.heightIn(max = 320.dp)) {
+                if (controller != null) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            enabled = query.trim().length >= 2 && online != OnlineState.Loading,
+                            onClick = {
+                                online = OnlineState.Loading
+                                scope.launch { show(controller.search(query)) }
+                            },
+                        ) { Text(stringResource(R.string.search_online)) }
+                        OutlinedButton(
+                            enabled = online != OnlineState.Loading,
+                            onClick = {
+                                if (controller.hasLocationPermission()) {
+                                    runNearby()
+                                } else {
+                                    permissionLauncher.launch(
+                                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
+                                    )
+                                }
+                            },
+                        ) { Text(stringResource(R.string.search_here)) }
+                    }
+                }
+                LazyColumn(Modifier.heightIn(max = 360.dp)) {
+                    when (val state = online) {
+                        OnlineState.Idle -> Unit
+                        OnlineState.Loading -> item {
+                            Row(Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                                Text(stringResource(R.string.search_loading))
+                            }
+                        }
+                        is OnlineState.Error -> item {
+                            Text(stringResource(state.message), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(vertical = 8.dp))
+                        }
+                        is OnlineState.Results -> {
+                            item { SectionLabel(stringResource(R.string.search_online_results)) }
+                            items(state.items, key = { "osm-" + it.osmId }) { candidate ->
+                                val country = ReferenceData.countableCountry(candidate.countryIso2)
+                                Column(
+                                    Modifier.fillMaxWidth().clickable {
+                                        val c = controller ?: return@clickable
+                                        scope.launch { onSelect(c.import(candidate).id) }
+                                    }.padding(vertical = 10.dp),
+                                ) {
+                                    Text("${country?.flag ?: "🌐"} ${candidate.name}")
+                                    Text(
+                                        candidate.subtitle,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                HorizontalDivider()
+                            }
+                            item {
+                                Text(
+                                    stringResource(R.string.search_attribution),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(vertical = 4.dp),
+                                )
+                            }
+                        }
+                    }
+                    if (filtered.isNotEmpty()) {
+                        item { SectionLabel(stringResource(R.string.search_saved)) }
+                    }
                     items(filtered, key = { it.id }) { place ->
                         Column(
                             Modifier.fillMaxWidth().clickable { onSelect(place.id) }.padding(vertical = 10.dp),
                         ) {
                             val country = ReferenceData.countableCountry(place.countryIso2)
-                            Text((if (place.isFavorite) "★ " else "") + place.displayName)
-                            if (place.alias != null || country != null) {
-                                Text(
-                                    listOfNotNull(place.alias?.let { place.name }, country?.let { "${it.flag} ${it.nameDe}" })
-                                        .joinToString(" · "),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
+                            Text((if (place.isHomebase) "🏠 " else if (place.isFavorite) "★ " else "") + place.displayName)
+                            Text(
+                                listOfNotNull(place.alias?.let { place.name }, country?.let { "${it.flag} ${it.nameDe}" })
+                                    .joinToString(" · "),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                         HorizontalDivider()
                     }
                 }
-                if (places.isEmpty()) Text(stringResource(R.string.editor_no_places))
+                if (places.isEmpty() && online == OnlineState.Idle) Text(stringResource(R.string.editor_no_places))
             }
         },
         confirmButton = { TextButton(onClick = { showCreate = true }) { Text(stringResource(R.string.editor_new_place)) } },
@@ -156,6 +259,16 @@ fun PlacePickerDialog(
             onCreate = { draft -> val place = onCreatePlace(draft); showCreate = false; onSelect(place.id) },
         )
     }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+    )
 }
 
 @Composable

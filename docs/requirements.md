@@ -161,6 +161,12 @@ Ziel: Ein Tag ist in **1–3 Tipps** erfasst, ohne Uhrzeiten.
 - Gelernte Muster
 - Geofence-Vorschläge
 - App-Sperre
+- Freie Tage ohne Eintrag optional automatisch als „Zuhause“ zählen
+- Geburtstags- und Feiertags-Statistiken:
+  - „Alter beim ersten Besuch“ je Land (Länderliste)
+  - Geburtstagsrückblick im Jahresrückblick
+  - Silvester/Neujahr im Ausland (wo war ich am 31.12.?)
+  - weitere Stichtage, z. B. Hochzeitstag, Weihnachten
 
 ---
 
@@ -262,7 +268,7 @@ Länderpunkte, Übernachtungsort und Statistiken werden berechnet, nicht gespeic
 | M2 | Heute-Screen, Muster, Erinnerung, Kalender mit Nachtragen, Feiertage | ✔ |
 | M2.5 | Stationen-Konzept: Homebase/Basis, Tagesvorlagen, Reisen (Weiter-/Heimreise, Umstiege), Verkehrsmittel, Besuche mit mehreren Kategorien | ✔ |
 | M2.6 | Profil mit Geburtsdaten: Länder bis zu runden Geburtstagen, Geburtstagsorte | ✔ |
-| M3 | Ortssuche, Favoriten, Besuche, Reisen, Timeline | offen |
+| M3 | Ortssuche (OSM/Photon) mit Standort, Orte + Orts-Akte, Reisen-Übersicht + alte Reisen nachtragen, Timeline | ✔ |
 | M4 | Länderliste mit Flaggen, Weltkarte | offen |
 | M5 | Basis-Statistik, Export/Import, Backup → Release v1.0 | offen |
 

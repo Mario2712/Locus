@@ -53,6 +53,8 @@ class TimelineTest {
         val ongoing = resolved("2026-08-04")
         assertEquals("bologna", Timeline.baseAtStart(d("2026-08-04"), ME, ongoing)!!.placeId)
         assertEquals(d("2026-08-04"), ongoing.single().endDate)
+        // Am heutigen Abend läuft die Reise weiter
+        assertEquals("bologna", Timeline.baseAtEnd(d("2026-08-04"), ME, ongoing, home, today = d("2026-08-04"))!!.placeId)
 
         commands.returnHome(d("2026-08-06"), both, home, setOf(TransportMode.CAR))
         val done = resolved("2026-08-20")

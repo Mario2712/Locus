@@ -125,6 +125,31 @@ class StayCommands(
         }
     }
 
+    /**
+     * Vergangene Reise nachtragen, auch mit unscharfem Datum (z. B. „Italien, Juli 2014“).
+     * Je Ziel eine Station über den ganzen Zeitraum; bei genauen Daten mit Übernachtung und festem Ende.
+     */
+    suspend fun addPastTrip(
+        placeIds: List<String>,
+        start: LocalDate,
+        end: LocalDate,
+        precision: DatePrecision,
+        participants: Set<PersonId>,
+        stayTypeId: String,
+    ): List<Stay> {
+        require(placeIds.isNotEmpty()) { "Mindestens ein Ziel" }
+        require(!end.isBefore(start)) { "Ende darf nicht vor Beginn liegen" }
+        val created = placeIds.mapIndexed { index, placeId ->
+            Stay(
+                id = newId(), placeId = placeId, typeId = stayTypeId, startDate = start, endDate = end,
+                precision = precision, sortIndex = index, participants = participants,
+                overnight = precision == DatePrecision.DAY && end > start, source = EntrySource.MANUAL,
+            )
+        }
+        created.forEach { stays.upsert(it) }
+        return created
+    }
+
     /** Heimreise: Station an der Homebase; damit ist die Homebase wieder die Basis. */
     suspend fun returnHome(
         date: LocalDate,

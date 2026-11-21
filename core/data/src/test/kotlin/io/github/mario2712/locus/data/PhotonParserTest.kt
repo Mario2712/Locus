@@ -1,0 +1,58 @@
+package io.github.mario2712.locus.data
+
+import io.github.mario2712.locus.data.places.PhotonParser
+import io.github.mario2712.locus.domain.model.PlaceKind
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+
+@RunWith(RobolectricTestRunner::class)
+class PhotonParserTest {
+
+    // Beispielantwort im Photon-Format (GeoJSON, Koordinaten als [lon, lat]).
+    private val json = """
+        {"type":"FeatureCollection","features":[
+          {"type":"Feature","geometry":{"type":"Point","coordinates":[13.0956,47.6833]},
+           "properties":{"osm_type":"R","osm_id":34896,"osm_key":"place","osm_value":"town","type":"city",
+             "name":"Hallein","state":"Salzburg","country":"Österreich","countrycode":"AT","postcode":"5400"}},
+          {"type":"Feature","geometry":{"type":"Point","coordinates":[13.0436,47.8003]},
+           "properties":{"osm_type":"N","osm_id":123,"osm_key":"tourism","osm_value":"museum","type":"house",
+             "name":"Museum der Moderne","city":"Salzburg","state":"Salzburg","country":"Österreich","countrycode":"at"}},
+          {"type":"Feature","geometry":{"type":"Point","coordinates":[13.1,47.7]},
+           "properties":{"osm_type":"W","osm_id":55,"osm_key":"highway","osm_value":"residential","type":"street",
+             "street":"Davisstraße","city":"Hallein","country":"Österreich","countrycode":"AT"}},
+          {"type":"Feature","geometry":{"type":"Point","coordinates":[1.0,2.0]},
+           "properties":{"osm_type":"N","osm_id":9,"name":"Ohne Land"}}
+        ]}
+    """.trimIndent()
+
+    @Test
+    fun `Stadt, POI und Strasse werden erkannt, Treffer ohne Land verworfen`() {
+        val results = PhotonParser.parse(json)
+        assertEquals(3, results.size)
+
+        val hallein = results[0]
+        assertEquals("R34896", hallein.osmId)
+        assertEquals(PlaceKind.CITY, hallein.kind)
+        assertEquals(47.6833, hallein.latitude, 1e-9)
+        assertEquals(13.0956, hallein.longitude, 1e-9)
+        assertEquals("Hallein", hallein.cityName)
+        assertEquals("Salzburg", hallein.stateName)
+
+        val museum = results[1]
+        assertEquals(PlaceKind.POI, museum.kind)
+        assertEquals("AT", museum.countryIso2)
+        assertEquals("museum", museum.category)
+        assertEquals("Salzburg, Österreich", museum.subtitle)
+
+        assertEquals(PlaceKind.ADDRESS, results[2].kind)
+        assertEquals("Davisstraße", results[2].name)
+    }
+
+    @Test
+    fun `leere Antwort ergibt keine Treffer`() {
+        assertTrue(PhotonParser.parse("""{"type":"FeatureCollection","features":[]}""").isEmpty())
+    }
+}
