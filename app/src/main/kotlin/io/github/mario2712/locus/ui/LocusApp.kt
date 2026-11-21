@@ -8,7 +8,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -57,11 +60,11 @@ import java.time.LocalDate
 fun LocusApp() {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
-    // Aktiver Reiter = der zuletzt geöffnete Hauptbereich im Back-Stack (auch in Untermenüs wie „Mehr → Orte“).
-    val activeTab = remember(backStackEntry) {
-        navController.currentBackStack.value.asReversed().firstNotNullOfOrNull { entry ->
-            TopLevelDestination.entries.firstOrNull { entry.destination.hasRoute(it.route::class) }
-        }
+    // Aktiver Reiter = zuletzt besuchter Hauptbereich; bleibt in Untermenüs (z. B. „Mehr → Orte“) markiert.
+    var activeTab by rememberSaveable { mutableStateOf(TopLevelDestination.TODAY) }
+    val currentTab = TopLevelDestination.entries.firstOrNull { backStackEntry?.destination?.hasRoute(it.route::class) == true }
+    LaunchedEffect(currentTab) {
+        if (currentTab != null) activeTab = currentTab
     }
 
     Scaffold(
@@ -73,8 +76,8 @@ fun LocusApp() {
                         selected = selected,
                         onClick = {
                             // Erneut antippen → zurück zur obersten Ebene des Reiters
-                            if (selected) navController.popBackStack(dest.route, inclusive = false)
-                            else navController.navigateTopLevel(dest.route)
+                            val popped = selected && navController.popBackStack(dest.route, inclusive = false)
+                            if (!popped) navController.navigateTopLevel(dest.route)
                         },
                         icon = { Icon(painterResource(dest.icon), contentDescription = null) },
                         label = { Text(stringResource(dest.label)) },
