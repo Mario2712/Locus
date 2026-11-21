@@ -25,10 +25,25 @@ data class PlaceCandidate(
     val longitude: Double,
     /** OSM-Kategorie, z. B. "town", "restaurant", "museum". */
     val category: String?,
+    val street: String? = null,
+    val houseNumber: String? = null,
+    val postcode: String? = null,
+    /** Stadtteil/Ortsteil, z. B. „Burgfried“. */
+    val district: String? = null,
+    /** Entfernung zum aktuellen Standort, falls bekannt. */
+    val distanceMeters: Double? = null,
 ) {
     /** Zweite Zeile für Suchergebnisse, z. B. „Salzburg, Österreich“. */
     val subtitle: String
         get() = listOfNotNull(cityName?.takeIf { it != name }, stateName, countryName).distinct().joinToString(", ")
+
+    /** Adresse, z. B. „Davisstraße 12, 5400 Hallein“ – zur Unterscheidung gleichnamiger Treffer. */
+    val address: String?
+        get() {
+            val streetPart = street?.let { listOfNotNull(it, houseNumber).joinToString(" ") }
+            val cityPart = listOfNotNull(postcode, cityName ?: district).joinToString(" ").takeIf { it.isNotBlank() }
+            return listOfNotNull(streetPart, cityPart).joinToString(", ").takeIf { it.isNotBlank() && streetPart != null }
+        }
 }
 
 /** Online-Suche nach Orten (Implementierung in :core:data, z. B. Photon/OSM). */
@@ -59,6 +74,7 @@ object PlaceCandidates {
         cityName = candidate.cityName,
         osmId = candidate.osmId,
         poiCategory = candidate.category,
+        address = candidate.address,
     )
 
     /**
@@ -86,6 +102,7 @@ object PlaceCandidates {
         regionCode = existing.regionCode ?: regionCode(existing.countryIso2, candidate.stateName),
         cityName = existing.cityName ?: candidate.cityName,
         poiCategory = existing.poiCategory ?: candidate.category,
+        address = existing.address ?: candidate.address,
     )
 
     /** Gespeicherte Stadt mit [cityName] im selben Land (für die Zuordnung von Lokalen, Museen …). */
@@ -104,6 +121,13 @@ object PlaceCandidates {
         regionCode = regionCode(candidate.countryIso2.uppercase(), candidate.stateName),
         cityName = cityName,
     )
+
+    /** „850 m“ bzw. „12,3 km“. */
+    fun formatDistance(meters: Double): String = when {
+        meters < 1_000 -> "${(meters / 10).toInt() * 10} m"
+        meters < 10_000 -> String.format(java.util.Locale.GERMAN, "%.1f km", meters / 1_000)
+        else -> "${(meters / 1_000).toInt()} km"
+    }
 
     /** Großkreis-Entfernung (Haversine) in Metern. */
     fun distanceMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {

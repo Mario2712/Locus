@@ -44,6 +44,24 @@ object PlaceGroups {
         VisitCategoryIds.ACCOMMODATION to LocationGroup.LODGING,
     )
 
+    private val labels: Map<String, String> = mapOf(
+        "restaurant" to "Restaurant", "cafe" to "Café", "bar" to "Bar", "pub" to "Pub", "fast_food" to "Imbiss",
+        "biergarten" to "Biergarten", "ice_cream" to "Eis", "bakery" to "Bäckerei", "supermarket" to "Supermarkt",
+        "convenience" to "Nahversorger", "mall" to "Einkaufszentrum", "department_store" to "Kaufhaus",
+        "clothes" to "Bekleidung", "shoes" to "Schuhe", "doityourself" to "Baumarkt", "hardware" to "Baumarkt",
+        "chemist" to "Drogerie", "pharmacy" to "Apotheke", "fuel" to "Tankstelle", "museum" to "Museum",
+        "gallery" to "Galerie", "theatre" to "Theater", "cinema" to "Kino", "attraction" to "Sehenswürdigkeit",
+        "castle" to "Burg/Schloss", "monument" to "Denkmal", "place_of_worship" to "Kirche", "church" to "Kirche",
+        "viewpoint" to "Aussichtspunkt", "peak" to "Gipfel", "park" to "Park", "zoo" to "Zoo", "hotel" to "Hotel",
+        "hostel" to "Hostel", "guest_house" to "Pension", "alpine_hut" to "Hütte", "camp_site" to "Campingplatz",
+        "station" to "Bahnhof", "aerodrome" to "Flughafen", "parking" to "Parkplatz", "hospital" to "Krankenhaus",
+        "school" to "Schule", "university" to "Universität", "city" to "Stadt", "town" to "Stadt",
+        "village" to "Dorf", "hamlet" to "Weiler", "suburb" to "Stadtteil", "residential" to "Straße",
+    )
+
+    /** Deutsche Bezeichnung einer OSM-Kategorie, z. B. „supermarket“ → „Supermarkt“. */
+    fun categoryLabel(osmValue: String?): String? = osmValue?.let { labels[it.lowercase()] }
+
     /** Stadt/Gemeinde (sonst Örtlichkeit: Lokal, Museum, Gipfel, Adresse …). */
     fun isLocality(place: Place): Boolean = place.kind == PlaceKind.CITY
 

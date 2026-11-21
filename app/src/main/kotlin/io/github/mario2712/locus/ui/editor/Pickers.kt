@@ -52,6 +52,8 @@ import io.github.mario2712.locus.domain.model.Place
 import io.github.mario2712.locus.domain.model.PlaceKind
 import io.github.mario2712.locus.domain.model.StayType
 import io.github.mario2712.locus.domain.places.PlaceCandidate
+import io.github.mario2712.locus.domain.places.PlaceCandidates
+import io.github.mario2712.locus.domain.places.PlaceGroups
 import io.github.mario2712.locus.domain.reference.ReferenceData
 import io.github.mario2712.locus.places.LocalPlaceSearch
 import io.github.mario2712.locus.places.SearchResult
@@ -103,6 +105,8 @@ fun PlaceField(
     onCreatePlace: suspend (PlaceDraft) -> Place,
     /** Örtlichkeiten (Lokale, Gipfel …) zuerst anzeigen – z. B. bei Besuchen. */
     preferLocations: Boolean = false,
+    /** Passende Orte für diesen Eintrag (z. B. Orte in der Stadt des Tages), oben angezeigt. */
+    suggestedIds: List<String> = emptyList(),
 ) {
     var showPicker by remember { mutableStateOf(false) }
     var editPlace by remember { mutableStateOf<Place?>(null) }
@@ -129,9 +133,13 @@ fun PlaceField(
             onSelect = { onSelect(it); showPicker = false },
             onCreatePlace = onCreatePlace,
             preferLocations = preferLocations,
+            suggestedIds = suggestedIds,
         )
     }
 }
+
+/** Ab so vielen gespeicherten Orten zeigt die Auswahl ohne Suchbegriff nur Vorschläge. */
+private const val COMPACT_LIMIT = 12
 
 private sealed interface OnlineState {
     data object Idle : OnlineState
@@ -152,8 +160,10 @@ fun PlacePickerDialog(
     onSelect: (String) -> Unit,
     onCreatePlace: suspend (PlaceDraft) -> Place,
     preferLocations: Boolean = false,
+    suggestedIds: List<String> = emptyList(),
 ) {
     val controller = LocalPlaceSearch.current
+    var showAll by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     var query by remember { mutableStateOf("") }
     var showCreate by remember { mutableStateOf(false) }
@@ -235,7 +245,11 @@ fun PlacePickerDialog(
                                 ) {
                                     Text("${country?.flag ?: "🌐"} ${candidate.name}")
                                     Text(
-                                        candidate.subtitle,
+                                        listOfNotNull(
+                                            PlaceGroups.categoryLabel(candidate.category),
+                                            candidate.address ?: candidate.subtitle,
+                                            candidate.distanceMeters?.let { PlaceCandidates.formatDistance(it) },
+                                        ).joinToString(" · "),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
@@ -252,7 +266,31 @@ fun PlacePickerDialog(
                             }
                         }
                     }
-                    val (cities, locations) = filtered.partition { it.kind == PlaceKind.CITY }
+                    // Viele Orte: ohne Suchbegriff nur Vorschläge (Kontext, Favoriten, Homebase), Rest auf Wunsch.
+                    val compact = query.isBlank() && !showAll && places.size > COMPACT_LIMIT
+                    if (compact) {
+                        val byId = places.associateBy { it.id }
+                        val suggestions = (suggestedIds.mapNotNull { byId[it] } + places.filter { it.isHomebase || it.isFavorite })
+                            .distinctBy { it.id }.take(10)
+                        if (suggestions.isNotEmpty()) item(key = "label-suggest") { SectionLabel(stringResource(R.string.search_suggestions)) }
+                        items(suggestions, key = { "s-" + it.id }) { place ->
+                            Column(
+                                Modifier.fillMaxWidth()
+                                    .combinedClickable(onClick = { onSelect(place.id) }, onLongClick = { editPlace = place })
+                                    .padding(vertical = 10.dp),
+                            ) {
+                                Text((if (place.isHomebase) "🏠 " else if (place.isFavorite) "★ " else "") + place.displayName)
+                                place.address?.let {
+                                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            HorizontalDivider()
+                        }
+                        item(key = "show-all") {
+                            TextButton(onClick = { showAll = true }) { Text(stringResource(R.string.search_show_all, places.size)) }
+                        }
+                    }
+                    val (cities, locations) = (if (compact) emptyList() else filtered).partition { it.kind == PlaceKind.CITY }
                     val sections = listOf(
                         R.string.places_tab_cities to cities,
                         R.string.places_tab_locations to locations,
@@ -273,8 +311,9 @@ fun PlacePickerDialog(
                                 Text(
                                     listOfNotNull(
                                         place.alias?.let { place.name },
-                                        parent?.let { stringResource(R.string.place_in_city, it) },
+                                        place.address ?: parent?.let { stringResource(R.string.place_in_city, it) },
                                         country?.let { "${it.flag} ${it.nameDe}" },
+                                        if (place.latitude == null) stringResource(R.string.places_no_coordinates) else null,
                                     ).joinToString(" · "),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,

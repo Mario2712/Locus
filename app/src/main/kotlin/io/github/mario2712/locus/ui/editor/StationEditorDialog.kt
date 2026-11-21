@@ -53,6 +53,7 @@ fun StationEditorDialog(
     onSave: (StayDraft) -> Unit,
     onDelete: (() -> Unit)?,
     onCreatePlace: suspend (PlaceDraft) -> Place,
+    suggestedPlaceIds: List<String> = emptyList(),
 ) {
     var draft by remember { mutableStateOf(initial) }
     var showDetails by remember { mutableStateOf(initial.startTime != null || initial.endTime != null || initial.note.isNotEmpty()) }
@@ -72,7 +73,10 @@ fun StationEditorDialog(
                     )
                 }
                 Text(stringResource(R.string.editor_place), style = MaterialTheme.typography.labelLarge)
-                PlaceField(editor.sortedPlaces, draft.placeId, { draft = draft.copy(placeId = it) }, onCreatePlace)
+                PlaceField(
+                    editor.sortedPlaces, draft.placeId, { draft = draft.copy(placeId = it) }, onCreatePlace,
+                    suggestedIds = suggestedPlaceIds,
+                )
                 Text(stringResource(R.string.editor_transport), style = MaterialTheme.typography.labelLarge)
                 TransportChips(draft.transport) { draft = draft.copy(transport = it) }
                 SwitchRow(stringResource(R.string.editor_overnight), draft.overnight) { draft = draft.copy(overnight = it) }

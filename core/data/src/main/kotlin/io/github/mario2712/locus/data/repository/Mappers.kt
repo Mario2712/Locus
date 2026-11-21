@@ -56,14 +56,14 @@ internal fun PlaceEntity.toDomain() = Place(
     id = id, name = name, kind = kind, countryIso2 = countryIso2, regionCode = regionCode,
     latitude = latitude, longitude = longitude, cityName = cityName, parentPlaceId = parentPlaceId,
     osmId = osmId, poiCategory = poiCategory, alias = alias, isFavorite = isFavorite, note = note,
-    isHomebase = isHomebase,
+    isHomebase = isHomebase, address = address,
 )
 
 internal fun Place.toEntity(meta: SyncMeta) = PlaceEntity(
     id = id, name = name, kind = kind, countryIso2 = countryIso2.uppercase(), regionCode = regionCode,
     latitude = latitude, longitude = longitude, cityName = cityName, parentPlaceId = parentPlaceId,
     osmId = osmId, poiCategory = poiCategory, alias = alias, isFavorite = isFavorite, note = note, meta = meta,
-    isHomebase = isHomebase,
+    isHomebase = isHomebase, address = address,
 )
 
 internal fun StayWithPersons.toDomain() = Stay(

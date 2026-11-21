@@ -47,6 +47,7 @@ class PhotonParserTest {
         assertEquals("museum", museum.category)
         assertEquals("Salzburg, Österreich", museum.subtitle)
 
+        assertEquals("Davisstraße, Hallein", results[2].address)
         assertEquals(PlaceKind.ADDRESS, results[2].kind)
         assertEquals("Davisstraße", results[2].name)
     }

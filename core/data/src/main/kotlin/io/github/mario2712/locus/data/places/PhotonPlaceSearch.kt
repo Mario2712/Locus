@@ -89,6 +89,10 @@ object PhotonParser {
                 latitude = coordinates.getDouble(1),
                 longitude = coordinates.getDouble(0),
                 category = osmValue,
+                street = street,
+                houseNumber = props.optStringOrNull("housenumber"),
+                postcode = props.optStringOrNull("postcode"),
+                district = props.optStringOrNull("district") ?: props.optStringOrNull("locality"),
             )
         }
     }

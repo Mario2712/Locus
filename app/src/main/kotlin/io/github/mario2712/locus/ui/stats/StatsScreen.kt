@@ -19,11 +19,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -48,6 +53,7 @@ import io.github.mario2712.locus.ui.common.Format
 import io.github.mario2712.locus.ui.common.SectionCard
 import io.github.mario2712.locus.ui.common.TypeDot
 import io.github.mario2712.locus.ui.common.themedColor
+import io.github.mario2712.locus.ui.editor.DatePickerDialogFor
 import io.github.mario2712.locus.ui.places.BackScaffold
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -63,8 +69,16 @@ import java.time.format.TextStyle
 import java.util.Locale
 import javax.inject.Inject
 
+/** Gewählter Zeitraum der Statistik. */
+sealed interface StatsPeriod {
+    data class Year(val year: Int) : StatsPeriod
+    data class Month(val month: YearMonth) : StatsPeriod
+    data object Last30 : StatsPeriod
+    data class Custom(val from: LocalDate, val to: LocalDate) : StatsPeriod
+}
+
 data class StatsUiState(
-    val year: Int,
+    val period: StatsPeriod,
     val years: List<Int> = emptyList(),
     val stats: YearStatsData? = null,
     val editor: EditorData = EditorData(),
@@ -77,19 +91,25 @@ class StatsViewModel @Inject constructor(
     visits: VisitRepository,
     editorCatalog: EditorCatalog,
 ) : ViewModel() {
-    private val today = LocalDate.now(clock)
-    private val year = MutableStateFlow(today.year)
+    val today: LocalDate = LocalDate.now(clock)
+    private val period = MutableStateFlow<StatsPeriod>(StatsPeriod.Year(today.year))
 
-    val state: StateFlow<StatsUiState> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data, year) { s, v, editor, y ->
+    val state: StateFlow<StatsUiState> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data, period) { s, v, editor, p ->
         val years = ((s.map { it.startDate.year } + v.map { it.date.year }) + today.year).distinct().sortedDescending()
+        val (from, to) = when (p) {
+            is StatsPeriod.Year -> LocalDate.of(p.year, 1, 1) to LocalDate.of(p.year, 12, 31)
+            is StatsPeriod.Month -> p.month.atDay(1) to p.month.atEndOfMonth()
+            StatsPeriod.Last30 -> today.minusDays(29) to today
+            is StatsPeriod.Custom -> p.from to p.to
+        }
         val stats = YearStats.compute(
-            y, Defaults.ME, s, v, editor.placesById, editor.typesById, editor.categoriesById, editor.rank, editor.homebase?.id, today,
+            from, to, Defaults.ME, s, v, editor.placesById, editor.typesById, editor.categoriesById, editor.rank, editor.homebase?.id, today,
         )
-        StatsUiState(y, years, stats, editor)
-    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), StatsUiState(today.year))
+        StatsUiState(p, years, stats, editor)
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), StatsUiState(StatsPeriod.Year(today.year)))
 
-    fun selectYear(value: Int) {
-        year.value = value
+    fun select(value: StatsPeriod) {
+        period.value = value
     }
 }
 
@@ -103,13 +123,11 @@ fun StatsScreen(onBack: () -> Unit, onOpenDay: (LocalDate) -> Unit, viewModel: S
             modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                state.years.forEach { y -> FilterChip(y == state.year, { viewModel.selectYear(y) }, label = { Text(y.toString()) }) }
-            }
+            PeriodSelector(state, viewModel)
             val stats = state.stats ?: return@Column
 
             // Überblick als Kennzahlen (keine Grafik nötig)
-            SectionCard(stringResource(R.string.stats_overview, stats.year)) {
+            SectionCard(periodLabel(state.period)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     StatTile(stats.recordedDays.toString(), stringResource(R.string.stats_recorded_days))
                     StatTile(stats.countries.size.toString(), stringResource(R.string.stats_countries))
@@ -181,6 +199,56 @@ fun StatsScreen(onBack: () -> Unit, onOpenDay: (LocalDate) -> Unit, viewModel: S
 }
 
 @Composable
+private fun periodLabel(period: StatsPeriod): String = when (period) {
+    is StatsPeriod.Year -> stringResource(R.string.stats_period_year, period.year)
+    is StatsPeriod.Month -> Format.month(period.month.atDay(1))
+    StatsPeriod.Last30 -> stringResource(R.string.stats_period_last30)
+    is StatsPeriod.Custom -> "${Format.fullDate(period.from)} – ${Format.fullDate(period.to)}"
+}
+
+/** Jahr ▾ · Monat ▾ · Letzte 30 Tage · Zeitraum … */
+@Composable
+private fun PeriodSelector(state: StatsUiState, viewModel: StatsViewModel) {
+    var yearMenu by remember { mutableStateOf(false) }
+    var monthMenu by remember { mutableStateOf(false) }
+    var pickFrom by remember { mutableStateOf(false) }
+    var customFrom by remember { mutableStateOf<LocalDate?>(null) }
+    val p = state.period
+    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Box {
+            FilterChip(p is StatsPeriod.Year, { yearMenu = true }, label = {
+                Text((p as? StatsPeriod.Year)?.year?.toString() ?: stringResource(R.string.stats_choose_year))
+            })
+            DropdownMenu(expanded = yearMenu, onDismissRequest = { yearMenu = false }) {
+                state.years.forEach { y ->
+                    DropdownMenuItem(text = { Text(y.toString()) }, onClick = { viewModel.select(StatsPeriod.Year(y)); yearMenu = false })
+                }
+            }
+        }
+        Box {
+            FilterChip(p is StatsPeriod.Month, { monthMenu = true }, label = {
+                Text((p as? StatsPeriod.Month)?.let { Format.month(it.month.atDay(1)) } ?: stringResource(R.string.stats_choose_month))
+            })
+            DropdownMenu(expanded = monthMenu, onDismissRequest = { monthMenu = false }) {
+                (0L until 24L).map { YearMonth.from(viewModel.today).minusMonths(it) }.forEach { m ->
+                    DropdownMenuItem(text = { Text(Format.month(m.atDay(1))) }, onClick = { viewModel.select(StatsPeriod.Month(m)); monthMenu = false })
+                }
+            }
+        }
+        FilterChip(p == StatsPeriod.Last30, { viewModel.select(StatsPeriod.Last30) }, label = { Text(stringResource(R.string.stats_period_last30)) })
+        FilterChip(p is StatsPeriod.Custom, { pickFrom = true }, label = { Text(stringResource(R.string.stats_period_custom)) })
+    }
+    if (pickFrom) {
+        DatePickerDialogFor(viewModel.today.minusMonths(1), { pickFrom = false }) { from -> customFrom = from; pickFrom = false }
+    }
+    customFrom?.let { from ->
+        DatePickerDialogFor(viewModel.today, { customFrom = null }) { to ->
+            viewModel.select(StatsPeriod.Custom(minOf(from, to), maxOf(from, to))); customFrom = null
+        }
+    }
+}
+
+@Composable
 private fun StatTile(value: String, label: String) {
     Column {
         Text(value, style = MaterialTheme.typography.headlineMedium)
@@ -216,8 +284,7 @@ private fun WorkRow(c1: String, c2: String, c3: String, c4: String, c5: String, 
 private fun Heatmap(stats: YearStatsData, editor: EditorData, onOpenDay: (LocalDate) -> Unit) {
     val empty = MaterialTheme.colorScheme.surfaceVariant
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        (1..12).forEach { m ->
-            val month = YearMonth.of(stats.year, m)
+        stats.months.forEach { month ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(month.month.getDisplayName(TextStyle.NARROW, Locale.GERMAN), Modifier.width(14.dp), style = MaterialTheme.typography.labelSmall)
                 (1..month.lengthOfMonth()).forEach { day ->

@@ -86,6 +86,7 @@ data class PlaceEntity(
     val note: String?,
     @Embedded val meta: SyncMeta,
     @ColumnInfo(name = "is_homebase", defaultValue = "0") val isHomebase: Boolean = false,
+    val address: String? = null,
 )
 
 // Bewusst ohne Foreign Keys: Soft-Deletes und ein späterer Import in beliebiger Reihenfolge

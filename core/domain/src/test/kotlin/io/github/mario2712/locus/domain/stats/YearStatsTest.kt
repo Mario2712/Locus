@@ -58,4 +58,20 @@ class YearStatsTest {
         assertEquals(StayTypeIds.OFFICE, stats.mainTypeByDate[d("2026-03-05")])
         assertEquals(9, stats.recordedDays) // Tage mit Station (Besuche allein zählen nicht)
     }
+
+    @Test
+    fun `beliebiger Zeitraum - z B ein Monat`() {
+        val stays = listOf(
+            Stay("1", "salzburg", StayTypeIds.OFFICE, d("2026-03-03"), participants = setOf(ME)),
+            Stay("2", "bologna", StayTypeIds.VACATION, d("2026-08-01"), d("2026-08-03"), participants = setOf(ME)),
+        )
+        val stats = YearStats.compute(
+            d("2026-08-01"), d("2026-08-31"), ME, stays, emptyList(), places, types,
+            Defaults.visitCategories.associateBy { it.id }, StayPriority.ranker(types), "hallein", d("2026-11-21"),
+        )
+        assertEquals(3, stats.recordedDays)
+        assertEquals(listOf("IT"), stats.newCountries)
+        assertEquals(listOf(YearMonth.of(2026, 8)), stats.months)
+        assertEquals(1, stats.trips)
+    }
 }

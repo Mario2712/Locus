@@ -31,9 +31,10 @@ data class MonthWork(
     val businessTripDays: Int,
 )
 
-/** Jahresstatistik einer Person. */
+/** Statistik einer Person für einen Zeitraum (Jahr, Monat, letzte 30 Tage, frei gewählt). */
 data class YearStatsData(
-    val year: Int,
+    val from: LocalDate,
+    val to: LocalDate,
     /** Tage mit mindestens einem Eintrag. */
     val recordedDays: Int,
     /** Tage je Hauptart (jeder Tag genau einmal). */
@@ -43,11 +44,11 @@ data class YearStatsData(
     val work: List<MonthWork>,
     val vacationDaysDomestic: Int,
     val vacationDaysAbroad: Int,
-    /** Länder, die in diesem Jahr zum ersten Mal besucht wurden. */
+    /** Länder, die im Zeitraum zum ersten Mal besucht wurden. */
     val newCountries: List<String>,
     /** Alle in diesem Jahr besuchten Länder. */
     val countries: List<String>,
-    /** Städte/Gemeinden, die in diesem Jahr zum ersten Mal vorkommen. */
+    /** Städte/Gemeinden, die im Zeitraum zum ersten Mal vorkommen. */
     val newCities: List<String>,
     /** Nächte nicht an der Homebase. */
     val nightsAway: Int,
@@ -56,7 +57,11 @@ data class YearStatsData(
     val topCities: List<Pair<String, Int>>,
     /** Hauptart je Tag – für die Kalender-Heatmap. */
     val mainTypeByDate: Map<LocalDate, String>,
-)
+) {
+    /** Monate des Zeitraums (für Tabelle und Heatmap). */
+    val months: List<YearMonth>
+        get() = generateSequence(YearMonth.from(from)) { it.plusMonths(1) }.takeWhile { !it.isAfter(YearMonth.from(to)) }.toList()
+}
 
 object YearStats {
 
@@ -71,16 +76,33 @@ object YearStats {
         rank: (String) -> Int,
         homebaseId: String?,
         today: LocalDate,
+    ): YearStatsData = compute(
+        LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31), person, stays, visits, places, stayTypes, visitCategories,
+        rank, homebaseId, today,
+    )
+
+    fun compute(
+        rangeFrom: LocalDate,
+        rangeTo: LocalDate,
+        person: PersonId,
+        stays: List<Stay>,
+        visits: List<Visit>,
+        places: Map<String, Place>,
+        stayTypes: Map<String, StayType>,
+        visitCategories: Map<String, VisitCategory>,
+        rank: (String) -> Int,
+        homebaseId: String?,
+        today: LocalDate,
     ): YearStatsData {
-        val from = LocalDate.of(year, 1, 1)
-        val to = minOf(LocalDate.of(year, 12, 31), today)
+        val from = rangeFrom
+        val to = minOf(rangeTo, today)
         val resolved = Timeline.resolve(stays, homebaseId, today)
         val own = resolved.filter { person in it.participants }
         val summaries = DayInsights.summaries(from, to, person, resolved, rank)
 
         // Arbeitsorte je Monat
-        val work = (1..12).map { m ->
-            val month = YearMonth.of(year, m)
+        val months = generateSequence(YearMonth.from(from)) { it.plusMonths(1) }.takeWhile { !it.isAfter(YearMonth.from(rangeTo)) }
+        val work = months.toList().map { month ->
             val days = summaries.filterKeys { YearMonth.from(it) == month }.values
             MonthWork(
                 month = month,
@@ -107,7 +129,7 @@ object YearStats {
         // Länder
         val points = CountryPointsCalculator().calculate(resolved, visits, places, stayTypes, visitCategories)
         val stats = points.byPerson[person].orEmpty().values
-        val newCountries = stats.filter { it.firstDate.year == year }.sortedBy { it.firstDate }.map { it.countryIso2 }
+        val newCountries = stats.filter { it.firstDate in from..to }.sortedBy { it.firstDate }.map { it.countryIso2 }
         val yearStays = resolved.filter { it.startDate <= to && it.endDate >= from }
         val yearVisits = visits.filter { it.date in from..to }
         val yearPoints = CountryPointsCalculator().calculate(yearStays, yearVisits, places, stayTypes, visitCategories)
@@ -125,7 +147,7 @@ object YearStats {
             while (!d.isAfter(stay.endDate)) { cityDates.getOrPut(city) { mutableSetOf() } += d; d = d.plusDays(1) }
         }
         visits.filter { person in it.participants }.forEach { v -> cityOf(v.placeId)?.let { cityDates.getOrPut(it) { mutableSetOf() } += v.date } }
-        val newCities = cityDates.filter { (_, dates) -> dates.min().year == year }.keys.toList()
+        val newCities = cityDates.filter { (_, dates) -> dates.min() in from..to }.keys.toList()
         val topCities = cityDates.mapValues { (_, dates) -> dates.count { it in from..to } }
             .filter { it.value > 0 }.toList().sortedByDescending { it.second }.take(5)
 
@@ -138,10 +160,11 @@ object YearStats {
         }
 
         val trips = Trips.derive(stays, visits, places, person, homebaseId, today)
-            .count { it.start.year == year || it.end.year == year }
+            .count { it.start <= to && it.end >= from }
 
         return YearStatsData(
-            year = year,
+            from = rangeFrom,
+            to = rangeTo,
             recordedDays = summaries.size,
             daysByMainType = DayStatistics.daysByMainType(summaries.values),
             daysWithType = DayStatistics.daysWithType(summaries.values),

@@ -144,6 +144,7 @@ fun DayPanel(state: DayState, viewModel: BaseDayViewModel) {
             onSave = { viewModel.saveStation(it); stationDraft = null },
             onDelete = draft.id?.let { id -> { viewModel.deleteStation(id); stationDraft = null } },
             onCreatePlace = viewModel::createPlace,
+            suggestedPlaceIds = state.combos.map { it.placeId },
         )
     }
     visitDraft?.let { draft ->
@@ -154,6 +155,7 @@ fun DayPanel(state: DayState, viewModel: BaseDayViewModel) {
             onSave = { viewModel.saveVisit(it); visitDraft = null },
             onDelete = draft.id?.let { id -> { viewModel.deleteVisit(id); visitDraft = null } },
             onCreatePlace = viewModel::createPlace,
+            suggestedPlaceIds = state.visitSuggestions,
         )
     }
     journeyMode?.let { mode ->

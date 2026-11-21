@@ -59,4 +59,16 @@ class PlaceCandidatesTest {
         assertEquals(PlaceKind.CITY, stub.kind)
         assertEquals("AT-5", stub.regionCode)
     }
+
+    @Test
+    fun `Adresse und Entfernung unterscheiden gleichnamige Treffer`() {
+        val lidl = hallein.copy(osmId = "N2", name = "Lidl", kind = PlaceKind.POI, category = "supermarket",
+            street = "Davisstraße", houseNumber = "12", postcode = "5400")
+        assertEquals("Davisstraße 12, 5400 Hallein", lidl.address)
+        assertEquals("Davisstraße 12, 5400 Hallein", PlaceCandidates.toPlace(lidl).address)
+        assertNull(hallein.address) // Städte haben keine Straße
+        assertEquals("850 m", PlaceCandidates.formatDistance(857.0))
+        assertEquals("1,2 km", PlaceCandidates.formatDistance(1_234.0))
+        assertEquals("Supermarkt", PlaceGroups.categoryLabel("supermarket"))
+    }
 }

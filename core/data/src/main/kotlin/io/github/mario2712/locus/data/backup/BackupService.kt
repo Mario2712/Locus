@@ -54,6 +54,7 @@ class BackupService @Inject constructor(
                 PlaceDto(
                     it.id, it.name, it.kind.name, it.countryIso2, it.regionCode, it.latitude, it.longitude, it.cityName,
                     it.parentPlaceId, it.osmId, it.poiCategory, it.alias, it.isFavorite, it.note, it.isHomebase, it.meta.dto(),
+                    it.address,
                 )
             },
             stays = dao.stays().sortedBy { it.sortKey() }.map { w ->
@@ -136,6 +137,7 @@ class BackupService @Inject constructor(
                     PlaceEntity(
                         d.id, d.name, PlaceKind.valueOf(d.kind), d.countryIso2, d.regionCode, d.latitude, d.longitude, d.cityName,
                         d.parentPlaceId, d.osmId, d.poiCategory, d.alias, d.isFavorite, d.note, d.meta.entity(), d.isHomebase,
+                        d.address,
                     ),
                 )
             }
@@ -238,6 +240,6 @@ class BackupService @Inject constructor(
 
     companion object {
         /** Muss zur Room-Version passen. */
-        const val SCHEMA_VERSION = 3
+        const val SCHEMA_VERSION = 4
     }
 }

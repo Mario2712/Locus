@@ -219,6 +219,7 @@ fun PlaceDetailScreen(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )
+                place.address?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                 place.parentPlaceId?.let { parent ->
                     TextButton(onClick = { onOpenPlace(parent) }) {
                         Text(stringResource(R.string.place_in_city, state.editor.placeName(parent)))

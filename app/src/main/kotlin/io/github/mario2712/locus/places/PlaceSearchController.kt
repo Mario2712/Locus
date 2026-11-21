@@ -32,7 +32,11 @@ class PlaceSearchController @Inject constructor(
 
     suspend fun search(query: String): SearchResult<List<PlaceCandidate>> = try {
         val near = location.takeIf { it.hasPermission() }?.let { runCatching { it.current() }.getOrNull() }
-        SearchResult.Ok(search.search(query, near?.latitude, near?.longitude))
+        val results = search.search(query, near?.latitude, near?.longitude)
+        SearchResult.Ok(
+            if (near == null) results
+            else results.map { it.copy(distanceMeters = PlaceCandidates.distanceMeters(near.latitude, near.longitude, it.latitude, it.longitude)) },
+        )
     } catch (e: Exception) {
         if (e is kotlinx.coroutines.CancellationException) throw e
         SearchResult.Offline
@@ -50,7 +54,11 @@ class PlaceSearchController @Inject constructor(
                 runCatching { search.search(name, here.latitude, here.longitude) }.getOrNull()
                     ?.firstOrNull { it.kind == PlaceKind.CITY && it.name.equals(name, ignoreCase = true) }
             }
-            SearchResult.Ok(listOfNotNull(city, hit))
+            SearchResult.Ok(
+                listOfNotNull(city, hit).map {
+                    it.copy(distanceMeters = PlaceCandidates.distanceMeters(here.latitude, here.longitude, it.latitude, it.longitude))
+                },
+            )
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             SearchResult.Offline

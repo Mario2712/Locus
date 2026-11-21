@@ -108,6 +108,8 @@ data class Place(
     val note: String? = null,
     /** Zuhause; Tage beginnen und enden hier, sofern keine Reise läuft. Höchstens ein Ort. */
     val isHomebase: Boolean = false,
+    /** Adresse zur Unterscheidung gleichnamiger Orte, z. B. „Davisstraße 12, 5400 Hallein“. */
+    val address: String? = null,
 ) {
     val displayName: String get() = alias ?: name
 }

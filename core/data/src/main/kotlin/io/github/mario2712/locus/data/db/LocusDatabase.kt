@@ -22,13 +22,15 @@ import androidx.room.TypeConverters
         PatternRuleEntity::class,
         DayTemplateEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
     autoMigrations = [
         // v2: Stationen-Konzept (Homebase, Übernachtung, Verkehrsmittel, Besuchs-Kategorien, Vorlagen)
         AutoMigration(from = 1, to = 2),
         // v3: Geburtsdatum für Profil-Statistiken
         AutoMigration(from = 2, to = 3),
+        // v4: Adresse von Orten (gleichnamige Orte unterscheiden)
+        AutoMigration(from = 3, to = 4),
     ],
 )
 @TypeConverters(Converters::class)

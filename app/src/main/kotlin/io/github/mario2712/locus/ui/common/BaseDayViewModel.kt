@@ -47,6 +47,8 @@ data class DayState(
     val suggestion: DaySuggestion? = null,
     val combos: List<StayCombo> = emptyList(),
     val recentVisitPlaces: List<String> = emptyList(),
+    /** Vorschläge für Besuche: Örtlichkeiten in den Städten des Tages, dann zuletzt besuchte Orte. */
+    val visitSuggestions: List<String> = emptyList(),
     val editor: EditorData = EditorData(),
 ) {
     val onTrip: Boolean get() = baseAtEnd != null
@@ -117,6 +119,14 @@ abstract class BaseDayViewModel(
             combos = DayInsights.recentCombos(me, input.stays, limit = 5, excludePlaceId = currentPlace)
                 .filter { it.placeId in editor.placesById && it.stayTypeId in editor.typesById },
             recentVisitPlaces = DayInsights.recentVisitPlaces(me, input.visits).filter { it in editor.placesById },
+            visitSuggestions = run {
+                val dayCities = (own.map { it.placeId } + listOfNotNull(baseAtStart?.placeId, homeId))
+                    .mapNotNull { id -> editor.placesById[id]?.let { p -> if (p.kind == io.github.mario2712.locus.domain.model.PlaceKind.CITY) p.id else p.parentPlaceId } }
+                    .toSet()
+                val inDayCities = editor.places.filter { it.parentPlaceId in dayCities }.map { it.id }
+                (dayCities.toList() + inDayCities + DayInsights.recentVisitPlaces(me, input.visits, limit = 8))
+                    .filter { it in editor.placesById }.distinct()
+            },
             editor = editor,
         )
     }
