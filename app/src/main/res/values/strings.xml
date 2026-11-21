@@ -291,12 +291,17 @@
     <string name="countries_first_visit">%1$s erstmals: %2$s</string>
     <string name="countries_last_visit">Zuletzt: %1$s</string>
     <string name="countries_days">%1$s: %2$d Tage im Land</string>
-    <string name="countries_places">Orte: %1$s</string>
     <string name="countries_before_year">vor %1$d</string>
     <string name="countries_undated_question">Schon dort gewesen, aber wann weißt du nicht mehr?</string>
     <string name="countries_undated_hint">Zählt als Länderpunkt und auf der Karte und gilt als vor dem Jahr besucht, ab dem du lückenlos erfasst hast (siehe Profil). Erscheint nicht in Timeline, Reisen und Zeitraum-Statistik.</string>
     <string name="countries_undated_entry">Ohne Datum erfasst: %1$s</string>
     <string name="countries_undated_remove">Eintrag ohne Datum entfernen</string>
+    <string name="countries_not_visited">Noch nicht besucht</string>
+    <string name="countries_cities">Städte &amp; Gemeinden (%1$d)</string>
+    <string name="countries_all_cities">Alle %1$d anzeigen</string>
+    <string name="countries_unassigned">Dazu %1$d Örtlichkeiten ohne zugeordnete Stadt – unter Mehr → Orte zuordenbar.</string>
+    <string name="countries_trips">Reisen (%1$d)</string>
+    <string name="countries_undated_title">Ohne Datum</string>
     <string name="countries_wish_add">☆ Auf Wunschliste</string>
     <string name="countries_wish_remove">Von Wunschliste entfernen</string>
 

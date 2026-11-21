@@ -37,12 +37,17 @@ import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
 
+/** Stadt in der Länderansicht: Tage dort (inkl. Örtlichkeiten) und Anzahl Örtlichkeiten. */
+data class CityRow(val placeId: String, val days: Int, val locations: Int)
+
 data class CountriesUiState(
     val overview: CountryOverviewData? = null,
     val personA: Person? = null,
     val personB: Person? = null,
-    /** Orte je Land (Person A), für die Detailansicht. */
-    val placesByCountry: Map<String, List<String>> = emptyMap(),
+    /** Städte je Land (Person A), nach Tagen absteigend. */
+    val citiesByCountry: Map<String, List<CityRow>> = emptyMap(),
+    /** Örtlichkeiten ohne zugeordnete Stadt je Land. */
+    val unassignedByCountry: Map<String, Int> = emptyMap(),
     val tripsByCountry: Map<String, List<TripSummary>> = emptyMap(),
     /** Einträge „Datum unbekannt“ je Land. */
     val undatedByCountry: Map<String, List<Stay>> = emptyMap(),
@@ -73,18 +78,41 @@ class CountriesViewModel @Inject constructor(
         val points = calculator.calculate(resolved, v, editor.placesById, editor.typesById, editor.categoriesById)
         val overview = CountryOverview.build(points, a.id, b?.id, w, CountryOverview.countryDays(resolved, editor.placesById, a.id))
 
-        val usedPlaces = (resolved.filter { a.id in it.participants }.map { it.placeId } +
-            v.filter { a.id in it.participants }.map { it.placeId }).toSet()
-        val placesByCountry = usedPlaces.mapNotNull { id ->
-            editor.placesById[id]?.let { p -> ReferenceData.countableCountry(p.countryIso2)?.iso2?.let { it to id } }
-        }.groupBy({ it.first }, { it.second })
+        // Tage je Ort (Stationen tagesgenau + Besuche), dann je Stadt zusammengefasst.
+        val datesByPlace = mutableMapOf<String, MutableSet<LocalDate>>()
+        resolved.filter { a.id in it.participants && it.precision == DatePrecision.DAY }.forEach { stay ->
+            var day = stay.startDate
+            while (!day.isAfter(stay.endDate)) { datesByPlace.getOrPut(stay.placeId) { mutableSetOf() } += day; day = day.plusDays(1) }
+        }
+        v.filter { a.id in it.participants && it.precision == DatePrecision.DAY }
+            .forEach { datesByPlace.getOrPut(it.placeId) { mutableSetOf() } += it.date }
+        val cityDates = mutableMapOf<String, MutableSet<LocalDate>>()
+        val cityLocations = mutableMapOf<String, MutableSet<String>>()
+        val unassigned = mutableMapOf<String, Int>()
+        datesByPlace.forEach { (placeId, dates) ->
+            val place = editor.placesById[placeId] ?: return@forEach
+            if (place.kind == PlaceKind.COUNTRY) return@forEach
+            val cityId = if (place.kind == PlaceKind.CITY) place.id else place.parentPlaceId
+            if (cityId == null) {
+                val iso = ReferenceData.countableCountry(place.countryIso2)?.iso2 ?: return@forEach
+                unassigned[iso] = (unassigned[iso] ?: 0) + 1
+                return@forEach
+            }
+            cityDates.getOrPut(cityId) { mutableSetOf() } += dates
+            if (cityId != place.id) cityLocations.getOrPut(cityId) { mutableSetOf() } += place.id
+        }
+        val citiesByCountry = cityDates.mapNotNull { (cityId, dates) ->
+            val city = editor.placesById[cityId] ?: return@mapNotNull null
+            val iso = ReferenceData.countableCountry(city.countryIso2)?.iso2 ?: return@mapNotNull null
+            iso to CityRow(cityId, dates.size, cityLocations[cityId]?.size ?: 0)
+        }.groupBy({ it.first }, { it.second }).mapValues { (_, rows) -> rows.sortedByDescending { it.days } }
         val trips = Trips.derive(s, v, editor.placesById, a.id, editor.homebase?.id, today)
         val tripsByCountry = trips.flatMap { t -> t.countryIso2s.map { it to t } }.groupBy({ it.first }, { it.second })
 
         val undated = s.filter { it.precision == DatePrecision.UNKNOWN }.mapNotNull { stay ->
             editor.placesById[stay.placeId]?.let { p -> ReferenceData.countableCountry(p.countryIso2)?.iso2?.let { it to stay } }
         }.groupBy({ it.first }, { it.second })
-        CountriesUiState(overview, a, b, placesByCountry, tripsByCountry, undated, editor)
+        CountriesUiState(overview, a, b, citiesByCountry, unassigned, tripsByCountry, undated, editor)
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), CountriesUiState())
 
     fun toggleWish(iso2: String, existing: List<Wish>) = viewModelScope.launch {

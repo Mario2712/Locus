@@ -17,6 +17,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class TripRoute(val id: String)
 @Serializable data object PlacesRoute
 @Serializable data object StatsRoute
+@Serializable data class CountryRoute(val iso2: String)
 @Serializable data object DataRoute
 @Serializable data class PlaceRoute(val id: String)
 

@@ -37,6 +37,7 @@ import io.github.mario2712.locus.domain.countrypoints.CountryStatus
 import io.github.mario2712.locus.domain.model.UNKNOWN_DATE
 import io.github.mario2712.locus.ui.common.Format
 import io.github.mario2712.locus.ui.common.SectionCard
+import io.github.mario2712.locus.ui.places.BackScaffold
 import io.github.mario2712.locus.ui.trips.tripDates
 import io.github.mario2712.locus.ui.trips.tripTitle
 
@@ -56,11 +57,10 @@ private fun dateOrUnknown(date: java.time.LocalDate, documentedSince: Int): Stri
     if (date == UNKNOWN_DATE) stringResource(R.string.countries_before_year, documentedSince) else Format.fullDate(date)
 
 @Composable
-fun CountriesScreen(viewModel: CountriesViewModel = hiltViewModel()) {
+fun CountriesScreen(onOpenCountry: (String) -> Unit, viewModel: CountriesViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val wishes by viewModel.wishList.collectAsStateWithLifecycle()
     var filter by remember { mutableStateOf(CountryFilter.VISITED_A) }
-    var detail by remember { mutableStateOf<CountryRow?>(null) }
     val overview = state.overview ?: return
     val nameA = state.personA?.name ?: ""
     val nameB = state.personB?.name ?: ""
@@ -109,7 +109,7 @@ fun CountriesScreen(viewModel: CountriesViewModel = hiltViewModel()) {
             }
             items(list, key = { it.country.iso2 }) { row ->
                 Row(
-                    Modifier.fillMaxWidth().clickable { detail = row }.padding(vertical = 8.dp),
+                    Modifier.fillMaxWidth().clickable { onOpenCountry(row.country.iso2) }.padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -130,54 +130,112 @@ fun CountriesScreen(viewModel: CountriesViewModel = hiltViewModel()) {
             }
         }
     }
+}
 
-    detail?.let { row ->
-        val current = overview.rows.firstOrNull { it.country.iso2 == row.country.iso2 } ?: row
-        AlertDialog(
-            onDismissRequest = { detail = null },
-            title = { Text("${current.country.flag} ${current.country.nameDe}") },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    statusLabel(current.status, nameA, nameB).takeIf { it.isNotEmpty() }?.let { Text(it) }
-                    val since = state.editor.defaults.documentedSinceYear
-                    current.firstVisitA?.let { Text(stringResource(R.string.countries_first_visit, nameA, dateOrUnknown(it, since))) }
-                    current.firstVisitB?.let { Text(stringResource(R.string.countries_first_visit, nameB, dateOrUnknown(it, since))) }
-                    current.lastVisit?.takeIf { it != UNKNOWN_DATE }?.let { Text(stringResource(R.string.countries_last_visit, Format.fullDate(it))) }
-                    if (current.daysA > 0) Text(stringResource(R.string.countries_days, nameA, current.daysA))
-                    val placeNames = state.placesByCountry[current.country.iso2].orEmpty().map { state.editor.placeName(it) }.sorted()
-                    if (placeNames.isNotEmpty()) Text(stringResource(R.string.countries_places, placeNames.joinToString(", ")))
-                    state.tripsByCountry[current.country.iso2].orEmpty().forEach { trip ->
-                        Text("🧳 ${tripTitle(trip, state.editor)} · ${tripDates(trip)}", style = MaterialTheme.typography.bodySmall)
+/** Länder-Detailseite: Überblick, Städte (nach Tagen), Reisen, Wunschliste und „Datum unbekannt“. */
+@Composable
+fun CountryDetailScreen(
+    iso2: String,
+    onBack: () -> Unit,
+    onOpenPlace: (String) -> Unit,
+    onOpenTrip: (String) -> Unit,
+    viewModel: CountriesViewModel = hiltViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val wishes by viewModel.wishList.collectAsStateWithLifecycle()
+    val row = state.overview?.rows?.firstOrNull { it.country.iso2 == iso2 }
+    val nameA = state.personA?.name ?: ""
+    val nameB = state.personB?.name ?: ""
+    var showAllCities by remember { mutableStateOf(false) }
+
+    BackScaffold(row?.let { "${it.country.flag} ${it.country.nameDe}" } ?: iso2, onBack) { modifier ->
+        if (row == null) return@BackScaffold
+        Column(
+            modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            val since = state.editor.defaults.documentedSinceYear
+            SectionCard(statusLabel(row.status, nameA, nameB).ifEmpty { stringResource(R.string.countries_not_visited) }) {
+                row.firstVisitA?.let { Text(stringResource(R.string.countries_first_visit, nameA, dateOrUnknown(it, since))) }
+                row.firstVisitB?.let { Text(stringResource(R.string.countries_first_visit, nameB, dateOrUnknown(it, since))) }
+                row.lastVisit?.takeIf { it != UNKNOWN_DATE }?.let { Text(stringResource(R.string.countries_last_visit, Format.fullDate(it))) }
+                if (row.daysA > 0) Text(stringResource(R.string.countries_days, nameA, row.daysA))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = { viewModel.toggleWish(iso2, wishes) }) {
+                        Text(stringResource(if (row.wished) R.string.countries_wish_remove else R.string.countries_wish_add))
                     }
-                    HorizontalDivider()
-                    val undated = state.undatedByCountry[current.country.iso2].orEmpty()
-                    if (undated.isNotEmpty()) {
-                        Text(
-                            stringResource(R.string.countries_undated_entry, undated.joinToString(", ") { state.editor.participantsLabel(it.participants) }),
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                        TextButton(onClick = { viewModel.removeUndated(undated) }) { Text(stringResource(R.string.countries_undated_remove)) }
-                    } else {
-                        Text(stringResource(R.string.countries_undated_question), style = MaterialTheme.typography.labelLarge)
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            state.personA?.let { a -> OutlinedButton(onClick = { viewModel.markUndated(current.country.iso2, setOf(a.id)) }) { Text(a.name) } }
-                            state.personB?.let { b -> OutlinedButton(onClick = { viewModel.markUndated(current.country.iso2, setOf(b.id)) }) { Text(b.name) } }
-                            if (state.personA != null && state.personB != null) {
-                                OutlinedButton(onClick = { viewModel.markUndated(current.country.iso2, setOf(state.personA!!.id, state.personB!!.id)) }) {
-                                    Text(stringResource(R.string.map_both))
-                                }
-                            }
+                }
+            }
+
+            val cities = state.citiesByCountry[iso2].orEmpty()
+            val unassigned = state.unassignedByCountry[iso2] ?: 0
+            if (cities.isNotEmpty() || unassigned > 0) {
+                SectionCard(stringResource(R.string.countries_cities, cities.size)) {
+                    (if (showAllCities) cities else cities.take(8)).forEach { city ->
+                        Row(
+                            Modifier.fillMaxWidth().clickable { onOpenPlace(city.placeId) }.padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(state.editor.placeName(city.placeId), Modifier.weight(1f))
+                            Text(
+                                listOfNotNull(
+                                    stringResource(R.string.places_days, city.days),
+                                    if (city.locations > 0) stringResource(R.string.places_locations_count, city.locations) else null,
+                                ).joinToString(" · "),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
-                        Text(stringResource(R.string.countries_undated_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        HorizontalDivider()
+                    }
+                    if (!showAllCities && cities.size > 8) {
+                        TextButton(onClick = { showAllCities = true }) { Text(stringResource(R.string.countries_all_cities, cities.size)) }
+                    }
+                    if (unassigned > 0) {
+                        Text(
+                            stringResource(R.string.countries_unassigned, unassigned),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { viewModel.toggleWish(current.country.iso2, wishes) }) {
-                    Text(stringResource(if (current.wished) R.string.countries_wish_remove else R.string.countries_wish_add))
+            }
+
+            val trips = state.tripsByCountry[iso2].orEmpty()
+            if (trips.isNotEmpty()) {
+                SectionCard(stringResource(R.string.countries_trips, trips.size)) {
+                    trips.forEach { trip ->
+                        Column(Modifier.fillMaxWidth().clickable { onOpenTrip(trip.id) }.padding(vertical = 8.dp)) {
+                            Text("🧳 ${tripTitle(trip, state.editor)}")
+                            Text(tripDates(trip), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        HorizontalDivider()
+                    }
                 }
-            },
-            dismissButton = { TextButton(onClick = { detail = null }) { Text(stringResource(R.string.action_ok)) } },
-        )
+            }
+
+            SectionCard(stringResource(R.string.countries_undated_title)) {
+                val undated = state.undatedByCountry[iso2].orEmpty()
+                if (undated.isNotEmpty()) {
+                    Text(
+                        stringResource(R.string.countries_undated_entry, undated.joinToString(", ") { state.editor.participantsLabel(it.participants) }),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    TextButton(onClick = { viewModel.removeUndated(undated) }) { Text(stringResource(R.string.countries_undated_remove)) }
+                } else {
+                    Text(stringResource(R.string.countries_undated_question))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        val a = state.personA
+                        val b = state.personB
+                        a?.let { OutlinedButton(onClick = { viewModel.markUndated(iso2, setOf(it.id)) }) { Text(it.name) } }
+                        b?.let { OutlinedButton(onClick = { viewModel.markUndated(iso2, setOf(it.id)) }) { Text(it.name) } }
+                        if (a != null && b != null) {
+                            OutlinedButton(onClick = { viewModel.markUndated(iso2, setOf(a.id, b.id)) }) { Text(stringResource(R.string.map_both)) }
+                        }
+                    }
+                    Text(stringResource(R.string.countries_undated_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
     }
 }

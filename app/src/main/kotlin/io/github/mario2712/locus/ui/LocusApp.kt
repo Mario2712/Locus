@@ -50,6 +50,8 @@ import io.github.mario2712.locus.ui.navigation.SettingsRoute
 import io.github.mario2712.locus.ui.navigation.TodayRoute
 import io.github.mario2712.locus.ui.navigation.TopLevelDestination
 import io.github.mario2712.locus.ui.countries.CountriesScreen
+import io.github.mario2712.locus.ui.countries.CountryDetailScreen
+import io.github.mario2712.locus.ui.navigation.CountryRoute
 import io.github.mario2712.locus.ui.map.MapScreen
 import io.github.mario2712.locus.ui.profile.ProfileScreen
 import io.github.mario2712.locus.ui.settings.SettingsScreen
@@ -107,7 +109,15 @@ fun LocusApp() {
             }
             composable<CalendarRoute> { CalendarScreen(onOpenDay = openDay) }
             composable<MapRoute> { MapScreen() }
-            composable<CountriesRoute> { CountriesScreen() }
+            composable<CountriesRoute> { CountriesScreen(onOpenCountry = { navController.navigate(CountryRoute(it)) }) }
+            composable<CountryRoute> { entry ->
+                CountryDetailScreen(
+                    iso2 = entry.toRoute<CountryRoute>().iso2,
+                    onBack = { navController.popBackStack() },
+                    onOpenPlace = { navController.navigate(PlaceRoute(it)) },
+                    onOpenTrip = { navController.navigate(TripRoute(it)) },
+                )
+            }
             composable<MoreRoute> {
                 MoreScreen(
                     onOpenSettings = { navController.navigate(SettingsRoute) },
