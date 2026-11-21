@@ -120,6 +120,9 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                 }
             }
 
+            StayTypesCard(editor.stayTypes, viewModel::saveStayType) { viewModel.newCustomId("stay") }
+            VisitCategoriesCard(editor.visitCategories, viewModel::saveVisitCategory) { viewModel.newCustomId("visit") }
+
             SectionCard(stringResource(R.string.settings_defaults)) {
                 val defaults = editor.defaults
                 SwitchRow(stringResource(R.string.settings_prefill_transport), defaults.prefillTransport) {

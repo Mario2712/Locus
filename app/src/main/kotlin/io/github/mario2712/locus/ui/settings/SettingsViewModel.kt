@@ -42,6 +42,7 @@ class SettingsViewModel @Inject constructor(
     private val templates: DayTemplateRepository,
     private val places: PlaceRepository,
     private val editorCatalog: EditorCatalog,
+    private val catalog: io.github.mario2712.locus.domain.repository.CatalogRepository,
 ) : ViewModel() {
 
     private val me = Defaults.ME
@@ -86,6 +87,11 @@ class SettingsViewModel @Inject constructor(
     fun clearRule(weekday: DayOfWeek) = viewModelScope.launch {
         state.value.rules[weekday]?.let { patterns.delete(it.id) }
     }
+
+    fun saveStayType(type: io.github.mario2712.locus.domain.model.StayType) = viewModelScope.launch { catalog.upsertStayType(type) }
+    fun saveVisitCategory(category: io.github.mario2712.locus.domain.model.VisitCategory) =
+        viewModelScope.launch { catalog.upsertVisitCategory(category) }
+    fun newCustomId(prefix: String): String = "$prefix-custom-" + UUID.randomUUID().toString()
 
     fun setEntryDefaults(defaults: EntryDefaults) = viewModelScope.launch { settings.setEntryDefaults(defaults) }
 

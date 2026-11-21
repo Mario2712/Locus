@@ -56,6 +56,7 @@ object Defaults {
         const val NATURE = "visit-nature"
         const val SUMMIT = "visit-summit"
         const val EVENT = "visit-event"
+        const val ACTIVITY = "visit-activity"
         const val MUSEUM = "visit-museum"
         const val SHOPPING = "visit-shopping"
         const val SPORT = "visit-sport"
@@ -70,6 +71,8 @@ object Defaults {
         VisitCategory(VisitCategoryIds.BAR, "Bar", true, "local_bar", 2),
         VisitCategory(VisitCategoryIds.NATURE, "Natur / Wandern", true, "hiking", 3),
         VisitCategory(VisitCategoryIds.SUMMIT, "Gipfel", true, "landscape", 4),
+        // Gleiche Sortierung wie in der Datenbank (sortOrder, dann Name).
+        VisitCategory(VisitCategoryIds.ACTIVITY, "Aktivität / Erlebnis", true, "local_activity", 5),
         VisitCategory(VisitCategoryIds.EVENT, "Konzert / Event", true, "music_note", 5),
         VisitCategory(VisitCategoryIds.MUSEUM, "Museum", true, "museum", 6),
         VisitCategory(VisitCategoryIds.SHOPPING, "Einkaufen", true, "shopping_bag", 7),
@@ -77,6 +80,11 @@ object Defaults {
         VisitCategory(VisitCategoryIds.ACCOMMODATION, "Unterkunft", true, "hotel", 9),
         VisitCategory(VisitCategoryIds.REST_STOP, "Rast / Tankstopp", false, "local_gas_station", 10),
         VisitCategory(VisitCategoryIds.OTHER, "Sonstiges", true, "place", 11),
+    )
+
+    /** Farben für neue, eigene Aufenthaltsarten (geprüfte Palette, plus Neutralgrau). */
+    val stayTypePalette: List<Long> = listOf(
+        0xFF2A78D6, 0xFFEB6834, 0xFF1BAF7A, 0xFFEDA100, 0xFFE87BA4, 0xFF008300, 0xFF6250D6, 0xFFE34948, 0xFF8A8A85,
     )
 
     /** Frühere Standardfarben (bis M4) → neue, für die einmalige Umstellung bestehender Installationen. */

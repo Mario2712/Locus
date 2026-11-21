@@ -81,7 +81,27 @@
     </plurals>
 
     <!-- Einstellungen -->
-    <string name="settings_title">Muster &amp; Erinnerung</string>
+    <string name="settings_title">Einstellungen</string>
+    <string name="catalog_stay_types">Aufenthaltsarten</string>
+    <string name="catalog_types_hint">Name, Farbe und Gruppe anpassen oder eigene Arten anlegen. Die Gruppe bestimmt die Statistik (Arbeit, Frei, Urlaub).</string>
+    <string name="catalog_visit_categories">Besuchskategorien</string>
+    <string name="catalog_visit_hint">z. B. „Aktivität / Erlebnis“ für Escape-Room, Kino oder Therme. Eigene Kategorien sind möglich.</string>
+    <string name="catalog_new_category">+ Neue Kategorie</string>
+    <string name="catalog_new_type">+ Neue Art</string>
+    <string name="catalog_category">Kategorie</string>
+    <string name="catalog_type">Aufenthaltsart</string>
+    <string name="catalog_name">Name</string>
+    <string name="catalog_color">Farbe</string>
+    <string name="catalog_group">Gruppe</string>
+    <string name="catalog_counts">Zählt für Länderpunkte</string>
+    <string name="catalog_archived">Ausblenden</string>
+    <string name="catalog_archive_hint">Ausgeblendete Einträge stehen nicht mehr zur Auswahl, bestehende Einträge bleiben erhalten.</string>
+    <string name="catalog_no_points">kein Länderpunkt</string>
+    <string name="catalog_hidden">ausgeblendet</string>
+    <string name="catalog_group_work">Arbeit</string>
+    <string name="catalog_group_free">Frei</string>
+    <string name="catalog_group_vacation">Urlaub</string>
+    <string name="catalog_group_other">Sonstiges</string>
     <string name="settings_patterns">Wochentag-Muster</string>
     <string name="settings_patterns_hint">Pro Wochentag eine Tagesvorlage oder eine einzelne Station. Daraus entstehen die Vorschläge am Heute-Screen und in der Erinnerung. An Feiertagen entfallen Muster mit Arbeit.</string>
     <string name="settings_remove_rule">Muster entfernen</string>
@@ -110,7 +130,7 @@
     <string name="day_visits_empty">Kurz woanders gewesen (z. B. Einkaufen in Oberalm)? Das zählt in der Statistik, ohne den Tagesverlauf zu unterbrechen.</string>
     <string name="day_add_visit">+ Besuch …</string>
     <string name="day_others_title">Weitere Einträge</string>
-    <string name="day_no_homebase">Tipp: In „Muster &amp; Erinnerung“ deine Homebase festlegen – dann beginnt und endet jeder Tag dort automatisch.</string>
+    <string name="day_no_homebase">Tipp: In Mehr → Einstellungen deine Homebase festlegen – dann beginnt und endet jeder Tag dort automatisch.</string>
     <string name="msg_day_not_empty">Der Tag hat schon Einträge – Vorschlag nicht übernommen.</string>
 
     <!-- Reisen -->
