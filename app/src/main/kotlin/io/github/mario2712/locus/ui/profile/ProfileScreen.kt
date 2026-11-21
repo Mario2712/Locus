@@ -117,7 +117,7 @@ private fun PersonCard(profile: PersonProfile, state: ProfileUiState, onEditBirt
                     if (milestone.reached) {
                         stringResource(R.string.profile_milestone_reached, milestone.age)
                     } else {
-                        stringResource(R.string.profile_milestone_next, milestone.age, Format.shortDate(milestone.date))
+                        stringResource(R.string.profile_milestone_next, milestone.age, Format.fullDate(milestone.date))
                     },
                 )
                 Text(
