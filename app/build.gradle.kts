@@ -28,6 +28,8 @@ android {
         minSdk = 31
         targetSdk = 37
         versionCode = ciVersionCode ?: 1
+        // Nur 64-Bit-ARM (Pixel 7): hält die APK trotz Karten-Bibliothek klein.
+        ndk { abiFilters += "arm64-v8a" }
         // Debug-Builds tragen die CI-Run-Nummer, damit man am Gerät sieht, welche Version installiert ist.
         versionName = ciVersionName ?: "$baseVersion-dev" + (ciVersionCode?.let { ".$it" } ?: "")
     }
@@ -106,6 +108,7 @@ dependencies {
     implementation(libs.androidx.work.runtime)
 
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.maplibre.android)
 
     testImplementation(libs.junit4)
 }

@@ -269,7 +269,7 @@ Länderpunkte, Übernachtungsort und Statistiken werden berechnet, nicht gespeic
 | M2.5 | Stationen-Konzept: Homebase/Basis, Tagesvorlagen, Reisen (Weiter-/Heimreise, Umstiege), Verkehrsmittel, Besuche mit mehreren Kategorien | ✔ |
 | M2.6 | Profil mit Geburtsdaten: Länder bis zu runden Geburtstagen, Geburtstagsorte | ✔ |
 | M3 | Ortssuche (OSM/Photon) mit Standort, Orte + Orts-Akte, Reisen-Übersicht + alte Reisen nachtragen, Timeline | ✔ |
-| M4 | Länderliste mit Flaggen, Weltkarte | offen |
+| M4 | Länderliste mit Flaggen (Ich/Johanna/gemeinsam, Kontinente, Wunschländer), Weltkarte (MapLibre, offline Länder + optionale OpenFreeMap-Detailkarte, Orte, Routen, Filter) | ✔ |
 | M5 | Basis-Statistik, Export/Import, Backup → Release v1.0 | offen |
 
 ---

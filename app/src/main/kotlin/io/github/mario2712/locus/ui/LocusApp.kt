@@ -42,8 +42,8 @@ import io.github.mario2712.locus.ui.trips.TripsScreen
 import io.github.mario2712.locus.ui.navigation.SettingsRoute
 import io.github.mario2712.locus.ui.navigation.TodayRoute
 import io.github.mario2712.locus.ui.navigation.TopLevelDestination
-import io.github.mario2712.locus.ui.screens.CountriesScreen
-import io.github.mario2712.locus.ui.screens.MapScreen
+import io.github.mario2712.locus.ui.countries.CountriesScreen
+import io.github.mario2712.locus.ui.map.MapScreen
 import io.github.mario2712.locus.ui.profile.ProfileScreen
 import io.github.mario2712.locus.ui.settings.SettingsScreen
 import io.github.mario2712.locus.ui.today.TodayScreen

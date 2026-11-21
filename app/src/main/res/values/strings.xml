@@ -236,11 +236,35 @@
     <string name="timeline_title">Timeline</string>
     <string name="timeline_empty">Noch keine Einträge.</string>
 
-    <!-- Platzhalter (bis M3/M4) -->
-    <string name="map_title">Karte</string>
-    <string name="map_placeholder">Weltkarte mit besuchten Ländern, Städten und Orten.</string>
-    <string name="countries_title">Länder</string>
-    <string name="countries_placeholder">Deine Länderpunkte – Ich, Johanna und gemeinsam.</string>
+    <!-- Länder -->
+    <string name="countries_summary">%1$s %2$d · %3$s %4$d · gemeinsam %5$d</string>
+    <string name="countries_lead">Nur %1$s: %2$d · nur %3$s: %4$d</string>
+    <string name="countries_of_total">von %1$d zählbaren Ländern</string>
+    <string name="countries_status_together">gemeinsam</string>
+    <string name="countries_status_both">beide, getrennt</string>
+    <string name="countries_status_only">nur %1$s</string>
+    <string name="countries_wishes">Wunschländer</string>
+    <string name="countries_all">Alle Länder</string>
+    <string name="countries_empty">Hier ist noch nichts.</string>
+    <string name="countries_since">seit %1$d</string>
+    <string name="countries_first_visit">%1$s erstmals: %2$s</string>
+    <string name="countries_last_visit">Zuletzt: %1$s</string>
+    <string name="countries_days">%1$s: %2$d Tage im Land</string>
+    <string name="countries_places">Orte: %1$s</string>
+    <string name="countries_wish_add">☆ Auf Wunschliste</string>
+    <string name="countries_wish_remove">Von Wunschliste entfernen</string>
+
+    <!-- Karte -->
+    <string name="map_both">Beide</string>
+    <string name="map_all_years">Alle Jahre</string>
+    <string name="map_places">Orte</string>
+    <string name="map_routes">Routen</string>
+    <string name="map_detail">Detailkarte (online)</string>
+    <string name="map_visited">besucht</string>
+    <string name="map_days">Tage</string>
+
+    <!-- Mehr -->
+    <string name="countries_title">Länderpunkte</string>
     <string name="more_title">Mehr</string>
     <string name="more_placeholder">Rückblick, Orte und Einstellungen.</string>
 

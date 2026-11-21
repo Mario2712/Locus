@@ -120,7 +120,7 @@ fun PlaceDetailScreen(onBack: () -> Unit, onOpenDay: (LocalDate) -> Unit, viewMo
                     place.regionCode?.let { ReferenceData.region(it)?.nameDe }).joinToString(" · "))
                 Text(
                     if (place.latitude != null && place.longitude != null) {
-                        stringResource(R.string.place_coordinates, "%.4f".format(place.latitude), "%.4f".format(place.longitude))
+                        stringResource(R.string.place_coordinates, "%.4f".format(java.util.Locale.ROOT, place.latitude), "%.4f".format(java.util.Locale.ROOT, place.longitude))
                     } else {
                         stringResource(R.string.places_no_coordinates)
                     },
