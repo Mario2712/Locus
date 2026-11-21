@@ -9,7 +9,9 @@ import io.github.mario2712.locus.domain.repository.PersonRepository
 import io.github.mario2712.locus.domain.repository.PlaceRepository
 import io.github.mario2712.locus.domain.repository.StayRepository
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
@@ -45,5 +47,5 @@ class MoreViewModel @Inject constructor(
             places = pl.size,
             stays = st.size,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DataStatus())
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), DataStatus())
 }

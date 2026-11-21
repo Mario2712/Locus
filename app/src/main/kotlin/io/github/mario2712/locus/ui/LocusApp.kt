@@ -8,11 +8,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -57,16 +57,25 @@ import java.time.LocalDate
 fun LocusApp() {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = backStackEntry?.destination
+    // Aktiver Reiter = der zuletzt geöffnete Hauptbereich im Back-Stack (auch in Untermenüs wie „Mehr → Orte“).
+    val activeTab = remember(backStackEntry) {
+        navController.currentBackStack.value.asReversed().firstNotNullOfOrNull { entry ->
+            TopLevelDestination.entries.firstOrNull { entry.destination.hasRoute(it.route::class) }
+        }
+    }
 
     Scaffold(
         bottomBar = {
             NavigationBar {
                 TopLevelDestination.entries.forEach { dest ->
-                    val selected = currentDestination?.hierarchy?.any { it.hasRoute(dest.route::class) } == true
+                    val selected = dest == activeTab
                     NavigationBarItem(
                         selected = selected,
-                        onClick = { navController.navigateTopLevel(dest.route) },
+                        onClick = {
+                            // Erneut antippen → zurück zur obersten Ebene des Reiters
+                            if (selected) navController.popBackStack(dest.route, inclusive = false)
+                            else navController.navigateTopLevel(dest.route)
+                        },
                         icon = { Icon(painterResource(dest.icon), contentDescription = null) },
                         label = { Text(stringResource(dest.label)) },
                     )

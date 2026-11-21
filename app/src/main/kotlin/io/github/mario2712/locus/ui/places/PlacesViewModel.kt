@@ -22,7 +22,9 @@ import io.github.mario2712.locus.ui.common.EditorCatalog
 import io.github.mario2712.locus.ui.common.EditorData
 import io.github.mario2712.locus.ui.navigation.PlaceRoute
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -60,7 +62,7 @@ class PlacesViewModel @Inject constructor(
                 locationCount = children[place.id].orEmpty().size,
             )
         }.sortedWith(compareByDescending<PlaceListItem> { it.totalDays }.thenBy { it.place.displayName.lowercase() })
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), emptyList())
 }
 
 data class PlaceDetailState(
@@ -87,7 +89,7 @@ class PlaceDetailViewModel @Inject constructor(
         val resolved = Timeline.resolve(s, editor.homebase?.id, today)
         val children = editor.places.filter { it.parentPlaceId == placeId }.map { it.id }.toSet()
         PlaceDetailState(place, place?.let { PlaceStats.record(it.id, Defaults.ME, resolved, v, children) }, editor)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlaceDetailState())
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), PlaceDetailState())
 
     fun save(place: Place) = viewModelScope.launch { places.upsert(place) }
     fun setHomebase() = viewModelScope.launch { places.setHomebase(placeId) }

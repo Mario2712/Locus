@@ -14,7 +14,9 @@ import io.github.mario2712.locus.ui.common.EditorCatalog
 import io.github.mario2712.locus.ui.common.StationActions
 import io.github.mario2712.locus.ui.navigation.DayRoute
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.time.Clock
@@ -37,5 +39,6 @@ class DayViewModel @Inject constructor(
     override val today: LocalDate = LocalDate.now(clock)
 
     val state: StateFlow<DayState> = inputs.map(::buildDayState)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DayState(date))
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), DayState(date))
 }

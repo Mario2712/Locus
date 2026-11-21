@@ -60,7 +60,7 @@ class DataViewModel @Inject constructor(
     private val settings: SettingsRepository,
 ) : ViewModel() {
     val backup: StateFlow<BackupSettings> = settings.observeBackup()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BackupSettings())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), BackupSettings())
     val message = MutableStateFlow<DataMessage?>(null)
     val busy = MutableStateFlow(false)
 

@@ -18,7 +18,9 @@ import io.github.mario2712.locus.ui.editor.FillDraft
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -90,7 +92,7 @@ class CalendarViewModel @Inject constructor(
             .sortedBy { it.sortOrder }
             .map { it.name to it.colorArgb }
         CalendarUiState(m, days, sel.second, sel.first, legend, editor)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarUiState(YearMonth.from(today)))
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), CalendarUiState(YearMonth.from(today)))
 
     fun previousMonth() = month.update { it.minusMonths(1) }
     fun nextMonth() = month.update { it.plusMonths(1) }

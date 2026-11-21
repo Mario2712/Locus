@@ -18,7 +18,9 @@ import io.github.mario2712.locus.domain.trips.Trips
 import io.github.mario2712.locus.ui.common.EditorCatalog
 import io.github.mario2712.locus.ui.common.EditorData
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -67,7 +69,7 @@ class CountriesViewModel @Inject constructor(
         val tripsByCountry = trips.flatMap { t -> t.countryIso2s.map { it to t } }.groupBy({ it.first }, { it.second })
 
         CountriesUiState(overview, a, b, placesByCountry, tripsByCountry, editor)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CountriesUiState())
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), CountriesUiState())
 
     fun toggleWish(iso2: String, existing: List<Wish>) = viewModelScope.launch {
         val wish = existing.firstOrNull { it.countryIso2.equals(iso2, true) }
@@ -76,5 +78,5 @@ class CountriesViewModel @Inject constructor(
     }
 
     val wishList: StateFlow<List<Wish>> = wishes.observeAll()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), emptyList())
 }

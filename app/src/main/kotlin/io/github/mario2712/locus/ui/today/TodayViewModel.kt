@@ -17,7 +17,9 @@ import io.github.mario2712.locus.ui.common.DayState
 import io.github.mario2712.locus.ui.common.EditorCatalog
 import io.github.mario2712.locus.ui.common.StationActions
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import java.time.Clock
@@ -91,5 +93,5 @@ class TodayViewModel @Inject constructor(
             countries = countries,
             reminderEnabled = reminder.enabled,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState(DayState(today)))
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), TodayUiState(DayState(today)))
 }

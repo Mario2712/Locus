@@ -17,7 +17,9 @@ import io.github.mario2712.locus.ui.common.EditorCatalog
 import io.github.mario2712.locus.ui.common.EditorData
 import io.github.mario2712.locus.ui.common.PlaceDraft
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -57,7 +59,7 @@ class SettingsViewModel @Inject constructor(
             reminder = reminder,
             editor = editor,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), SettingsUiState())
 
     fun setHomebase(placeId: String) = viewModelScope.launch { places.setHomebase(placeId) }
 

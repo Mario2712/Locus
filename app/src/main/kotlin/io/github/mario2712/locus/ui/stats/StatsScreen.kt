@@ -51,7 +51,9 @@ import io.github.mario2712.locus.ui.common.themedColor
 import io.github.mario2712.locus.ui.places.BackScaffold
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import java.time.Clock
@@ -84,7 +86,7 @@ class StatsViewModel @Inject constructor(
             y, Defaults.ME, s, v, editor.placesById, editor.typesById, editor.categoriesById, editor.rank, editor.homebase?.id, today,
         )
         StatsUiState(y, years, stats, editor)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StatsUiState(today.year))
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), StatsUiState(today.year))
 
     fun selectYear(value: Int) {
         year.value = value

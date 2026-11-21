@@ -36,7 +36,9 @@ import io.github.mario2712.locus.ui.common.Format
 import io.github.mario2712.locus.ui.common.TypeDot
 import io.github.mario2712.locus.ui.places.BackScaffold
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import java.time.Clock
@@ -57,7 +59,7 @@ class TimelineViewModel @Inject constructor(
     val state: StateFlow<TimelineUiState> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data) { s, v, editor ->
         val resolved = Timeline.resolve(s, editor.homebase?.id, today)
         TimelineUiState(TimelineDays.build(resolved, v, Defaults.ME, today), editor)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TimelineUiState())
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), TimelineUiState())
 }
 
 @Composable

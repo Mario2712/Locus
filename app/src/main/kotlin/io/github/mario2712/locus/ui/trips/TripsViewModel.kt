@@ -19,7 +19,9 @@ import io.github.mario2712.locus.ui.common.EditorCatalog
 import io.github.mario2712.locus.ui.common.EditorData
 import io.github.mario2712.locus.ui.common.PlaceDraft
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -63,7 +65,7 @@ class TripsViewModel @Inject constructor(
             days = trips.associate { trip -> trip.id to allDays.filter { it.date in trip.start..trip.end }.reversed() },
             editor = editor,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TripsUiState())
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), TripsUiState())
 
     fun addPastTrip(draft: PastTripDraft) = viewModelScope.launch {
         commands.addPastTrip(draft.placeIds, draft.start, draft.end, draft.precision, draft.participants, draft.typeId)
