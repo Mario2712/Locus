@@ -1,6 +1,6 @@
-# Locus – Requirements (v0.3)
+# Locus – Requirements (v0.4)
 
-Stand: 2026-11-20 · Status: abgestimmt, Umsetzung läuft (M0)
+Stand: 2026-11-21 · Status: abgestimmt, Umsetzung läuft (M2.5)
 
 Locus ist eine persönliche Android-App, die festhält, **wo ich wann war** – im Alltag
 (Homeoffice, Büro, Freizeit) ebenso wie auf Reisen – und daraus Karte, Länderpunkte
@@ -86,6 +86,33 @@ Auch Johannas Alltag kann erfasst werden (Aufenthalte mit Teilnehmerin „nur Jo
 - Länderliste: 193 UN-Staaten plus Kosovo, Vatikan, Taiwan und Palästina. Gebiete werden dem Mutterland zugeordnet.
 - **Wunschländer** werden auf der Karte separat (z. B. schraffiert) dargestellt.
 - **Regionen sammeln** (z. B. Bundesländer): pro Land in den Einstellungen aktivierbar. Zuerst für Österreich und Deutschland.
+
+### 2.7 Erfassung mit Stationen (v0.4)
+
+Ziel: Ein Tag ist in **1–3 Tipps** erfasst, ohne Uhrzeiten.
+
+- **Stationen-Kette:** Ein Tag ist eine geordnete Kette von Stationen (`sortIndex`), z. B.
+  `🏠 ▸ Büro · Salzburg ▸ Homeoffice · Hallein`. Uhrzeiten sind nie Pflicht; bei Live-Erfassung
+  wird die aktuelle Uhrzeit still mitgespeichert.
+- **Homebase:** Genau ein Ort (Hallein). Tage beginnen und enden dort implizit – „morgens zuhause“
+  und „abends Freizeit“ werden nicht erfasst.
+- **Basis & Reisen:** Eine Station mit *Übernachtung* wird zur neuen Basis und läuft weiter, bis eine
+  andere Basis beginnt (Weiterreise) oder eine Station an der Homebase folgt (Heimreise) – ohne
+  Ende bis heute. Tages-Stationen (Büro, Homeoffice, Ausflug, Dienstreise ohne Übernachtung) enden
+  am Abend; man ist zurück an der *aktuellen* Basis (zuhause oder z. B. Samarkand).
+- **Reise-Assistent:** Ziel + optionale Zwischenstopps (Abflughafen, Umstieg) mit „Ankunft am
+  Folgetag“; Zwischenstopps sind Transit (kein Länderpunkt).
+- **Verkehrsmittel:** optional je Station (Weg dorthin), Mehrfachauswahl ohne Reihenfolge
+  (🚶🚲🚗🚌🚊🚆✈️⛴️). Kein Erfassen jeder Teilstrecke oder jedes Umstiegs am Bahnhof.
+- **Tagesvorlagen:** benannte Ketten (z. B. „Bürotag“, „Hybrid: Büro → Homeoffice“); Wochentag-Muster
+  verweisen auf eine Vorlage oder eine einzelne Station.
+- **Besuche:** kurze Abstecher ohne Zeit (Einkaufen in Oberalm), mehrere Kategorien je Besuch.
+  Zählen für Orts-Statistik, Karte und – nach Kategorie bzw. Schalter – für Länderpunkte, ändern aber
+  weder Kette noch Tagesart.
+- **Hauptart eines Tages** nach Rangfolge: Urlaub > Dienstreise > Büro > Homeoffice > Ausflug > Frei >
+  Krank > Anreise > Transit (eigene Arten nach Gruppe).
+- **Erinnerung:** leerer Tag → Vorschlag (Vorlage) mit „Passt“; während einer Reise „Noch in X?“ mit
+  „Heimreise heute“.
 
 ---
 
@@ -233,17 +260,10 @@ Länderpunkte, Übernachtungsort und Statistiken werden berechnet, nicht gespeic
 | M0 | Projektgerüst, CI-Workflow, Debug-APK aus GitHub Actions | ✔ |
 | M1 | Datenmodell, Room, Stammdaten (Länder, Arten, Personen), Domain-Regeln mit Tests | ✔ |
 | M2 | Heute-Screen, Muster, Erinnerung, Kalender mit Nachtragen, Feiertage | ✔ |
+| M2.5 | Stationen-Konzept: Homebase/Basis, Tagesvorlagen, Reisen (Weiter-/Heimreise, Umstiege), Verkehrsmittel, Besuche mit mehreren Kategorien | ✔ |
 | M3 | Ortssuche, Favoriten, Besuche, Reisen, Timeline | offen |
 | M4 | Länderliste mit Flaggen, Weltkarte | offen |
 | M5 | Basis-Statistik, Export/Import, Backup → Release v1.0 | offen |
-
----|---|
-| M0 | Projektgerüst, CI-Workflow, Debug-APK aus GitHub Actions |
-| M1 | Datenmodell, Room, Stammdaten (Länder, Arten, Personen), Domain-Regeln mit Tests |
-| M2 | Heute-Screen, Muster, Erinnerung, Kalender mit Nachtragen, Feiertage |
-| M3 | Ortssuche, Favoriten, Besuche, Reisen, Timeline |
-| M4 | Länderliste mit Flaggen, Weltkarte |
-| M5 | Basis-Statistik, Export/Import, Backup → Release v1.0 |
 
 ---
 
@@ -251,7 +271,17 @@ Länderpunkte, Übernachtungsort und Statistiken werden berechnet, nicht gespeic
 
 | Thema | Entscheidung |
 |---|---|
-| Zählregel geteilter Tage | „Tage mit X“ zählt jede vorkommende Art; Hauptart = längster Aufenthalt; Homeoffice-Report zählt nur reine Homeoffice-Tage |
+| Zählregel geteilter Tage | „Tage mit X“ zählt jede vorkommende Art; Hauptart nach Rangfolge (v0.4, siehe 2.7); Homeoffice-Report zählt nur reine Homeoffice-Tage |
 | Regionen | Zuerst AT und DE |
 | Johanna | Alltag und Reisen erfassbar |
 | Durchfahrt/Anreise | Kein Länderpunkt; Punkt erst durch Restaurant, Sehenswürdigkeit o. Ä. |
+| Erfassung (v0.4) | Stationen-Kette statt Zeitfenstern, Homebase Hallein, Uhrzeit nur automatisch bei Live-Eintrag |
+| Freie Tage zuhause | Über Muster (z. B. Sa/So „Frei · Zuhause“) mit einem Tipp; Automatik optional später |
+| Freizeit am Abend | Implizit, wird nicht erfasst |
+| Hauptart pro Tag | Rangfolge Urlaub > Dienstreise > Büro > Homeoffice > Ausflug > Frei |
+| Verkehrsmittel | Optional, Mehrfachauswahl ohne Reihenfolge; Vorbelegung konfigurierbar |
+| Abflughafen / Durchfahrten | Abflughafen = Wegpunkt ohne Punkt; Durchfahrten werden nicht erfasst |
+| Nachtflug | Nacht gilt als „unterwegs“ |
+| Dienstreise | „Ich übernachte dort“ standardmäßig aus (Urlaub: an); mit Übernachtung wie eine Reise |
+| Besuche | Ort + Kategorie(n) reichen; mehrere Kategorien pro Besuch; Länderpunkt pro Besuch schaltbar (Einkaufen zählt standardmäßig, Tankstopp nicht) |
+| Standard-Teilnehmer | Alltag: Ich, Reisen: Ich + Johanna – in den Einstellungen änderbar |
