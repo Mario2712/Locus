@@ -54,6 +54,7 @@ import io.github.mario2712.locus.ui.common.EditorData
 import io.github.mario2712.locus.ui.common.Format
 import io.github.mario2712.locus.ui.common.SectionCard
 import io.github.mario2712.locus.ui.common.TypeDot
+import io.github.mario2712.locus.ui.common.MonthPickerDialog
 import io.github.mario2712.locus.ui.common.themedColor
 import io.github.mario2712.locus.ui.editor.DatePickerDialogFor
 import io.github.mario2712.locus.ui.places.BackScaffold
@@ -259,38 +260,6 @@ private fun PeriodSelector(state: StatsUiState, viewModel: StatsViewModel) {
             viewModel.select(StatsPeriod.Custom(minOf(from, to), maxOf(from, to))); customFrom = null
         }
     }
-}
-
-/** Kompakter Monatswähler: Jahr mit ‹ › blättern, darunter 12 Monate. */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun MonthPickerDialog(initial: YearMonth, latest: YearMonth, onDismiss: () -> Unit, onSelect: (YearMonth) -> Unit) {
-    var year by remember { mutableStateOf(initial.year) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { year-- }) { Text("‹") }
-                Text(year.toString(), style = MaterialTheme.typography.titleLarge)
-                TextButton(enabled = year < latest.year, onClick = { year++ }) { Text("›") }
-            }
-        },
-        text = {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp), maxItemsInEachRow = 3) {
-                (1..12).forEach { m ->
-                    val month = YearMonth.of(year, m)
-                    FilterChip(
-                        selected = month == initial,
-                        enabled = !month.isAfter(latest),
-                        onClick = { onSelect(month) },
-                        label = { Text(month.month.getDisplayName(TextStyle.SHORT, Locale.GERMAN)) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
-    )
 }
 
 @Composable

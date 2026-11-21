@@ -3,7 +3,9 @@ package io.github.mario2712.locus.ui.calendar
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +32,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -48,12 +52,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.mario2712.locus.R
 import io.github.mario2712.locus.ui.common.Format
+import io.github.mario2712.locus.ui.common.MonthPickerDialog
 import io.github.mario2712.locus.ui.common.TypeDot
 import io.github.mario2712.locus.ui.common.themedColor
 import io.github.mario2712.locus.ui.common.text
 import io.github.mario2712.locus.ui.editor.FillRangeDialog
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -67,6 +73,8 @@ fun CalendarScreen(
     val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
     var showFill by remember { mutableStateOf(false) }
+    var pickMonth by remember { mutableStateOf(false) }
+    val currentMonth = YearMonth.from(viewModel.today)
 
     LaunchedEffect(Unit) {
         viewModel.messages.collect { snackbar.showSnackbar(it.text(context)) }
@@ -82,21 +90,40 @@ fun CalendarScreen(
                     Icon(painterResource(R.drawable.ic_chevron_left), stringResource(R.string.calendar_previous))
                 }
                 Text(
-                    Format.month(state.month.atDay(1)),
+                    Format.month(state.month.atDay(1)) + " ▾",
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).clickable { pickMonth = true }.padding(vertical = 8.dp),
                 )
+                if (state.month != currentMonth) {
+                    TextButton(onClick = { viewModel.setMonth(currentMonth) }) { Text(stringResource(R.string.calendar_today)) }
+                }
                 IconButton(onClick = viewModel::nextMonth) {
                     Icon(painterResource(R.drawable.ic_chevron_right), stringResource(R.string.calendar_next))
                 }
             }
 
-            MonthGrid(
-                days = state.days,
-                selection = state.selection,
-                onTap = { date -> if (!viewModel.extendSelection(date)) onOpenDay(date) },
-                onLongPress = viewModel::startSelection,
-            )
+            // Wischen: nach links = nächster Monat, nach rechts = vorheriger Monat
+            var dragTotal by remember { mutableStateOf(0f) }
+            Box(
+                Modifier.pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragStart = { dragTotal = 0f },
+                        onHorizontalDrag = { change, amount -> dragTotal += amount; change.consume() },
+                        onDragEnd = {
+                            val threshold = 80.dp.toPx()
+                            if (dragTotal < -threshold) viewModel.nextMonth() else if (dragTotal > threshold) viewModel.previousMonth()
+                            dragTotal = 0f
+                        },
+                    )
+                },
+            ) {
+                MonthGrid(
+                    days = state.days,
+                    selection = state.selection,
+                    onTap = { date -> if (!viewModel.extendSelection(date)) onOpenDay(date) },
+                    onLongPress = viewModel::startSelection,
+                )
+            }
 
             val selection = state.selection
             if (selection != null) {
@@ -136,6 +163,14 @@ fun CalendarScreen(
         }
     }
 
+    if (pickMonth) {
+        MonthPickerDialog(
+            initial = state.month,
+            latest = currentMonth.plusYears(1),
+            onDismiss = { pickMonth = false },
+            onSelect = { viewModel.setMonth(it); pickMonth = false },
+        )
+    }
     val selection = state.selection
     if (showFill && selection != null) {
         FillRangeDialog(

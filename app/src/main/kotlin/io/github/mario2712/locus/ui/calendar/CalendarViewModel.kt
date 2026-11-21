@@ -60,7 +60,7 @@ class CalendarViewModel @Inject constructor(
     private val editing: StationActions,
 ) : ViewModel() {
 
-    private val today = LocalDate.now(clock)
+    val today: LocalDate = LocalDate.now(clock)
     private val me = Defaults.ME
     private val month = MutableStateFlow(YearMonth.from(today))
     private val selection = MutableStateFlow<Pair<LocalDate?, ClosedRange<LocalDate>?>>(null to null)
@@ -93,6 +93,10 @@ class CalendarViewModel @Inject constructor(
             .map { it.name to it.colorArgb }
         CalendarUiState(m, days, sel.second, sel.first, legend, editor)
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), CalendarUiState(YearMonth.from(today)))
+
+    fun setMonth(value: YearMonth) {
+        month.value = value
+    }
 
     fun previousMonth() = month.update { it.minusMonths(1) }
     fun nextMonth() = month.update { it.plusMonths(1) }

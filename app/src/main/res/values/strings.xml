@@ -36,9 +36,10 @@
     <!-- Kalender -->
     <string name="calendar_previous">Vorheriger Monat</string>
     <string name="calendar_next">Nächster Monat</string>
-    <string name="calendar_hint">Tippen öffnet den Tag. Lange drücken startet eine Mehrfachauswahl, um mehrere Tage auf einmal nachzutragen.</string>
+    <string name="calendar_hint">Tippen öffnet den Tag. Lange drücken startet eine Mehrfachauswahl, um mehrere Tage auf einmal nachzutragen. Wischen wechselt den Monat, der Monatsname öffnet die Monatsauswahl.</string>
     <string name="calendar_selection">Auswahl: %1$s – %2$s (Ende antippen zum Ändern)</string>
     <string name="calendar_fill">Festlegen …</string>
+    <string name="calendar_today">Heute</string>
 
     <!-- Tag -->
 
