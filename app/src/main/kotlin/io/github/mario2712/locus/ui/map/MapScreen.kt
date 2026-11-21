@@ -109,6 +109,7 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
     val colors = remember(dark) { mapColors(dark) }
     val holder = remember { MapHolder(createMapView(context)) }
     var info by remember { mutableStateOf<String?>(null) }
+    val daysLabel = stringResource(R.string.map_days)
     var styleVersion by remember { mutableStateOf(0) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
@@ -156,8 +157,7 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
                 val place = map.queryRenderedFeatures(point, "places-circles").firstOrNull()
                 val country = map.queryRenderedFeatures(point, "visited", "land").firstOrNull()
                 info = when {
-                    place != null -> place.getStringProperty("name") + " · " + place.getNumberProperty("days")?.toInt() + " " +
-                        context.getString(R.string.map_days)
+                    place != null -> place.getStringProperty("name") + " · " + place.getNumberProperty("days")?.toInt() + " " + daysLabel
                     country != null -> country.getStringProperty("iso")?.let { iso ->
                         val c = ReferenceData.country(iso) ?: ReferenceData.countableCountry(iso)
                         c?.let { "${it.flag} ${it.nameDe}" } ?: iso
