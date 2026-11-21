@@ -6,7 +6,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.mario2712.locus.domain.model.Place
+import io.github.mario2712.locus.domain.places.LocationGroup
 import io.github.mario2712.locus.domain.places.PlaceCandidate
+import io.github.mario2712.locus.domain.places.PlaceGroups
 import io.github.mario2712.locus.domain.reference.Defaults
 import io.github.mario2712.locus.domain.repository.PlaceRepository
 import io.github.mario2712.locus.domain.repository.StayRepository
@@ -28,7 +30,15 @@ import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
 
-data class PlaceListItem(val place: Place, val totalDays: Int, val lastDate: LocalDate?)
+data class PlaceListItem(
+    val place: Place,
+    val totalDays: Int,
+    val lastDate: LocalDate?,
+    /** Art bei Örtlichkeiten. */
+    val group: LocationGroup,
+    /** Anzahl zugehöriger Örtlichkeiten (bei Städten). */
+    val locationCount: Int,
+)
 
 @HiltViewModel
 class PlacesViewModel @Inject constructor(
@@ -44,7 +54,11 @@ class PlacesViewModel @Inject constructor(
         val children = editor.places.filter { it.parentPlaceId != null }.groupBy({ it.parentPlaceId!! }, { it.id })
         editor.places.map { place ->
             val record = PlaceStats.record(place.id, Defaults.ME, resolved, v, children[place.id].orEmpty().toSet())
-            PlaceListItem(place, record.totalDays, record.lastDate)
+            PlaceListItem(
+                place, record.totalDays, record.lastDate,
+                group = PlaceGroups.groupOf(place, v.filter { it.placeId == place.id }),
+                locationCount = children[place.id].orEmpty().size,
+            )
         }.sortedWith(compareByDescending<PlaceListItem> { it.totalDays }.thenBy { it.place.displayName.lowercase() })
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 }

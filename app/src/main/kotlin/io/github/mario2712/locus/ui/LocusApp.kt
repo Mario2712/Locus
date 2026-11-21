@@ -104,7 +104,13 @@ fun LocusApp() {
             composable<PlacesRoute> {
                 PlacesScreen(onBack = { navController.popBackStack() }, onOpenPlace = { navController.navigate(PlaceRoute(it)) })
             }
-            composable<PlaceRoute> { PlaceDetailScreen(onBack = { navController.popBackStack() }, onOpenDay = openDay) }
+            composable<PlaceRoute> {
+                PlaceDetailScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenDay = openDay,
+                    onOpenPlace = { navController.navigate(PlaceRoute(it)) },
+                )
+            }
         }
     }
 }

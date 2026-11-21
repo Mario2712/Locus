@@ -47,6 +47,9 @@ data class EditorData(
     val tripTypes: List<StayType>
         get() = activeStayTypes.filter { it.group == StayGroup.VACATION || it.id == "stay-business-trip" }
 
+    /** Städte und Gemeinden. */
+    val cities: List<Place> get() = sortedPlaces.filter { it.kind == PlaceKind.CITY }
+
     /** Favoriten zuerst, dann alphabetisch. */
     val sortedPlaces: List<Place>
         get() = places.sortedWith(
@@ -109,6 +112,10 @@ data class PlaceDraft(
     val regionCode: String?,
     val alias: String?,
     val isFavorite: Boolean,
+    /** Stadt/Gemeinde oder Örtlichkeit (Lokal, Gipfel, Museum …). */
+    val kind: PlaceKind = PlaceKind.CITY,
+    /** Zugehörige Stadt einer Örtlichkeit. */
+    val parentPlaceId: String? = null,
 )
 
 class EditorCatalog @Inject constructor(
@@ -135,11 +142,12 @@ class EditorCatalog @Inject constructor(
         val place = Place(
             id = UUID.randomUUID().toString(),
             name = draft.name.trim(),
-            kind = PlaceKind.CITY,
+            kind = draft.kind,
             countryIso2 = draft.countryIso2,
             regionCode = draft.regionCode,
             alias = draft.alias?.trim()?.takeIf { it.isNotEmpty() },
             isFavorite = draft.isFavorite,
+            parentPlaceId = draft.parentPlaceId.takeIf { draft.kind != PlaceKind.CITY },
         )
         placeRepository.upsert(place)
         return place

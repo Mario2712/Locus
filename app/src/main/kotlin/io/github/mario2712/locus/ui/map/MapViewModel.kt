@@ -33,7 +33,15 @@ enum class MapPerson { A, B, BOTH }
 /** Einfärbung eines Landes auf der Karte. */
 enum class MapCountryState { TOGETHER, BOTH_SEPARATELY, ONLY_A, ONLY_B, VISITED, WISH }
 
-data class MapPlace(val id: String, val name: String, val latitude: Double, val longitude: Double, val days: Int)
+data class MapPlace(
+    val id: String,
+    val name: String,
+    val latitude: Double,
+    val longitude: Double,
+    val days: Int,
+    /** Örtlichkeit (Lokal, Gipfel …) statt Stadt – erst beim Hineinzoomen sichtbar. */
+    val isLocation: Boolean = false,
+)
 
 data class MapFilter(
     val person: MapPerson = MapPerson.BOTH,
@@ -157,7 +165,7 @@ class MapViewModel @Inject constructor(
             val place = editor.placesById[id] ?: return@mapNotNull null
             val lat = place.latitude ?: return@mapNotNull null
             val lon = place.longitude ?: return@mapNotNull null
-            MapPlace(id, place.displayName, lat, lon, dates.size)
+            MapPlace(id, place.displayName, lat, lon, dates.size, isLocation = place.kind != io.github.mario2712.locus.domain.model.PlaceKind.CITY)
         }
     }
 }

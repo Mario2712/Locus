@@ -2,6 +2,8 @@ package io.github.mario2712.locus.ui.places
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +15,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -26,6 +31,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -38,6 +44,9 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.mario2712.locus.R
 import io.github.mario2712.locus.domain.model.Place
+import io.github.mario2712.locus.domain.model.PlaceKind
+import io.github.mario2712.locus.domain.places.LocationGroup
+import io.github.mario2712.locus.domain.places.PlaceGroups
 import io.github.mario2712.locus.domain.places.PlaceCandidate
 import io.github.mario2712.locus.domain.reference.ReferenceData
 import io.github.mario2712.locus.places.SearchResult
@@ -63,33 +72,100 @@ fun BackScaffold(title: String, onBack: () -> Unit, content: @Composable (Modifi
     ) { padding -> content(Modifier.padding(padding)) }
 }
 
+private enum class PlacesTab { CITIES, LOCATIONS }
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun PlacesScreen(onBack: () -> Unit, onOpenPlace: (String) -> Unit, viewModel: PlacesViewModel = hiltViewModel()) {
     val items by viewModel.items.collectAsStateWithLifecycle()
     var query by remember { mutableStateOf("") }
+    var tab by remember { mutableStateOf(PlacesTab.CITIES) }
+    var group by remember { mutableStateOf<LocationGroup?>(null) }
+    var countryFilter by remember { mutableStateOf<String?>(null) }
+    var countryMenu by remember { mutableStateOf(false) }
+    val expanded = remember { mutableStateMapOf<String, Boolean>() }
+
+    val byId = items.associateBy { it.place.id }
+    val matching = items.filter { item ->
+        (query.isBlank() || item.place.displayName.contains(query, true) || item.place.name.contains(query, true)) &&
+            (countryFilter == null || ReferenceData.countableCountry(item.place.countryIso2)?.iso2 == countryFilter)
+    }
+    val (cities, locations) = matching.partition { PlaceGroups.isLocality(it.place) }
+    val countries = items.mapNotNull { ReferenceData.countableCountry(it.place.countryIso2) }.distinct().sortedBy { it.nameDe }
+
     BackScaffold(stringResource(R.string.places_title), onBack) { modifier ->
-        Column(modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-            OutlinedTextField(
-                value = query, onValueChange = { query = it }, singleLine = true,
-                label = { Text(stringResource(R.string.editor_search)) }, modifier = Modifier.fillMaxWidth(),
-            )
-            LazyColumn {
-                items(items.filter { query.isBlank() || it.place.displayName.contains(query, true) || it.place.name.contains(query, true) }, key = { it.place.id }) { item ->
-                    val place = item.place
-                    val country = ReferenceData.countableCountry(place.countryIso2)
-                    Column(Modifier.fillMaxWidth().clickable { onOpenPlace(place.id) }.padding(vertical = 10.dp)) {
-                        Text((if (place.isHomebase) "🏠 " else if (place.isFavorite) "★ " else "") + "${country?.flag ?: ""} ${place.displayName}")
-                        Text(
-                            listOfNotNull(
-                                stringResource(R.string.places_days, item.totalDays),
-                                item.lastDate?.let { stringResource(R.string.places_last, Format.fullDate(it)) },
-                                if (place.latitude == null) stringResource(R.string.places_no_coordinates) else null,
-                            ).joinToString(" · "),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+        LazyColumn(modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(tab == PlacesTab.CITIES, { tab = PlacesTab.CITIES },
+                            label = { Text(stringResource(R.string.places_tab_cities) + " (${cities.size})") })
+                        FilterChip(tab == PlacesTab.LOCATIONS, { tab = PlacesTab.LOCATIONS },
+                            label = { Text(stringResource(R.string.places_tab_locations) + " (${locations.size})") })
                     }
-                    HorizontalDivider()
+                    OutlinedTextField(
+                        value = query, onValueChange = { query = it }, singleLine = true,
+                        label = { Text(stringResource(R.string.editor_search)) }, modifier = Modifier.fillMaxWidth(),
+                    )
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Box {
+                            FilterChip(countryFilter != null, { countryMenu = true }, label = {
+                                Text(countryFilter?.let { iso -> ReferenceData.country(iso)?.let { "${it.flag} ${it.nameDe}" } }
+                                    ?: stringResource(R.string.places_all_countries))
+                            })
+                            DropdownMenu(expanded = countryMenu, onDismissRequest = { countryMenu = false }) {
+                                DropdownMenuItem(text = { Text(stringResource(R.string.places_all_countries)) },
+                                    onClick = { countryFilter = null; countryMenu = false })
+                                countries.forEach { c ->
+                                    DropdownMenuItem(text = { Text("${c.flag} ${c.nameDe}") }, onClick = { countryFilter = c.iso2; countryMenu = false })
+                                }
+                            }
+                        }
+                        if (tab == PlacesTab.LOCATIONS) {
+                            LocationGroup.entries.forEach { g ->
+                                FilterChip(group == g, { group = if (group == g) null else g }, label = { Text(g.nameDe) })
+                            }
+                        }
+                    }
+                }
+            }
+            when (tab) {
+                PlacesTab.CITIES -> {
+                    if (cities.isEmpty()) item { Text(stringResource(R.string.places_empty), Modifier.padding(vertical = 12.dp)) }
+                    items(cities, key = { it.place.id }) { item ->
+                        PlaceRow(item, extra = if (item.locationCount > 0) stringResource(R.string.places_locations_count, item.locationCount) else null) {
+                            onOpenPlace(item.place.id)
+                        }
+                    }
+                }
+                PlacesTab.LOCATIONS -> {
+                    val shown = locations.filter { group == null || it.group == group }
+                    if (shown.isEmpty()) item { Text(stringResource(R.string.places_empty), Modifier.padding(vertical = 12.dp)) }
+                    // Gruppiert nach Stadt; Örtlichkeiten ohne Stadt am Ende.
+                    val grouped = shown.groupBy { it.place.parentPlaceId }
+                        .toList()
+                        .sortedWith(compareBy({ it.first == null }, { byId[it.first]?.place?.displayName?.lowercase() ?: "" }))
+                    grouped.forEach { (parentId, list) ->
+                        val key = parentId ?: "none"
+                        val open = expanded[key] ?: (grouped.size <= 3 || query.isNotBlank())
+                        item(key = "g-$key") {
+                            Row(
+                                Modifier.fillMaxWidth().clickable { expanded[key] = !open }.padding(vertical = 10.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Text(
+                                    (parentId?.let { byId[it]?.place?.displayName } ?: stringResource(R.string.places_without_city)) + " (${list.size})",
+                                    style = MaterialTheme.typography.titleSmall,
+                                )
+                                Text(if (open) "▾" else "▸")
+                            }
+                        }
+                        if (open) {
+                            items(list, key = { it.place.id }) { item ->
+                                PlaceRow(item, extra = item.group.nameDe, indent = true) { onOpenPlace(item.place.id) }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -97,7 +173,32 @@ fun PlacesScreen(onBack: () -> Unit, onOpenPlace: (String) -> Unit, viewModel: P
 }
 
 @Composable
-fun PlaceDetailScreen(onBack: () -> Unit, onOpenDay: (LocalDate) -> Unit, viewModel: PlaceDetailViewModel = hiltViewModel()) {
+private fun PlaceRow(item: PlaceListItem, extra: String?, indent: Boolean = false, onClick: () -> Unit) {
+    val place = item.place
+    val country = ReferenceData.countableCountry(place.countryIso2)
+    Column(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(start = if (indent) 16.dp else 0.dp, top = 10.dp, bottom = 10.dp)) {
+        Text((if (place.isHomebase) "🏠 " else if (place.isFavorite) "★ " else "") + "${country?.flag ?: ""} ${place.displayName}")
+        Text(
+            listOfNotNull(
+                stringResource(R.string.places_days, item.totalDays),
+                item.lastDate?.let { stringResource(R.string.places_last, Format.fullDate(it)) },
+                extra,
+                if (place.latitude == null) stringResource(R.string.places_no_coordinates) else null,
+            ).joinToString(" · "),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    HorizontalDivider()
+}
+
+@Composable
+fun PlaceDetailScreen(
+    onBack: () -> Unit,
+    onOpenDay: (LocalDate) -> Unit,
+    onOpenPlace: (String) -> Unit,
+    viewModel: PlaceDetailViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val place = state.place
     var edit by remember { mutableStateOf(false) }
@@ -113,8 +214,15 @@ fun PlaceDetailScreen(onBack: () -> Unit, onOpenDay: (LocalDate) -> Unit, viewMo
         ) {
             val country = ReferenceData.countableCountry(place.countryIso2)
             SectionCard(place.displayName) {
+                Text(
+                    stringResource(if (place.kind == PlaceKind.CITY) R.string.place_kind_city else R.string.place_kind_location),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
                 place.parentPlaceId?.let { parent ->
-                    Text(stringResource(R.string.place_in_city, state.editor.placeName(parent)), style = MaterialTheme.typography.bodySmall)
+                    TextButton(onClick = { onOpenPlace(parent) }) {
+                        Text(stringResource(R.string.place_in_city, state.editor.placeName(parent)))
+                    }
                 }
                 Text(listOfNotNull(place.alias?.let { place.name }, country?.let { "${it.flag} ${it.nameDe}" },
                     place.regionCode?.let { ReferenceData.region(it)?.nameDe }).joinToString(" · "))
@@ -143,10 +251,14 @@ fun PlaceDetailScreen(onBack: () -> Unit, onOpenDay: (LocalDate) -> Unit, viewMo
                     record.daysByType.entries.sortedByDescending { it.value }.forEach { (typeId, count) ->
                         Text("• ${state.editor.typeName(typeId)}: $count")
                     }
-                    if (record.childVisits.isNotEmpty()) {
+                    val children = state.editor.places.filter { it.parentPlaceId == place.id }
+                    if (children.isNotEmpty()) {
                         Text(stringResource(R.string.place_record_children), style = MaterialTheme.typography.labelLarge)
-                        record.childVisits.entries.sortedByDescending { it.value }.forEach { (childId, count) ->
-                            Text("• ${state.editor.placeName(childId)}: $count")
+                        children.sortedByDescending { record.childVisits[it.id] ?: 0 }.forEach { child ->
+                            Text(
+                                "• ${child.displayName}: ${record.childVisits[child.id] ?: 0}",
+                                Modifier.fillMaxWidth().clickable { onOpenPlace(child.id) }.padding(vertical = 4.dp),
+                            )
                         }
                     }
                     if (record.visitCount > 0) {
@@ -171,7 +283,7 @@ fun PlaceDetailScreen(onBack: () -> Unit, onOpenDay: (LocalDate) -> Unit, viewMo
     }
 
     if (place != null && edit) {
-        PlaceEditDialog(place, onDismiss = { edit = false }, onSave = { viewModel.save(it); edit = false })
+        PlaceEditDialog(place, state.editor.cities.filter { it.id != place.id }, onDismiss = { edit = false }, onSave = { viewModel.save(it); edit = false })
     }
     if (place != null && link) {
         LinkDialog(place, viewModel, onDismiss = { link = false })
@@ -187,14 +299,27 @@ fun PlaceDetailScreen(onBack: () -> Unit, onOpenDay: (LocalDate) -> Unit, viewMo
 }
 
 @Composable
-private fun PlaceEditDialog(place: Place, onDismiss: () -> Unit, onSave: (Place) -> Unit) {
+private fun PlaceEditDialog(place: Place, cities: List<Place>, onDismiss: () -> Unit, onSave: (Place) -> Unit) {
     var draft by remember { mutableStateOf(place) }
     var pickCountry by remember { mutableStateOf(false) }
+    var pickCity by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.place_edit)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(draft.kind == PlaceKind.CITY, { draft = draft.copy(kind = PlaceKind.CITY, parentPlaceId = null) },
+                        label = { Text(stringResource(R.string.place_kind_city)) })
+                    FilterChip(draft.kind != PlaceKind.CITY, { if (draft.kind == PlaceKind.CITY) draft = draft.copy(kind = PlaceKind.POI) },
+                        label = { Text(stringResource(R.string.place_kind_location)) })
+                }
+                if (draft.kind != PlaceKind.CITY) {
+                    OutlinedButton(onClick = { pickCity = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text(draft.parentPlaceId?.let { id -> cities.firstOrNull { it.id == id }?.let { stringResource(R.string.place_in_city, it.displayName) } }
+                            ?: stringResource(R.string.place_parent_optional))
+                    }
+                }
                 OutlinedTextField(draft.name, { draft = draft.copy(name = it) }, singleLine = true,
                     label = { Text(stringResource(R.string.place_name)) }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(draft.alias.orEmpty(), { draft = draft.copy(alias = it.takeIf { a -> a.isNotBlank() }) }, singleLine = true,
@@ -209,6 +334,20 @@ private fun PlaceEditDialog(place: Place, onDismiss: () -> Unit, onSave: (Place)
         confirmButton = { TextButton(enabled = draft.name.isNotBlank(), onClick = { onSave(draft.copy(name = draft.name.trim())) }) { Text(stringResource(R.string.action_save)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
+    if (pickCity) {
+        AlertDialog(
+            onDismissRequest = { pickCity = false },
+            title = { Text(stringResource(R.string.place_parent_optional)) },
+            text = {
+                LazyColumn(Modifier.heightIn(max = 360.dp)) {
+                    items(cities, key = { it.id }) { city ->
+                        Text(city.displayName, Modifier.fillMaxWidth().clickable { draft = draft.copy(parentPlaceId = city.id); pickCity = false }.padding(vertical = 10.dp))
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { draft = draft.copy(parentPlaceId = null); pickCity = false }) { Text(stringResource(R.string.action_none)) } },
+        )
+    }
     if (pickCountry) {
         CountryPickerDialog(onDismiss = { pickCountry = false }, onSelect = {
             draft = draft.copy(countryIso2 = it.iso2, regionCode = null); pickCountry = false

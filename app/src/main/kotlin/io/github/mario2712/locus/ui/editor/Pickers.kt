@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -46,6 +48,7 @@ import io.github.mario2712.locus.domain.model.Country
 import io.github.mario2712.locus.domain.model.Person
 import io.github.mario2712.locus.domain.model.PersonId
 import io.github.mario2712.locus.domain.model.Place
+import io.github.mario2712.locus.domain.model.PlaceKind
 import io.github.mario2712.locus.domain.model.StayType
 import io.github.mario2712.locus.domain.places.PlaceCandidate
 import io.github.mario2712.locus.domain.reference.ReferenceData
@@ -97,6 +100,8 @@ fun PlaceField(
     selectedId: String?,
     onSelect: (String) -> Unit,
     onCreatePlace: suspend (PlaceDraft) -> Place,
+    /** Örtlichkeiten (Lokale, Gipfel …) zuerst anzeigen – z. B. bei Besuchen. */
+    preferLocations: Boolean = false,
 ) {
     var showPicker by remember { mutableStateOf(false) }
     val label = places.firstOrNull { it.id == selectedId }?.displayName ?: stringResource(R.string.editor_choose_place)
@@ -107,6 +112,7 @@ fun PlaceField(
             onDismiss = { showPicker = false },
             onSelect = { onSelect(it); showPicker = false },
             onCreatePlace = onCreatePlace,
+            preferLocations = preferLocations,
         )
     }
 }
@@ -128,6 +134,7 @@ fun PlacePickerDialog(
     onDismiss: () -> Unit,
     onSelect: (String) -> Unit,
     onCreatePlace: suspend (PlaceDraft) -> Place,
+    preferLocations: Boolean = false,
 ) {
     val controller = LocalPlaceSearch.current
     val scope = rememberCoroutineScope()
@@ -227,23 +234,34 @@ fun PlacePickerDialog(
                             }
                         }
                     }
-                    if (filtered.isNotEmpty()) {
-                        item { SectionLabel(stringResource(R.string.search_saved)) }
-                    }
-                    items(filtered, key = { it.id }) { place ->
-                        Column(
-                            Modifier.fillMaxWidth().clickable { onSelect(place.id) }.padding(vertical = 10.dp),
-                        ) {
-                            val country = ReferenceData.countableCountry(place.countryIso2)
-                            Text((if (place.isHomebase) "🏠 " else if (place.isFavorite) "★ " else "") + place.displayName)
-                            Text(
-                                listOfNotNull(place.alias?.let { place.name }, country?.let { "${it.flag} ${it.nameDe}" })
-                                    .joinToString(" · "),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                    val (cities, locations) = filtered.partition { it.kind == PlaceKind.CITY }
+                    val sections = listOf(
+                        R.string.places_tab_cities to cities,
+                        R.string.places_tab_locations to locations,
+                    ).let { if (preferLocations) it.reversed() else it }
+                    sections.forEach { (label, list) ->
+                        if (list.isNotEmpty()) {
+                            item(key = "label-$label") { SectionLabel(stringResource(label)) }
                         }
-                        HorizontalDivider()
+                        items(list, key = { it.id }) { place ->
+                            Column(
+                                Modifier.fillMaxWidth().clickable { onSelect(place.id) }.padding(vertical = 10.dp),
+                            ) {
+                                val country = ReferenceData.countableCountry(place.countryIso2)
+                                val parent = place.parentPlaceId?.let { id -> places.firstOrNull { it.id == id }?.displayName }
+                                Text((if (place.isHomebase) "🏠 " else if (place.isFavorite) "★ " else "") + place.displayName)
+                                Text(
+                                    listOfNotNull(
+                                        place.alias?.let { place.name },
+                                        parent?.let { stringResource(R.string.place_in_city, it) },
+                                        country?.let { "${it.flag} ${it.nameDe}" },
+                                    ).joinToString(" · "),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            HorizontalDivider()
+                        }
                     }
                 }
                 if (places.isEmpty() && online == OnlineState.Idle) Text(stringResource(R.string.editor_no_places))
@@ -255,6 +273,8 @@ fun PlacePickerDialog(
     if (showCreate) {
         PlaceCreateDialog(
             initialName = query,
+            cities = places.filter { it.kind == PlaceKind.CITY },
+            initialKind = if (preferLocations) PlaceKind.POI else PlaceKind.CITY,
             onDismiss = { showCreate = false },
             onCreate = { draft -> val place = onCreatePlace(draft); showCreate = false; onSelect(place.id) },
         )
@@ -274,10 +294,15 @@ private fun SectionLabel(text: String) {
 @Composable
 fun PlaceCreateDialog(
     initialName: String,
+    cities: List<Place>,
+    initialKind: PlaceKind,
     onDismiss: () -> Unit,
     onCreate: suspend (PlaceDraft) -> Unit,
 ) {
     var name by remember { mutableStateOf(initialName) }
+    var kind by remember { mutableStateOf(initialKind) }
+    var parentId by remember { mutableStateOf<String?>(null) }
+    var showCities by remember { mutableStateOf(false) }
     var alias by remember { mutableStateOf("") }
     var country by remember { mutableStateOf(ReferenceData.country("AT")!!) }
     var regionCode by remember { mutableStateOf<String?>(null) }
@@ -292,11 +317,22 @@ fun PlaceCreateDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.editor_new_place)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(kind == PlaceKind.CITY, { kind = PlaceKind.CITY }, label = { Text(stringResource(R.string.place_kind_city)) })
+                    FilterChip(kind != PlaceKind.CITY, { kind = PlaceKind.POI }, label = { Text(stringResource(R.string.place_kind_location)) })
+                }
                 OutlinedTextField(
                     value = name, onValueChange = { name = it }, singleLine = true,
-                    label = { Text(stringResource(R.string.place_name)) }, modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(if (kind == PlaceKind.CITY) R.string.place_name else R.string.place_name_location)) },
+                    modifier = Modifier.fillMaxWidth(),
                 )
+                if (kind != PlaceKind.CITY && cities.isNotEmpty()) {
+                    OutlinedButton(onClick = { showCities = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text(parentId?.let { id -> cities.firstOrNull { it.id == id }?.let { stringResource(R.string.place_in_city, it.displayName) } }
+                            ?: stringResource(R.string.place_parent_optional))
+                    }
+                }
                 OutlinedTextField(
                     value = alias, onValueChange = { alias = it }, singleLine = true,
                     label = { Text(stringResource(R.string.place_alias)) }, modifier = Modifier.fillMaxWidth(),
@@ -327,7 +363,7 @@ fun PlaceCreateDialog(
                     saving = true
                     scope.launch {
                         try {
-                            onCreate(PlaceDraft(name, country.iso2, regionCode, alias, favorite))
+                            onCreate(PlaceDraft(name, country.iso2, regionCode, alias, favorite, kind, parentId))
                         } finally {
                             saving = false
                         }
@@ -337,6 +373,27 @@ fun PlaceCreateDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
+    if (showCities) {
+        AlertDialog(
+            onDismissRequest = { showCities = false },
+            title = { Text(stringResource(R.string.place_parent_optional)) },
+            text = {
+                LazyColumn(Modifier.heightIn(max = 360.dp)) {
+                    items(cities, key = { it.id }) { city ->
+                        Text(
+                            city.displayName,
+                            Modifier.fillMaxWidth().clickable {
+                                parentId = city.id
+                                ReferenceData.country(city.countryIso2)?.let { country = it }
+                                showCities = false
+                            }.padding(vertical = 10.dp),
+                        )
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { parentId = null; showCities = false }) { Text(stringResource(R.string.action_none)) } },
+        )
+    }
     if (showCountries) {
         CountryPickerDialog(
             onDismiss = { showCountries = false },

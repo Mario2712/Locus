@@ -198,6 +198,16 @@
 
     <!-- Orte -->
     <string name="places_title">Orte</string>
+    <string name="places_tab_cities">Städte &amp; Gemeinden</string>
+    <string name="places_tab_locations">Örtlichkeiten</string>
+    <string name="places_all_countries">Alle Länder</string>
+    <string name="places_without_city">Ohne Stadt</string>
+    <string name="places_locations_count">%1$d Örtlichkeiten</string>
+    <string name="places_empty">Keine Orte für diesen Filter.</string>
+    <string name="place_kind_city">Stadt/Gemeinde</string>
+    <string name="place_kind_location">Örtlichkeit</string>
+    <string name="place_name_location">Name (z. B. Gasthof, Gipfel, Museum)</string>
+    <string name="place_parent_optional">Zugehörige Stadt (optional)</string>
     <string name="places_days">%1$d Tage</string>
     <string name="places_last">zuletzt %1$s</string>
     <string name="places_no_coordinates">ohne Koordinaten</string>
@@ -210,7 +220,7 @@
     <string name="place_record_range">erstmals %1$s · zuletzt %2$s</string>
     <string name="place_record_visits">Besuche: %1$d</string>
     <string name="place_record_dates">Tage</string>
-    <string name="place_record_children">Davon an Orten in der Stadt</string>
+    <string name="place_record_children">Örtlichkeiten in der Stadt (Besuche)</string>
     <string name="place_in_city">in %1$s</string>
     <string name="place_delete_confirm">Ort löschen? Bestehende Einträge zeigen ihn dann als „?“.</string>
 

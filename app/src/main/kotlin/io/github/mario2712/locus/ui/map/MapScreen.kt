@@ -61,7 +61,7 @@ import java.net.URI
 private data class MapColors(
     val water: Int, val land: Int, val border: Int,
     val together: Int, val bothSeparately: Int, val onlyA: Int, val onlyB: Int, val visited: Int, val wish: Int,
-    val place: Int, val route: Int,
+    val place: Int, val location: Int, val route: Int,
 )
 
 private fun mapColors(dark: Boolean) = if (dark) {
@@ -69,14 +69,14 @@ private fun mapColors(dark: Boolean) = if (dark) {
         water = 0xFF1B2A33.toInt(), land = 0xFF2B2F31.toInt(), border = 0xFF5A5F62.toInt(),
         together = 0xFF2E9E7E.toInt(), bothSeparately = 0xFF7FB8A4.toInt(), onlyA = 0xFF4F7FD1.toInt(),
         onlyB = 0xFFC95C8A.toInt(), visited = 0xFF2E9E7E.toInt(), wish = 0xFF8C7A3C.toInt(),
-        place = 0xFFFFD166.toInt(), route = 0xFFFFD166.toInt(),
+        place = 0xFFFFD166.toInt(), location = 0xFF9BC4FF.toInt(), route = 0xFFFFD166.toInt(),
     )
 } else {
     MapColors(
         water = 0xFFCFE3EA.toInt(), land = 0xFFF2EFE9.toInt(), border = 0xFFA8A8A8.toInt(),
         together = 0xFF1F6F5C.toInt(), bothSeparately = 0xFF7FB8A4.toInt(), onlyA = 0xFF3F6FC4.toInt(),
         onlyB = 0xFFB4446C.toInt(), visited = 0xFF1F6F5C.toInt(), wish = 0xFFE9C46A.toInt(),
-        place = 0xFFE76F51.toInt(), route = 0xFFE76F51.toInt(),
+        place = 0xFFE76F51.toInt(), location = 0xFF3F6FC4.toInt(), route = 0xFFE76F51.toInt(),
     )
 }
 
@@ -154,7 +154,7 @@ fun MapScreen(viewModel: MapViewModel = hiltViewModel()) {
             holder.clickInstalled = true
             map.addOnMapClickListener { latLng ->
                 val point: PointF = map.projection.toScreenLocation(latLng)
-                val place = map.queryRenderedFeatures(point, "places-circles").firstOrNull()
+                val place = map.queryRenderedFeatures(point, "pois-circles", "places-circles").firstOrNull()
                 val country = map.queryRenderedFeatures(point, "visited", "land").firstOrNull()
                 info = when {
                     place != null -> place.getStringProperty("name") + " · " + place.getNumberProperty("days")?.toInt() + " " + daysLabel
@@ -252,6 +252,7 @@ private fun addLocusLayers(style: Style, c: MapColors, detail: Boolean) {
     if (style.getSource("countries") == null) style.addSource(GeoJsonSource("countries", URI("asset://countries.geojson")))
     style.addSource(GeoJsonSource("routes", """{"type":"FeatureCollection","features":[]}"""))
     style.addSource(GeoJsonSource("places", """{"type":"FeatureCollection","features":[]}"""))
+    style.addSource(GeoJsonSource("pois", """{"type":"FeatureCollection","features":[]}"""))
     style.addLayer(
         FillLayer("visited", "countries").withProperties(
             PropertyFactory.fillColor(Color.Transparent.toArgb()),
@@ -279,6 +280,15 @@ private fun addLocusLayers(style: Style, c: MapColors, detail: Boolean) {
             PropertyFactory.circleStrokeWidth(1f),
         ),
     )
+    // Örtlichkeiten erst ab Regional-Zoom, damit die Weltansicht übersichtlich bleibt.
+    style.addLayer(
+        CircleLayer("pois-circles", "pois").withProperties(
+            PropertyFactory.circleColor(c.location),
+            PropertyFactory.circleRadius(Expression.get("r")),
+            PropertyFactory.circleStrokeColor(0xFFFFFFFF.toInt()),
+            PropertyFactory.circleStrokeWidth(1f),
+        ).apply { minZoom = 7f },
+    )
 }
 
 private fun updateLocusLayers(style: Style, state: MapUiState, c: MapColors) {
@@ -302,16 +312,19 @@ private fun updateLocusLayers(style: Style, state: MapUiState, c: MapColors) {
     style.getLayerAs<FillLayer>("visited")?.setProperties(PropertyFactory.fillColor(fill))
 
     val places = JSONArray()
+    val pois = JSONArray()
     if (state.filter.showPlaces) {
         state.places.forEach { p ->
-            places.put(JSONObject().apply {
+            (if (p.isLocation) pois else places).put(JSONObject().apply {
                 put("type", "Feature")
                 put("geometry", JSONObject().put("type", "Point").put("coordinates", JSONArray().put(p.longitude).put(p.latitude)))
-                put("properties", JSONObject().put("name", p.name).put("days", p.days).put("r", 4.0 + kotlin.math.min(10.0, kotlin.math.sqrt(p.days.toDouble()) * 1.5)))
+                val radius = if (p.isLocation) 4.0 else 4.0 + kotlin.math.min(10.0, kotlin.math.sqrt(p.days.toDouble()) * 1.5)
+                put("properties", JSONObject().put("name", p.name).put("days", p.days).put("r", radius))
             })
         }
     }
     style.getSourceAs<GeoJsonSource>("places")?.setGeoJson(JSONObject().put("type", "FeatureCollection").put("features", places).toString())
+    style.getSourceAs<GeoJsonSource>("pois")?.setGeoJson(JSONObject().put("type", "FeatureCollection").put("features", pois).toString())
 
     val routes = JSONArray()
     state.routes.forEach { line ->

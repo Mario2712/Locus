@@ -44,7 +44,7 @@ fun VisitDialog(
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(stringResource(R.string.editor_place), style = MaterialTheme.typography.labelLarge)
-                PlaceField(editor.sortedPlaces, draft.placeId, { draft = draft.copy(placeId = it) }, onCreatePlace)
+                PlaceField(editor.sortedPlaces, draft.placeId, { draft = draft.copy(placeId = it) }, onCreatePlace, preferLocations = true)
                 Text(stringResource(R.string.visit_categories), style = MaterialTheme.typography.labelLarge)
                 CategoryChips(editor.activeCategories, draft.categoryIds) { draft = draft.copy(categoryIds = it) }
                 SwitchRow(stringResource(R.string.visit_counts), counts) { value ->
