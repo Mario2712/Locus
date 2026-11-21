@@ -55,46 +55,51 @@ object PhotonParser {
 
     fun parse(json: String): List<PlaceCandidate> {
         val features = JSONObject(json).optJSONArray("features") ?: return emptyList()
+        // Jeder Treffer einzeln abgesichert; doppelte Treffer (gleiche OSM-ID) werden entfernt.
         return (0 until features.length()).mapNotNull { index ->
-            val feature = features.optJSONObject(index) ?: return@mapNotNull null
-            val props = feature.optJSONObject("properties") ?: return@mapNotNull null
-            val coordinates = feature.optJSONObject("geometry")?.optJSONArray("coordinates") ?: return@mapNotNull null
-            val country = props.optStringOrNull("countrycode")?.uppercase() ?: return@mapNotNull null
-            val osmType = props.optStringOrNull("osm_type") ?: return@mapNotNull null
-            val osmId = props.optLong("osm_id", -1).takeIf { it >= 0 } ?: return@mapNotNull null
-            val osmKey = props.optStringOrNull("osm_key")
-            val osmValue = props.optStringOrNull("osm_value")
-            val type = props.optStringOrNull("type")
-            val street = props.optStringOrNull("street")
-            val ownName = props.optStringOrNull("name")
-            val name = ownName
-                ?: street?.let { s -> listOfNotNull(s, props.optStringOrNull("housenumber")).joinToString(" ") }
-                ?: return@mapNotNull null
-            // Photon liefert POIs oft mit type "house" – als Adresse gilt nur, was keinen eigenen Namen hat
-            // oder eine Straße ist.
-            val kind = when {
-                osmKey == "place" && osmValue in cityValues -> PlaceKind.CITY
-                osmKey == "boundary" && type == "city" -> PlaceKind.CITY
-                osmKey == "highway" || type == "street" || ownName == null -> PlaceKind.ADDRESS
-                else -> PlaceKind.POI
-            }
-            PlaceCandidate(
-                osmId = "$osmType$osmId",
-                name = name,
-                kind = kind,
-                countryIso2 = country,
-                countryName = props.optStringOrNull("country"),
-                stateName = props.optStringOrNull("state"),
-                cityName = props.optStringOrNull("city") ?: if (kind == PlaceKind.CITY) name else props.optStringOrNull("locality"),
-                latitude = coordinates.getDouble(1),
-                longitude = coordinates.getDouble(0),
-                category = osmValue,
-                street = street,
-                houseNumber = props.optStringOrNull("housenumber"),
-                postcode = props.optStringOrNull("postcode"),
-                district = props.optStringOrNull("district") ?: props.optStringOrNull("locality"),
-            )
+            runCatching { parseFeature(features.optJSONObject(index)) }.getOrNull()
+        }.distinctBy { it.osmId }
+    }
+
+    private fun parseFeature(feature: JSONObject?): PlaceCandidate? {
+        feature ?: return null
+        val props = feature.optJSONObject("properties") ?: return null
+        val coordinates = feature.optJSONObject("geometry")?.optJSONArray("coordinates") ?: return null
+        val country = props.optStringOrNull("countrycode")?.uppercase() ?: return null
+        val osmType = props.optStringOrNull("osm_type") ?: return null
+        val osmId = props.optLong("osm_id", -1).takeIf { it >= 0 } ?: return null
+        val osmKey = props.optStringOrNull("osm_key")
+        val osmValue = props.optStringOrNull("osm_value")
+        val type = props.optStringOrNull("type")
+        val street = props.optStringOrNull("street")
+        val ownName = props.optStringOrNull("name")
+        val name = ownName
+            ?: street?.let { s -> listOfNotNull(s, props.optStringOrNull("housenumber")).joinToString(" ") }
+            ?: return null
+        // Photon liefert POIs oft mit type "house" – als Adresse gilt nur, was keinen eigenen Namen hat
+        // oder eine Straße ist.
+        val kind = when {
+            osmKey == "place" && osmValue in cityValues -> PlaceKind.CITY
+            osmKey == "boundary" && type == "city" -> PlaceKind.CITY
+            osmKey == "highway" || type == "street" || ownName == null -> PlaceKind.ADDRESS
+            else -> PlaceKind.POI
         }
+        return PlaceCandidate(
+            osmId = "$osmType$osmId",
+            name = name,
+            kind = kind,
+            countryIso2 = country,
+            countryName = props.optStringOrNull("country"),
+            stateName = props.optStringOrNull("state"),
+            cityName = props.optStringOrNull("city") ?: if (kind == PlaceKind.CITY) name else props.optStringOrNull("locality"),
+            latitude = coordinates.getDouble(1),
+            longitude = coordinates.getDouble(0),
+            category = osmValue,
+            street = street,
+            houseNumber = props.optStringOrNull("housenumber"),
+            postcode = props.optStringOrNull("postcode"),
+            district = props.optStringOrNull("district") ?: props.optStringOrNull("locality"),
+        )
     }
 
     private fun JSONObject.optStringOrNull(key: String): String? =

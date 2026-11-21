@@ -55,7 +55,7 @@ class PlaceSearchController @Inject constructor(
                     ?.firstOrNull { it.kind == PlaceKind.CITY && it.name.equals(name, ignoreCase = true) }
             }
             SearchResult.Ok(
-                listOfNotNull(city, hit).map {
+                listOfNotNull(city, hit).distinctBy { it.osmId }.map {
                     it.copy(distanceMeters = PlaceCandidates.distanceMeters(here.latitude, here.longitude, it.latitude, it.longitude))
                 },
             )

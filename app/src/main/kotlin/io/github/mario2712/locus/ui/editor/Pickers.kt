@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -183,7 +184,7 @@ fun PlacePickerDialog(
     fun runNearby() {
         val c = controller ?: return
         online = OnlineState.Loading
-        scope.launch { show(c.nearby()) }
+        scope.launch { show(runCatching { c.nearby() }.getOrElse { SearchResult.Offline }) }
     }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
         if (granted.values.any { it }) runNearby() else online = OnlineState.Error(R.string.search_no_permission)
@@ -204,7 +205,9 @@ fun PlacePickerDialog(
                             enabled = query.trim().length >= 2 && online != OnlineState.Loading,
                             onClick = {
                                 online = OnlineState.Loading
-                                scope.launch { show(controller.search(query)) }
+                                scope.launch {
+                                    show(runCatching { controller.search(query) }.getOrElse { SearchResult.Offline })
+                                }
                             },
                         ) { Text(stringResource(R.string.search_online)) }
                         OutlinedButton(
@@ -235,12 +238,19 @@ fun PlacePickerDialog(
                         }
                         is OnlineState.Results -> {
                             item { SectionLabel(stringResource(R.string.search_online_results)) }
-                            items(state.items, key = { "osm-" + it.osmId }) { candidate ->
+                            itemsIndexed(state.items, key = { index, it -> "osm-$index-${it.osmId}" }) { _, candidate ->
                                 val country = ReferenceData.countableCountry(candidate.countryIso2)
                                 Column(
                                     Modifier.fillMaxWidth().clickable {
                                         val c = controller ?: return@clickable
-                                        scope.launch { onSelect(c.import(candidate).id) }
+                                        scope.launch {
+                                            try {
+                                                onSelect(c.import(candidate).id)
+                                            } catch (e: Exception) {
+                                                if (e is kotlinx.coroutines.CancellationException) throw e
+                                                online = OnlineState.Error(R.string.search_import_failed)
+                                            }
+                                        }
                                     }.padding(vertical = 10.dp),
                                 ) {
                                     Text("${country?.flag ?: "🌐"} ${candidate.name}")

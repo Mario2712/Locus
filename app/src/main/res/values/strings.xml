@@ -190,6 +190,7 @@
     <string name="search_loading">Suche …</string>
     <string name="search_saved">Gespeichert</string>
     <string name="search_suggestions">Vorschläge</string>
+    <string name="search_import_failed">Der Ort konnte nicht übernommen werden – bitte nochmal versuchen.</string>
     <string name="search_show_all">Alle %1$d Orte anzeigen</string>
     <string name="search_online_results">OpenStreetMap</string>
     <string name="search_no_results">Nichts gefunden.</string>

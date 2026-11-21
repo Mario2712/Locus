@@ -56,4 +56,17 @@ class PhotonParserTest {
     fun `leere Antwort ergibt keine Treffer`() {
         assertTrue(PhotonParser.parse("""{"type":"FeatureCollection","features":[]}""").isEmpty())
     }
+
+    @Test
+    fun `doppelte und kaputte Treffer werden aussortiert`() {
+        val hotel = """{"type":"Feature","geometry":{"type":"Point","coordinates":[9.7418,47.5031]},
+            "properties":{"osm_type":"W","osm_id":77,"osm_key":"tourism","osm_value":"hotel","type":"house",
+            "name":"Hotel Ma Ma","street":"Am Steinenbach","housenumber":"8","postcode":"6900","city":"Bregenz",
+            "state":"Vorarlberg","country":"Österreich","countrycode":"AT"}}"""
+        val broken = """{"type":"Feature","geometry":{"type":"Point","coordinates":[]},
+            "properties":{"osm_type":"N","osm_id":1,"name":"Kaputt","countrycode":"AT"}}"""
+        val results = PhotonParser.parse("""{"type":"FeatureCollection","features":[$hotel,$hotel,$broken]}""")
+        assertEquals(1, results.size)
+        assertEquals("Am Steinenbach 8, 6900 Bregenz", results.single().address)
+    }
 }
