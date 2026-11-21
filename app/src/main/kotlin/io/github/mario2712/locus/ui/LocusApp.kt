@@ -64,7 +64,7 @@ fun LocusApp() {
             modifier = Modifier.padding(innerPadding),
         ) {
             composable<TodayRoute> {
-                TodayScreen(onOpenDay = openDay, onOpenCalendar = { navController.navigateTopLevel(CalendarRoute) })
+                TodayScreen(onOpenCalendar = { navController.navigateTopLevel(CalendarRoute) })
             }
             composable<CalendarRoute> { CalendarScreen(onOpenDay = openDay) }
             composable<MapRoute> { MapScreen() }

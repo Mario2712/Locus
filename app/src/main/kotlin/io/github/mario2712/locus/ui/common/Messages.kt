@@ -8,4 +8,5 @@ fun UiMessage.text(context: Context): String = when (this) {
     is UiMessage.Filled -> context.resources.getQuantityString(R.plurals.msg_filled, count, count)
     UiMessage.Saved -> context.getString(R.string.msg_saved)
     UiMessage.Deleted -> context.getString(R.string.msg_deleted)
+    UiMessage.DayNotEmpty -> context.getString(R.string.msg_day_not_empty)
 }

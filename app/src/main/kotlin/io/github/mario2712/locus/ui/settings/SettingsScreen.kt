@@ -9,13 +9,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -24,7 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -32,12 +29,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.mario2712.locus.R
+import io.github.mario2712.locus.domain.model.DayTemplate
 import io.github.mario2712.locus.ui.common.Format
 import io.github.mario2712.locus.ui.common.SectionCard
-import io.github.mario2712.locus.ui.common.TypeDot
-import io.github.mario2712.locus.ui.editor.PlaceField
+import io.github.mario2712.locus.ui.editor.ParticipantChips
+import io.github.mario2712.locus.ui.editor.PlacePickerDialog
+import io.github.mario2712.locus.ui.editor.SwitchRow
 import io.github.mario2712.locus.ui.editor.TimePickerDialog
-import io.github.mario2712.locus.ui.editor.TypeChips
 import io.github.mario2712.locus.ui.editor.ValueButtonRow
 import java.time.DayOfWeek
 import java.time.format.TextStyle
@@ -47,7 +45,11 @@ import java.util.Locale
 @Composable
 fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val editor = state.editor
     var editDay by remember { mutableStateOf<DayOfWeek?>(null) }
+    var editTemplate by remember { mutableStateOf<DayTemplate?>(null) }
+    var newTemplate by remember { mutableStateOf(false) }
+    var pickHomebase by remember { mutableStateOf(false) }
     var pickTime by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -66,6 +68,37 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            SectionCard(stringResource(R.string.settings_homebase)) {
+                Text(
+                    stringResource(R.string.settings_homebase_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                ValueButtonRow(
+                    stringResource(R.string.settings_homebase),
+                    editor.homebase?.displayName ?: stringResource(R.string.editor_choose_place),
+                ) { pickHomebase = true }
+            }
+
+            SectionCard(stringResource(R.string.settings_templates)) {
+                Text(
+                    stringResource(R.string.settings_templates_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                editor.templates.forEach { template ->
+                    Column(Modifier.fillMaxWidth().clickable { editTemplate = template }.padding(vertical = 6.dp)) {
+                        Text(template.name, style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            editor.stepsLabel(template.steps),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                TextButton(onClick = { newTemplate = true }) { Text(stringResource(R.string.settings_template_new)) }
+            }
+
             SectionCard(stringResource(R.string.settings_patterns)) {
                 Text(
                     stringResource(R.string.settings_patterns_hint),
@@ -74,34 +107,36 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                 )
                 DayOfWeek.entries.forEach { day ->
                     val rule = state.rules[day]
-                    Row(
-                        Modifier.fillMaxWidth().clickable { editDay = day }.padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        Text(day.getDisplayName(TextStyle.FULL, Locale.GERMAN), Modifier.weight(0.4f))
-                        if (rule != null) {
-                            TypeDot(state.editor.typeColor(rule.stayTypeId))
-                            Text(
-                                "${state.editor.typeName(rule.stayTypeId)} · ${state.editor.placeName(rule.placeId)}",
-                                Modifier.weight(0.6f),
-                            )
-                        } else {
-                            Text(
-                                stringResource(R.string.settings_no_rule),
-                                Modifier.weight(0.6f),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                    Row(Modifier.fillMaxWidth().clickable { editDay = day }.padding(vertical = 8.dp)) {
+                        Text(day.getDisplayName(TextStyle.FULL, Locale.GERMAN), Modifier.weight(0.35f))
+                        Text(
+                            rule?.let { r ->
+                                r.templateId?.let { editor.templatesById[it]?.name } ?: editor.stepsLabel(r.steps(editor.templatesById))
+                            } ?: stringResource(R.string.settings_no_rule),
+                            Modifier.weight(0.65f),
+                            color = if (rule == null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                        )
                     }
                 }
             }
 
-            SectionCard(stringResource(R.string.settings_reminder)) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(stringResource(R.string.settings_reminder_enabled), Modifier.weight(1f))
-                    Switch(checked = state.reminder.enabled, onCheckedChange = viewModel::setReminderEnabled)
+            SectionCard(stringResource(R.string.settings_defaults)) {
+                val defaults = editor.defaults
+                SwitchRow(stringResource(R.string.settings_prefill_transport), defaults.prefillTransport) {
+                    viewModel.setEntryDefaults(defaults.copy(prefillTransport = it))
                 }
+                Text(stringResource(R.string.settings_daily_participants), style = MaterialTheme.typography.labelLarge)
+                ParticipantChips(editor.persons, defaults.dailyParticipants) {
+                    if (it.isNotEmpty()) viewModel.setEntryDefaults(defaults.copy(dailyParticipants = it))
+                }
+                Text(stringResource(R.string.settings_trip_participants), style = MaterialTheme.typography.labelLarge)
+                ParticipantChips(editor.persons, defaults.tripParticipants) {
+                    if (it.isNotEmpty()) viewModel.setEntryDefaults(defaults.copy(tripParticipants = it))
+                }
+            }
+
+            SectionCard(stringResource(R.string.settings_reminder)) {
+                SwitchRow(stringResource(R.string.settings_reminder_enabled), state.reminder.enabled, viewModel::setReminderEnabled)
                 ValueButtonRow(stringResource(R.string.settings_reminder_time), Format.time(state.reminder.time)) {
                     pickTime = true
                 }
@@ -114,13 +149,34 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
         }
     }
 
+    if (pickHomebase) {
+        PlacePickerDialog(
+            places = editor.sortedPlaces,
+            onDismiss = { pickHomebase = false },
+            onSelect = { viewModel.setHomebase(it); pickHomebase = false },
+            onCreatePlace = viewModel::createPlace,
+        )
+    }
     editDay?.let { day ->
         RuleDialog(
             day = day,
             state = state,
             onDismiss = { editDay = null },
-            onSave = { typeId, placeId -> viewModel.setRule(day, typeId, placeId); editDay = null },
+            onTemplate = { viewModel.setRuleTemplate(day, it); editDay = null },
+            onSingle = { typeId, placeId -> viewModel.setRuleSingle(day, typeId, placeId); editDay = null },
             onClear = { viewModel.clearRule(day); editDay = null },
+            onCreatePlace = viewModel::createPlace,
+        )
+    }
+    val templateToEdit = editTemplate
+    if (templateToEdit != null || newTemplate) {
+        TemplateDialog(
+            initial = templateToEdit,
+            editor = editor,
+            newId = viewModel::newTemplateId,
+            onDismiss = { editTemplate = null; newTemplate = false },
+            onSave = { viewModel.saveTemplate(it); editTemplate = null; newTemplate = false },
+            onDelete = templateToEdit?.let { t -> { viewModel.deleteTemplate(t.id); editTemplate = null } },
             onCreatePlace = viewModel::createPlace,
         )
     }
@@ -131,43 +187,4 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
             onConfirm = { viewModel.setReminderTime(it); pickTime = false },
         )
     }
-}
-
-@Composable
-private fun RuleDialog(
-    day: DayOfWeek,
-    state: SettingsUiState,
-    onDismiss: () -> Unit,
-    onSave: (String, String) -> Unit,
-    onClear: () -> Unit,
-    onCreatePlace: suspend (io.github.mario2712.locus.ui.common.PlaceDraft) -> io.github.mario2712.locus.domain.model.Place,
-) {
-    val existing = state.rules[day]
-    var typeId by remember { mutableStateOf(existing?.stayTypeId) }
-    var placeId by remember { mutableStateOf(existing?.placeId) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(day.getDisplayName(TextStyle.FULL, Locale.GERMAN)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(stringResource(R.string.editor_type), style = MaterialTheme.typography.labelLarge)
-                TypeChips(state.editor.activeStayTypes, typeId) { typeId = it }
-                Text(stringResource(R.string.editor_place), style = MaterialTheme.typography.labelLarge)
-                PlaceField(state.editor.sortedPlaces, placeId, { placeId = it }, onCreatePlace)
-                if (existing != null) {
-                    TextButton(onClick = onClear) {
-                        Text(stringResource(R.string.settings_remove_rule), color = MaterialTheme.colorScheme.error)
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            val t = typeId
-            val p = placeId
-            TextButton(enabled = t != null && p != null, onClick = { if (t != null && p != null) onSave(t, p) }) {
-                Text(stringResource(R.string.action_save))
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
-    )
 }

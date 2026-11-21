@@ -7,20 +7,19 @@ import io.github.mario2712.locus.domain.model.Place
 import io.github.mario2712.locus.domain.reference.Defaults
 import io.github.mario2712.locus.domain.repository.StayRepository
 import io.github.mario2712.locus.domain.usecase.AustrianHolidays
+import io.github.mario2712.locus.domain.timeline.Timeline
 import io.github.mario2712.locus.domain.usecase.DayInsights
 import io.github.mario2712.locus.ui.common.EditorCatalog
 import io.github.mario2712.locus.ui.common.EditorData
 import io.github.mario2712.locus.ui.common.PlaceDraft
-import io.github.mario2712.locus.ui.common.StayEditing
+import io.github.mario2712.locus.ui.common.StationActions
 import io.github.mario2712.locus.ui.common.UiMessage
 import io.github.mario2712.locus.ui.editor.FillDraft
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -51,13 +50,12 @@ data class CalendarUiState(
     val editor: EditorData = EditorData(),
 )
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
     clock: Clock,
     private val stays: StayRepository,
     private val editorCatalog: EditorCatalog,
-    private val editing: StayEditing,
+    private val editing: StationActions,
 ) : ViewModel() {
 
     private val today = LocalDate.now(clock)
@@ -68,12 +66,12 @@ class CalendarViewModel @Inject constructor(
     private val messageChannel = Channel<UiMessage>(Channel.BUFFERED)
     val messages = messageChannel.receiveAsFlow()
 
-    private val monthStays = month.flatMapLatest { m -> stays.observeBetween(m.atDay(1), m.atEndOfMonth()) }
-
     val state: StateFlow<CalendarUiState> = combine(
-        month, monthStays, stays.observeAll(), editorCatalog.data, selection,
-    ) { m, inMonth, all, editor, sel ->
-        val summaries = DayInsights.summaries(m.atDay(1), m.atEndOfMonth(), me, inMonth)
+        month, stays.observeAll(), editorCatalog.data, selection,
+    ) { m, all, editor, sel ->
+        // Laufende Reisen (Basis ohne Ende) werden bis zur nächsten Basis bzw. bis heute aufgelöst.
+        val resolved = Timeline.resolve(all, editor.homebase?.id, today)
+        val summaries = DayInsights.summaries(m.atDay(1), m.atEndOfMonth(), me, resolved, editor.rank)
         val earliest = DayInsights.staysOf(me, all).minOfOrNull { it.startDate }
         val days = (1..m.lengthOfMonth()).map { dayOfMonth ->
             val date = m.atDay(dayOfMonth)

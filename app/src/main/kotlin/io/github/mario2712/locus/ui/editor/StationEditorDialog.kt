@@ -10,6 +10,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -26,14 +27,26 @@ import io.github.mario2712.locus.domain.model.Place
 import io.github.mario2712.locus.ui.common.EditorData
 import io.github.mario2712.locus.ui.common.Format
 import io.github.mario2712.locus.ui.common.PlaceDraft
+import io.github.mario2712.locus.ui.common.TransportChips
 import java.time.LocalDate
-import java.time.LocalTime
 
 private enum class PickerTarget { START_DATE, END_DATE, START_TIME, END_TIME }
 
-/** Anlegen/Bearbeiten eines Aufenthalts. */
+/** Schalter-Zeile mit Beschriftung. */
 @Composable
-fun StayEditorDialog(
+fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, Modifier.weight(1f))
+        Switch(checked = checked, onCheckedChange = onChange)
+    }
+}
+
+/**
+ * Station anlegen/bearbeiten. Wichtig sind Art, Ort und Verkehrsmittel; Datum, Uhrzeiten und
+ * Notiz stecken unter „Details“ und sind optional.
+ */
+@Composable
+fun StationEditorDialog(
     initial: StayDraft,
     editor: EditorData,
     onDismiss: () -> Unit,
@@ -42,6 +55,7 @@ fun StayEditorDialog(
     onCreatePlace: suspend (PlaceDraft) -> Place,
 ) {
     var draft by remember { mutableStateOf(initial) }
+    var showDetails by remember { mutableStateOf(initial.startTime != null || initial.endTime != null || initial.note.isNotEmpty()) }
     var picker by remember { mutableStateOf<PickerTarget?>(null) }
     val noTime = stringResource(R.string.editor_no_time)
 
@@ -51,34 +65,46 @@ fun StayEditorDialog(
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(stringResource(R.string.editor_type), style = MaterialTheme.typography.labelLarge)
-                TypeChips(editor.activeStayTypes, draft.typeId) { draft = draft.copy(typeId = it) }
-
+                TypeChips(editor.activeStayTypes, draft.typeId) { typeId ->
+                    draft = draft.copy(
+                        typeId = typeId,
+                        overnight = if (draft.isNew) editor.defaultOvernight(typeId) else draft.overnight,
+                    )
+                }
                 Text(stringResource(R.string.editor_place), style = MaterialTheme.typography.labelLarge)
                 PlaceField(editor.sortedPlaces, draft.placeId, { draft = draft.copy(placeId = it) }, onCreatePlace)
-
-                ValueButtonRow(stringResource(R.string.editor_from_date), Format.mediumDate(draft.startDate)) {
-                    picker = PickerTarget.START_DATE
-                }
-                ValueButtonRow(stringResource(R.string.editor_to_date), Format.mediumDate(draft.endDate)) {
-                    picker = PickerTarget.END_DATE
-                }
-                ValueButtonRow(stringResource(R.string.editor_start_time), formatOptionalTime(draft.startTime, noTime)) {
-                    picker = PickerTarget.START_TIME
-                }
-                ValueButtonRow(stringResource(R.string.editor_end_time), formatOptionalTime(draft.endTime, noTime)) {
-                    picker = PickerTarget.END_TIME
-                }
-                if (!draft.timesValid) {
-                    Text(stringResource(R.string.editor_invalid_times), color = MaterialTheme.colorScheme.error)
-                }
+                Text(stringResource(R.string.editor_transport), style = MaterialTheme.typography.labelLarge)
+                TransportChips(draft.transport) { draft = draft.copy(transport = it) }
+                SwitchRow(stringResource(R.string.editor_overnight), draft.overnight) { draft = draft.copy(overnight = it) }
 
                 Text(stringResource(R.string.editor_participants), style = MaterialTheme.typography.labelLarge)
                 ParticipantChips(editor.persons, draft.participants) { draft = draft.copy(participants = it) }
 
-                OutlinedTextField(
-                    value = draft.note, onValueChange = { draft = draft.copy(note = it) },
-                    label = { Text(stringResource(R.string.editor_note)) }, modifier = Modifier.fillMaxWidth(),
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = showDetails, onCheckedChange = { showDetails = it })
+                    Text(stringResource(R.string.editor_details))
+                }
+                if (showDetails) {
+                    ValueButtonRow(stringResource(R.string.editor_from_date), Format.mediumDate(draft.startDate)) {
+                        picker = PickerTarget.START_DATE
+                    }
+                    ValueButtonRow(stringResource(R.string.editor_to_date), Format.mediumDate(draft.endDate)) {
+                        picker = PickerTarget.END_DATE
+                    }
+                    ValueButtonRow(stringResource(R.string.editor_start_time), formatOptionalTime(draft.startTime, noTime)) {
+                        picker = PickerTarget.START_TIME
+                    }
+                    ValueButtonRow(stringResource(R.string.editor_end_time), formatOptionalTime(draft.endTime, noTime)) {
+                        picker = PickerTarget.END_TIME
+                    }
+                    if (!draft.timesValid) {
+                        Text(stringResource(R.string.editor_invalid_times), color = MaterialTheme.colorScheme.error)
+                    }
+                    OutlinedTextField(
+                        value = draft.note, onValueChange = { draft = draft.copy(note = it) },
+                        label = { Text(stringResource(R.string.editor_note)) }, modifier = Modifier.fillMaxWidth(),
+                    )
+                }
                 if (onDelete != null) {
                     TextButton(onClick = onDelete) {
                         Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
@@ -110,62 +136,6 @@ fun StayEditorDialog(
             onClear = { draft = draft.copy(endTime = null); picker = null },
         )
         null -> Unit
-    }
-}
-
-/** Eingaben für „Wechsel ab …“. */
-data class SwitchDraft(
-    val time: LocalTime,
-    val typeId: String? = null,
-    val placeId: String? = null,
-    val endDate: LocalDate,
-)
-
-@Composable
-fun SwitchDialog(
-    date: LocalDate,
-    initialTime: LocalTime,
-    editor: EditorData,
-    onDismiss: () -> Unit,
-    onConfirm: (SwitchDraft) -> Unit,
-    onCreatePlace: suspend (PlaceDraft) -> Place,
-) {
-    var draft by remember { mutableStateOf(SwitchDraft(time = initialTime, endDate = date)) }
-    var pickTime by remember { mutableStateOf(false) }
-    var pickEnd by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.switch_title)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                ValueButtonRow(stringResource(R.string.switch_from), Format.time(draft.time)) { pickTime = true }
-                Text(stringResource(R.string.editor_type), style = MaterialTheme.typography.labelLarge)
-                TypeChips(editor.activeStayTypes, draft.typeId) { draft = draft.copy(typeId = it) }
-                Text(stringResource(R.string.editor_place), style = MaterialTheme.typography.labelLarge)
-                PlaceField(editor.sortedPlaces, draft.placeId, { draft = draft.copy(placeId = it) }, onCreatePlace)
-                ValueButtonRow(stringResource(R.string.switch_until), Format.mediumDate(draft.endDate)) { pickEnd = true }
-                Text(
-                    stringResource(R.string.switch_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(enabled = draft.typeId != null && draft.placeId != null, onClick = { onConfirm(draft) }) {
-                Text(stringResource(R.string.action_save))
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
-    )
-    if (pickTime) {
-        TimePickerDialog(draft.time, { pickTime = false }, onConfirm = { draft = draft.copy(time = it); pickTime = false })
-    }
-    if (pickEnd) {
-        DatePickerDialogFor(draft.endDate, { pickEnd = false }) {
-            draft = draft.copy(endDate = maxOf(it, date)); pickEnd = false
-        }
     }
 }
 

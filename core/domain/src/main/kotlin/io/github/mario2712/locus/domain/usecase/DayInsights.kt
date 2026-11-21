@@ -5,6 +5,7 @@ import io.github.mario2712.locus.domain.day.DaySummary
 import io.github.mario2712.locus.domain.model.DatePrecision
 import io.github.mario2712.locus.domain.model.PersonId
 import io.github.mario2712.locus.domain.model.Stay
+import io.github.mario2712.locus.domain.model.TransportMode
 import io.github.mario2712.locus.domain.model.Visit
 import java.time.LocalDate
 
@@ -34,6 +35,12 @@ object DayInsights {
             .distinct()
             .filter { excludePlaceId == null || it.placeId != excludePlaceId }
             .take(limit)
+
+    /** Verkehrsmittel der letzten Station an [placeId] (zum Vorbelegen), sonst leer. */
+    fun lastTransportTo(placeId: String, stays: List<Stay>): Set<TransportMode> =
+        stays.filter { it.placeId == placeId && it.transport.isNotEmpty() }
+            .maxWithOrNull(compareBy<Stay> { it.startDate }.thenBy { it.sortIndex })
+            ?.transport.orEmpty()
 
     /** Zuletzt besuchte, unterschiedliche Orte (für den Besuch-Schnellzugriff). */
     fun recentVisitPlaces(person: PersonId, visits: List<Visit>, limit: Int = 4): List<String> =

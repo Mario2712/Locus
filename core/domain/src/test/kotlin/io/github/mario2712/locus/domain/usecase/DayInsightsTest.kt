@@ -37,4 +37,14 @@ class DayInsightsTest {
         assertEquals(setOf(d("2026-11-19"), d("2026-11-20"), d("2026-11-21"), d("2026-11-22")), summaries.keys)
         assertEquals("office", summaries.getValue(d("2026-11-19")).mainTypeId)
     }
+
+    @Test
+    fun `letztes Verkehrsmittel zu einem Ort`() {
+        val withTrain = stays + Stay(
+            "6", "salzburg", "office", d("2026-11-24"), participants = setOf(ME),
+            transport = setOf(io.github.mario2712.locus.domain.model.TransportMode.TRAIN),
+        )
+        assertEquals(setOf(io.github.mario2712.locus.domain.model.TransportMode.TRAIN), DayInsights.lastTransportTo("salzburg", withTrain))
+        assertEquals(emptySet<Any>(), DayInsights.lastTransportTo("linz", withTrain))
+    }
 }

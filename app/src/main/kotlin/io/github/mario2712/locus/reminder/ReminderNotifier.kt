@@ -38,29 +38,39 @@ class ReminderNotifier @Inject constructor(
             Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+        val text = when (content) {
+            is ReminderContent.OnTrip -> context.getString(R.string.reminder_text_trip, content.baseName)
+            is ReminderContent.Empty -> content.label?.let { context.getString(R.string.reminder_text_suggestion, it) }
+                ?: context.getString(R.string.reminder_text)
+        }
+        val title = when (content) {
+            is ReminderContent.OnTrip -> context.getString(R.string.reminder_title_trip, content.baseName)
+            is ReminderContent.Empty -> context.getString(R.string.reminder_title)
+        }
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(context.getString(R.string.reminder_title))
-            .setContentText(
-                content.suggestionLabel?.let { context.getString(R.string.reminder_text_suggestion, it) }
-                    ?: context.getString(R.string.reminder_text),
-            )
+            .setContentTitle(title)
+            .setContentText(text)
             .setContentIntent(openApp)
             .setAutoCancel(true)
 
-        val suggestion = content.suggestion
-        if (suggestion != null) {
-            val confirm = PendingIntent.getBroadcast(
+        val actionIntent = when {
+            content is ReminderContent.Empty && content.suggestion != null ->
+                ReminderActionReceiver.ACTION_CONFIRM to R.string.reminder_action_confirm
+            content is ReminderContent.OnTrip && content.canReturnHome ->
+                ReminderActionReceiver.ACTION_RETURN_HOME to R.string.reminder_action_return_home
+            else -> null
+        }
+        if (actionIntent != null) {
+            val pendingAction = PendingIntent.getBroadcast(
                 context, 1,
                 Intent(context, ReminderActionReceiver::class.java).apply {
-                    action = ReminderActionReceiver.ACTION_CONFIRM
+                    action = actionIntent.first
                     putExtra(ReminderActionReceiver.EXTRA_DATE, content.date.toString())
-                    putExtra(ReminderActionReceiver.EXTRA_TYPE, suggestion.first.stayTypeId)
-                    putExtra(ReminderActionReceiver.EXTRA_PLACE, suggestion.first.placeId)
                 },
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
-            builder.addAction(0, context.getString(R.string.reminder_action_confirm), confirm)
+            builder.addAction(0, context.getString(actionIntent.second), pendingAction)
         }
         NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, builder.build())
     }
