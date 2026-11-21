@@ -66,13 +66,16 @@ object PhotonParser {
             val osmValue = props.optStringOrNull("osm_value")
             val type = props.optStringOrNull("type")
             val street = props.optStringOrNull("street")
-            val name = props.optStringOrNull("name")
+            val ownName = props.optStringOrNull("name")
+            val name = ownName
                 ?: street?.let { s -> listOfNotNull(s, props.optStringOrNull("housenumber")).joinToString(" ") }
                 ?: return@mapNotNull null
+            // Photon liefert POIs oft mit type "house" – als Adresse gilt nur, was keinen eigenen Namen hat
+            // oder eine Straße ist.
             val kind = when {
                 osmKey == "place" && osmValue in cityValues -> PlaceKind.CITY
                 osmKey == "boundary" && type == "city" -> PlaceKind.CITY
-                type == "house" || type == "street" -> PlaceKind.ADDRESS
+                osmKey == "highway" || type == "street" || ownName == null -> PlaceKind.ADDRESS
                 else -> PlaceKind.POI
             }
             PlaceCandidate(
