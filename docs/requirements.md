@@ -228,8 +228,16 @@ Länderpunkte, Übernachtungsort und Statistiken werden berechnet, nicht gespeic
 
 ## 8. Meilensteine
 
-| M | Inhalt |
-|---|---|
+| M | Inhalt | Stand |
+|---|---|---|
+| M0 | Projektgerüst, CI-Workflow, Debug-APK aus GitHub Actions | ✔ |
+| M1 | Datenmodell, Room, Stammdaten (Länder, Arten, Personen), Domain-Regeln mit Tests | ✔ |
+| M2 | Heute-Screen, Muster, Erinnerung, Kalender mit Nachtragen, Feiertage | ✔ |
+| M3 | Ortssuche, Favoriten, Besuche, Reisen, Timeline | offen |
+| M4 | Länderliste mit Flaggen, Weltkarte | offen |
+| M5 | Basis-Statistik, Export/Import, Backup → Release v1.0 | offen |
+
+---|---|
 | M0 | Projektgerüst, CI-Workflow, Debug-APK aus GitHub Actions |
 | M1 | Datenmodell, Room, Stammdaten (Länder, Arten, Personen), Domain-Regeln mit Tests |
 | M2 | Heute-Screen, Muster, Erinnerung, Kalender mit Nachtragen, Feiertage |

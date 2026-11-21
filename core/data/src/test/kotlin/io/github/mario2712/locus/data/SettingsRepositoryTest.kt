@@ -4,7 +4,6 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import io.github.mario2712.locus.data.settings.DataStoreSettingsRepository
 import io.github.mario2712.locus.domain.model.ReminderSettings
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -21,7 +20,7 @@ class SettingsRepositoryTest {
     @get:Rule val tmp = TemporaryFolder()
 
     @Test
-    fun `Standard ist 20 Uhr 30 aktiv, Aenderungen werden gespeichert`() = runTest(UnconfinedTestDispatcher()) {
+    fun `Standard ist 20 Uhr 30 aktiv, Aenderungen werden gespeichert`() = runTest {
         val store = PreferenceDataStoreFactory.create(scope = backgroundScope) {
             File(tmp.root, "settings.preferences_pb")
         }
