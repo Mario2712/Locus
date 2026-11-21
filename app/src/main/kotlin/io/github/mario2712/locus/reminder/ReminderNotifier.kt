@@ -39,7 +39,7 @@ class ReminderNotifier @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val text = when (content) {
-            is ReminderContent.OnTrip -> context.getString(R.string.reminder_text_trip, content.baseName)
+            is ReminderContent.OnTrip -> context.getString(R.string.reminder_text_trip)
             is ReminderContent.Empty -> content.label?.let { context.getString(R.string.reminder_text_suggestion, it) }
                 ?: context.getString(R.string.reminder_text)
         }
