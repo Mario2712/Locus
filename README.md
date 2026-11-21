@@ -22,13 +22,23 @@ genauso wie auf Reisen. Daraus entstehen Karte, Länderpunkte mit Flaggen und St
 
 Voraussetzungen: JDK 17+ und Android SDK (compileSdk 37).
 
-## APK herunterladen
+## Varianten und APKs
 
-- **Debug-APK**: Jeder Push baut über GitHub Actions eine Debug-APK. Sie hängt als Artefakt
-  `locus-debug-apk` am jeweiligen Workflow-Lauf (Tab *Actions*).
-- **Release-APK**: Ein Tag `vX.Y.Z` erzeugt eine signierte APK und ein GitHub-Release.
+| | Debug | Release |
+|---|---|---|
+| Wofür | Entwicklung, jeder Branch | reguläre App aus `main` bzw. Tags |
+| App-Name / Icon | „Locus Debug“, orange | „Locus“, grün |
+| Paket-ID | `io.github.mario2712.locus.debug` | `io.github.mario2712.locus` |
+| Signatur | Debug-Schlüssel `app/debug.keystore` (im Repo, kein Geheimnis) | Release-Schlüssel (nur in GitHub Secrets) |
+| Download | Artefakt `locus-debug-apk` an jedem Workflow-Lauf | Artefakt `locus-release-apk` (main), GitHub-Release (Tag `vX.Y.Z`) |
 
-Die Debug-Variante hat die Paket-ID `io.github.mario2712.locus.debug` und lässt sich parallel zur Release-Variante installieren.
+Weil sich Paket-ID und Signatur unterscheiden, sind beide Varianten für Android **zwei getrennte Apps**
+mit eigener Datenbank. Die Debug-APK lässt sich parallel installieren und kann die reguläre App
+weder überschreiben noch ihre Daten verändern. Debug-APKs aus verschiedenen CI-Läufen haben dieselbe
+Signatur und lassen sich daher direkt übereinander aktualisieren.
+
+Versionen: Basis in `gradle.properties` (`locus.version`). main-Builds heißen `<basis>-main.<run>`,
+Tags `vX.Y.Z` ergeben genau `X.Y.Z`. Der `versionCode` ist die fortlaufende Workflow-Run-Nummer.
 
 ## Release-Signatur einrichten (einmalig)
 
@@ -40,6 +50,6 @@ Die Debug-Variante hat die Paket-ID `io.github.mario2712.locus.debug` und lässt
    ```
 2. Im Repository unter *Settings → Secrets and variables → Actions* anlegen:
    `LOCUS_KEYSTORE_BASE64` (Inhalt der .b64-Datei), `LOCUS_KEYSTORE_PASSWORD`, `LOCUS_KEY_ALIAS`, `LOCUS_KEY_PASSWORD`.
-3. Release auslösen: `git tag v0.1.0 && git push origin v0.1.0`.
+3. Ab dann baut jeder Push auf `main` eine signierte Release-APK. Für ein GitHub-Release: `git tag v0.1.0 && git push origin v0.1.0`.
 
 Den Keystore gut sichern: Ohne ihn lassen sich spätere Updates nicht über eine bestehende Installation einspielen.

@@ -6,7 +6,8 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
-// Versionierung über CI: Tag "v1.2.3" → versionName, Run-Nummer → versionCode.
+// Versionierung über CI: Tag "v1.2.3" bzw. main-Build → versionName, Run-Nummer → versionCode.
+val baseVersion: String = providers.gradleProperty("locus.version").get()
 val ciVersionName: String? = System.getenv("LOCUS_VERSION_NAME")
 val ciVersionCode: Int? = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()
 
@@ -27,7 +28,7 @@ android {
         minSdk = 31
         targetSdk = 37
         versionCode = ciVersionCode ?: 1
-        versionName = ciVersionName ?: "0.1.0-dev"
+        versionName = ciVersionName ?: "$baseVersion-dev"
     }
 
     signingConfigs {

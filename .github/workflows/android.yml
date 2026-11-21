@@ -1,5 +1,10 @@
 name: Android CI
 
+# Varianten:
+# - Debug-APK (jeder Branch): Paket ...locus.debug, „Locus Debug“, Debug-Schlüssel aus dem Repo.
+#   Lässt sich parallel zur regulären App installieren, ohne sie zu berühren.
+# - Release-APK (main und Tags v*): Paket ...locus, „Locus“, Release-Schlüssel aus GitHub Secrets.
+
 on:
   push:
     branches: ["**"]
@@ -44,6 +49,9 @@ jobs:
       - name: Debug-APK bauen
         run: ./gradlew :app:assembleDebug
 
+      - name: Release-Build prüfen (unsigniert, inkl. R8)
+        run: ./gradlew :app:assembleRelease
+
       - name: Debug-APK hochladen
         uses: actions/upload-artifact@v4
         with:
@@ -63,13 +71,6 @@ jobs:
             echo "Room-Schema ist aktuell."
           fi
 
-      - name: Room-Schemas hochladen
-        uses: actions/upload-artifact@v4
-        with:
-          name: room-schemas
-          path: core/data/schemas/
-          if-no-files-found: ignore
-
       - name: Test- und Lint-Berichte hochladen
         if: always()
         uses: actions/upload-artifact@v4
@@ -83,7 +84,7 @@ jobs:
 
   release:
     name: Signierte Release-APK
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -110,18 +111,35 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/locus-release.jks"
           echo "LOCUS_KEYSTORE_PATH=$RUNNER_TEMP/locus-release.jks" >> "$GITHUB_ENV"
 
+      - name: Version bestimmen
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            BASE=$(grep '^locus.version=' gradle.properties | cut -d= -f2)
+            VERSION="${BASE}-main.${GITHUB_RUN_NUMBER}"
+          fi
+          echo "LOCUS_VERSION_NAME=$VERSION" >> "$GITHUB_ENV"
+          echo "Version: $VERSION"
+
       - name: Release-APK bauen
         env:
           LOCUS_KEYSTORE_PASSWORD: ${{ secrets.LOCUS_KEYSTORE_PASSWORD }}
           LOCUS_KEY_ALIAS: ${{ secrets.LOCUS_KEY_ALIAS }}
           LOCUS_KEY_PASSWORD: ${{ secrets.LOCUS_KEY_PASSWORD }}
-          LOCUS_VERSION_NAME: ${{ github.ref_name }}
         run: |
-          export LOCUS_VERSION_NAME="${LOCUS_VERSION_NAME#v}"
           ./gradlew :app:assembleRelease
           mv app/build/outputs/apk/release/app-release.apk "locus-${LOCUS_VERSION_NAME}.apk"
 
+      - name: Release-APK hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: locus-release-apk
+          path: locus-*.apk
+          if-no-files-found: error
+
       - name: GitHub-Release erstellen
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: locus-*.apk
