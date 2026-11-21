@@ -168,9 +168,7 @@ Unter „Mehr“: Timeline, Reisen, Statistik, Orte, Wunschliste, Einstellungen,
 
 ```
 person         id, name, color, isMe
-country        iso2 PK, iso3, nameDe, continent, flagEmoji            (statisch)
-region         code PK (ISO 3166-2), countryIso2, nameDe              (statisch/nachladbar)
-region_config  countryIso2 PK, collectRegions
+region_collection  countryIso2 PK, enabled
 place          id, kind[CITY|POI|ADDRESS], name, lat, lon, countryIso2,
                regionCode?, cityName?, parentPlaceId?, osmId?, poiCategory?,
                alias?, isFavorite, note?
@@ -187,6 +185,13 @@ trip_person    tripId, personId
 wish           id, placeId? | countryIso2?, note?, priority, createdAt, fulfilledAt?
 pattern_rule   id, weekday, stayTypeId, placeId, validFrom?, validTo?
 ```
+
+**Stammdaten im Code statt in der Datenbank** (Umsetzung M1): Länder (196, deutsche Namen,
+Kontinent, Flagge), Regionen (AT, DE) und die Zuordnung abhängiger Gebiete zum Mutterland
+(Grönland → Dänemark, Hongkong → China …) liegen in `:core:domain` (`ReferenceData`), erzeugt von
+`tools/generate_reference_data.py`. Sie ändern sich nur mit App-Updates und müssen nicht synchronisiert werden.
+Die Tabellen haben bewusst keine Foreign Keys, damit Soft-Deletes und ein späterer Import in
+beliebiger Reihenfolge nicht an Constraints scheitern.
 
 Alle veränderbaren Tabellen haben zusätzlich `uuid`, `createdAt`, `updatedAt`,
 `deleted` (Soft-Delete) und `originDevice`. Damit ist der spätere Sync vorbereitet.
