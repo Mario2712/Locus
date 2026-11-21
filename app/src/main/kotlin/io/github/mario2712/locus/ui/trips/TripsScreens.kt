@@ -52,8 +52,9 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
+/** Eigener Name der Reise oder automatischer Name aus den Städten. */
 fun tripTitle(trip: TripSummary, editor: EditorData): String =
-    trip.basePlaceIds.joinToString(" → ") { editor.placeName(it) }
+    editor.tripNames[trip.id] ?: io.github.mario2712.locus.domain.trips.Trips.defaultTitle(trip, editor.placesById)
 
 fun tripDates(trip: TripSummary): String = when (trip.precision) {
     DatePrecision.YEAR -> trip.start.year.toString()
@@ -119,7 +120,14 @@ fun TripDetailScreen(tripId: String, onBack: () -> Unit, onOpenDay: (LocalDate) 
             modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            var rename by remember { mutableStateOf(false) }
             SectionCard(tripDates(trip)) {
+                TextButton(onClick = { rename = true }) { Text(stringResource(R.string.trips_rename)) }
+                if (rename) {
+                    TripRenameDialog(tripTitle(trip, state.editor), onDismiss = { rename = false }) { title ->
+                        viewModel.rename(trip, title); rename = false
+                    }
+                }
                 if (trip.precision == DatePrecision.DAY) Text(stringResource(R.string.trips_days, trip.days))
                 Text(state.editor.participantsLabel(trip.participants))
                 Text(
@@ -142,6 +150,24 @@ fun TripDetailScreen(tripId: String, onBack: () -> Unit, onOpenDay: (LocalDate) 
             }
         }
     }
+}
+
+/** Reise benennen (leer = automatischer Name). */
+@Composable
+fun TripRenameDialog(current: String, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+    var title by remember { mutableStateOf(current) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.trips_rename)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(title, { title = it }, singleLine = true, label = { Text(stringResource(R.string.trips_name)) }, modifier = Modifier.fillMaxWidth())
+                Text(stringResource(R.string.trips_rename_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+        confirmButton = { TextButton(onClick = { onSave(title) }) { Text(stringResource(R.string.action_save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+    )
 }
 
 /** Vergangene Reise nachtragen – mit genauen Daten oder nur Monat/Jahr. */

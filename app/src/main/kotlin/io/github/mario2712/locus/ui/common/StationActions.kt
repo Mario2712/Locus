@@ -34,6 +34,7 @@ class StationActions @Inject constructor(
     private val commands: StayCommands,
     private val visitCommands: VisitCommands,
     private val overlap: StayOverlapChecker,
+    private val trips: io.github.mario2712.locus.domain.repository.TripRepository,
 ) {
     suspend fun saveStation(draft: StayDraft): UiMessage {
         val prepared = if (draft.isNew) {
@@ -112,6 +113,21 @@ class StationActions @Inject constructor(
             draft.skipWeekendsAndHolidays,
         )
         return UiMessage.Filled(count)
+    }
+
+    /** Reise benennen; leerer Name setzt den automatischen Namen zurück. */
+    suspend fun renameTrip(trip: io.github.mario2712.locus.domain.trips.TripSummary, title: String): UiMessage {
+        if (title.isBlank()) {
+            trips.delete(trip.id)
+        } else {
+            trips.upsert(
+                io.github.mario2712.locus.domain.model.Trip(
+                    id = trip.id, title = title.trim(), startDate = trip.start, endDate = trip.end,
+                    participants = trip.participants.ifEmpty { setOf(io.github.mario2712.locus.domain.reference.Defaults.ME) },
+                ),
+            )
+        }
+        return UiMessage.Saved
     }
 
     private suspend fun conflictOrSaved(stay: Stay): UiMessage {

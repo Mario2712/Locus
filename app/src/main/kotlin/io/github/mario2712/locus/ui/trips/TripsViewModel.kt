@@ -52,6 +52,7 @@ class TripsViewModel @Inject constructor(
     visits: VisitRepository,
     private val editorCatalog: EditorCatalog,
     private val commands: StayCommands,
+    private val actions: io.github.mario2712.locus.ui.common.StationActions,
 ) : ViewModel() {
     val today: LocalDate = LocalDate.now(clock)
 
@@ -70,6 +71,8 @@ class TripsViewModel @Inject constructor(
     fun addPastTrip(draft: PastTripDraft) = viewModelScope.launch {
         commands.addPastTrip(draft.placeIds, draft.start, draft.end, draft.precision, draft.participants, draft.typeId)
     }
+
+    fun rename(trip: TripSummary, title: String) = viewModelScope.launch { actions.renameTrip(trip, title) }
 
     suspend fun createPlace(draft: PlaceDraft): Place = editorCatalog.createPlace(draft)
 }

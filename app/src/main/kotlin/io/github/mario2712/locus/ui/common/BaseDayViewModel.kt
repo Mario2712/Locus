@@ -40,6 +40,8 @@ data class DayState(
     val baseAtEnd: Stay? = null,
     /** Tag der laufenden Reise (1 = erster Tag), sonst `null`. */
     val tripDay: Int? = null,
+    /** Reise, zu der der Tag gehört (für Name und Umbenennen). */
+    val trip: io.github.mario2712.locus.domain.trips.TripSummary? = null,
     val stations: List<StayItem> = emptyList(),
     /** Einträge, an denen „Ich“ nicht beteiligt ist (z. B. nur Johanna). */
     val otherStations: List<StayItem> = emptyList(),
@@ -107,6 +109,10 @@ abstract class BaseDayViewModel(
             baseAtStart = baseAtStart,
             baseAtEnd = baseAtEnd,
             tripDay = tripBase?.let { ChronoUnit.DAYS.between(Timeline.tripStart(it, me, resolved), date).toInt() + 1 },
+            trip = tripBase?.let {
+                io.github.mario2712.locus.domain.trips.Trips.derive(input.stays, input.visits, editor.placesById, me, homeId, today)
+                    .firstOrNull { t -> t.precision == io.github.mario2712.locus.domain.model.DatePrecision.DAY && date in t.start..t.end }
+            },
             stations = own.map(editor::stayItem),
             otherStations = raw.filterNot { me in it.participants }.map(editor::stayItem),
             visits = dayVisits.map(editor::visitItem),
@@ -179,6 +185,9 @@ abstract class BaseDayViewModel(
 
     fun newVisitDraft(state: DayState, placeId: String? = null) =
         VisitDraft(date = date, placeId = placeId, participants = defaultParticipants(state))
+
+    fun renameTrip(trip: io.github.mario2712.locus.domain.trips.TripSummary, title: String) =
+        viewModelScope.launch { send(actions.renameTrip(trip, title)) }
 
     fun saveVisit(draft: VisitDraft) = viewModelScope.launch { send(actions.saveVisit(draft, live())) }
     fun deleteVisit(id: String) = viewModelScope.launch { send(actions.deleteVisit(id)) }

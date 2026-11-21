@@ -44,14 +44,16 @@ fun DayPanel(state: DayState, viewModel: BaseDayViewModel) {
 
     // Reise-Kopf
     val tripBase = state.baseAtEnd ?: state.baseAtStart
+    var renameTrip by remember { mutableStateOf(false) }
     if (tripBase != null) {
-        SectionCard(
-            stringResource(
-                R.string.trip_header,
-                editor.placeName(tripBase.placeId),
-                state.tripDay ?: 1,
-            ),
-        ) {
+        val tripName = state.trip?.let { io.github.mario2712.locus.ui.trips.tripTitle(it, editor) } ?: editor.placeName(tripBase.placeId)
+        SectionCard(stringResource(R.string.trip_header, tripName, state.tripDay ?: 1)) {
+            if (state.trip != null) {
+                Text(
+                    stringResource(R.string.trip_base_now, editor.placeName((state.baseAtEnd ?: tripBase).placeId)),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = {
                     stationDraft = viewModel.newStationDraft(state, Defaults.StayTypeIds.EXCURSION)
@@ -60,8 +62,18 @@ fun DayPanel(state: DayState, viewModel: BaseDayViewModel) {
                 if (editor.homebase != null) {
                     Button(onClick = { showReturnHome = true }) { Text(stringResource(R.string.trip_return_home)) }
                 }
+                if (state.trip != null) {
+                    androidx.compose.material3.TextButton(onClick = { renameTrip = true }) { Text(stringResource(R.string.trips_rename)) }
+                }
             }
         }
+    }
+    val trip = state.trip
+    if (renameTrip && trip != null) {
+        io.github.mario2712.locus.ui.trips.TripRenameDialog(
+            io.github.mario2712.locus.ui.trips.tripTitle(trip, editor),
+            onDismiss = { renameTrip = false },
+        ) { viewModel.renameTrip(trip, it); renameTrip = false }
     }
 
     SectionCard(stringResource(R.string.day_chain_title)) {

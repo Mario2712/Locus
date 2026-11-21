@@ -38,6 +38,19 @@ data class TripSummary(
  */
 object Trips {
 
+    /**
+     * Automatischer Name: die Städte der Basen (bei Örtlichkeiten wie Hotels deren Stadt), z. B.
+     * „Linz“ oder „Taschkent → Samarkand“.
+     */
+    fun defaultTitle(trip: TripSummary, places: Map<String, Place>): String =
+        trip.basePlaceIds.map { id ->
+            val place = places[id]
+            val city = place?.parentPlaceId?.let { places[it] }
+            city?.displayName ?: place?.cityName?.takeIf { place.kind != io.github.mario2712.locus.domain.model.PlaceKind.CITY }
+                ?: place?.displayName ?: "?"
+        }.fold(mutableListOf<String>()) { acc, name -> if (acc.lastOrNull() != name) acc += name; acc }
+            .joinToString(" → ")
+
     fun derive(
         stays: List<Stay>,
         visits: List<Visit>,

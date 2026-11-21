@@ -127,4 +127,22 @@ class TripsTest {
         assertEquals(mapOf("museum" to 2), city.childVisits)
         assertEquals(1, PlaceStats.record("salzburg", ME, resolved, visits).totalDays)
     }
+
+    @Test
+    fun `automatischer Reisename nimmt die Stadt statt des Hotels`() = runTest {
+        val withHotel = places + mapOf(
+            "linz" to Place("linz", "Linz", PlaceKind.CITY, "AT"),
+            "hotel" to Place("hotel", "Hotel X", PlaceKind.POI, "AT", parentPlaceId = "linz"),
+        )
+        commands.addStation(d("2026-11-11"), setOf(ME), StayTypeIds.BUSINESS_TRIP, "hotel", overnight = true)
+        commands.returnHome(d("2026-11-12"), setOf(ME), home)
+        val trip = Trips.derive(repo.all, emptyList(), withHotel, ME, home, d("2026-11-21")).single()
+        assertEquals("Linz", Trips.defaultTitle(trip, withHotel))
+
+        commands.journey(d("2026-05-01"), setOf(ME), listOf(JourneyLeg("taschkent")), StayTypeIds.VACATION)
+        commands.journey(d("2026-05-03"), setOf(ME), listOf(JourneyLeg("samarkand")), StayTypeIds.VACATION)
+        commands.returnHome(d("2026-05-08"), setOf(ME), home)
+        val uz = Trips.derive(repo.all, emptyList(), withHotel, ME, home, d("2026-11-21")).first { it.start == d("2026-05-01") }
+        assertEquals("Taschkent → Samarkand", Trips.defaultTitle(uz, withHotel))
+    }
 }

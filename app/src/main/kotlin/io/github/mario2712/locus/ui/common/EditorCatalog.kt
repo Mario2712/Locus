@@ -31,6 +31,8 @@ data class EditorData(
     val visitCategories: List<VisitCategory> = emptyList(),
     val templates: List<DayTemplate> = emptyList(),
     val defaults: EntryDefaults = EntryDefaults(),
+    /** Eigene Reisenamen je Reise-ID (ID der ersten Basis-Station). */
+    val tripNames: Map<String, String> = emptyMap(),
 ) {
     val placesById: Map<String, Place> by lazy { places.associateBy { it.id } }
     val typesById: Map<String, StayType> by lazy { stayTypes.associateBy { it.id } }
@@ -124,6 +126,7 @@ class EditorCatalog @Inject constructor(
     personRepository: PersonRepository,
     templateRepository: DayTemplateRepository,
     settingsRepository: SettingsRepository,
+    tripRepository: io.github.mario2712.locus.domain.repository.TripRepository,
 ) {
     private val base = combine(
         placeRepository.observeAll(),
@@ -136,7 +139,10 @@ class EditorCatalog @Inject constructor(
         base,
         templateRepository.observeAll(),
         settingsRepository.observeEntryDefaults(),
-    ) { data, templates, defaults -> data.copy(templates = templates, defaults = defaults) }
+        tripRepository.observeAll(),
+    ) { data, templates, defaults, trips ->
+        data.copy(templates = templates, defaults = defaults, tripNames = trips.associate { it.id to it.title })
+    }
 
     suspend fun createPlace(draft: PlaceDraft): Place {
         val place = Place(

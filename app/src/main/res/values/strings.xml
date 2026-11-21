@@ -134,8 +134,9 @@
     <string name="msg_day_not_empty">Der Tag hat schon Einträge – Vorschlag nicht übernommen.</string>
 
     <!-- Reisen -->
-    <string name="trip_header">🧳 %1$s – Tag %2$d der Reise</string>
+    <string name="trip_header">🧳 %1$s – Tag %2$d</string>
     <string name="trip_start">Reise starten …</string>
+    <string name="trip_base_now">Übernachtung: %1$s</string>
     <string name="trip_continue">Weiterreise …</string>
     <string name="trip_excursion">Ausflug …</string>
     <string name="trip_return_home">Heimreise</string>
@@ -253,6 +254,9 @@
 
     <!-- Reisen -->
     <string name="trips_title">Reisen</string>
+    <string name="trips_rename">✎ Reise benennen</string>
+    <string name="trips_name">Name der Reise (z. B. Linz-Workshop)</string>
+    <string name="trips_rename_hint">Leer lassen für den automatischen Namen aus den Städten.</string>
     <string name="trips_add_past">+ Alte Reise nachtragen</string>
     <string name="trips_empty">Noch keine Reisen. Starte eine über „Reise starten …“ am Heute-Screen oder trage alte Reisen nach.</string>
     <string name="trips_year">%1$d · %2$d Reisen</string>
