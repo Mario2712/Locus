@@ -42,14 +42,73 @@ Tags `vX.Y.Z` ergeben genau `X.Y.Z`. Der `versionCode` ist die fortlaufende Work
 
 ## Release-Signatur einrichten (einmalig)
 
-1. Keystore lokal erzeugen (nie committen):
-   ```bash
-   keytool -genkeypair -v -keystore locus-release.jks -alias locus \
-     -keyalg RSA -keysize 4096 -validity 10000
-   base64 -w0 locus-release.jks > locus-release.jks.b64
-   ```
-2. Im Repository unter *Settings → Secrets and variables → Actions* anlegen:
-   `LOCUS_KEYSTORE_BASE64` (Inhalt der .b64-Datei), `LOCUS_KEYSTORE_PASSWORD`, `LOCUS_KEY_ALIAS`, `LOCUS_KEY_PASSWORD`.
-3. Ab dann baut jeder Push auf `main` eine signierte Release-APK. Für ein GitHub-Release: `git tag v0.1.0 && git push origin v0.1.0`.
+Die Release-APK (aus `main` bzw. Tags `vX.Y.Z`) wird mit einem eigenen Schlüssel signiert, der nur
+in den GitHub-Secrets liegt – nie im Repo. **Keystore und Passwort gut sichern:** Ohne sie lässt
+sich die installierte App nie mehr aktualisieren.
 
-Den Keystore gut sichern: Ohne ihn lassen sich spätere Updates nicht über eine bestehende Installation einspielen.
+Benötigte Secrets (Repository → *Settings → Secrets and variables → Actions*):
+
+| Secret | Inhalt |
+|---|---|
+| `LOCUS_KEYSTORE_BASE64` | Keystore-Datei als Base64-Text |
+| `LOCUS_KEYSTORE_PASSWORD` | Passwort des Keystores |
+| `LOCUS_KEY_ALIAS` | Alias des Schlüssels, hier `locus` |
+| `LOCUS_KEY_PASSWORD` | Passwort des Schlüssels – bei PKCS12 **dasselbe** wie das Keystore-Passwort |
+
+### Windows (PowerShell)
+
+1. **keytool finden** (kommt mit jedem JDK). Mit Android Studio ist es schon da:
+   ```powershell
+   $keytool = "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe"
+   & $keytool -help | Select-Object -First 1
+   ```
+   Ohne Android Studio: `winget install EclipseAdoptium.Temurin.21.JDK`, neues Terminal öffnen, dann `$keytool = "keytool"`.
+
+2. **Keystore erzeugen** – in einem Ordner **außerhalb** des Repos; fragt zweimal nach dem Passwort:
+   ```powershell
+   $dir = "$HOME\locus-signing"
+   New-Item -ItemType Directory -Force $dir | Out-Null
+   Set-Location $dir
+   & $keytool -genkeypair -v -keystore locus-release.jks -storetype PKCS12 -alias locus `
+       -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=Locus, O=Privat, C=AT"
+   ```
+
+3. **Fingerabdruck notieren** (zum späteren Prüfen der APK):
+   ```powershell
+   & $keytool -list -v -keystore locus-release.jks -alias locus | Select-String "SHA256"
+   ```
+
+4. **Secrets setzen** – entweder im Browser (Base64 liegt danach in der Zwischenablage) …
+   ```powershell
+   [Convert]::ToBase64String([IO.File]::ReadAllBytes("$dir\locus-release.jks")) | Set-Clipboard
+   ```
+   … und unter *New repository secret* die vier Secrets anlegen,
+
+   **oder** mit der GitHub-CLI (`winget install GitHub.cli`, einmal `gh auth login`):
+   ```powershell
+   $repo = "Mario2712/Locus"
+   [Convert]::ToBase64String([IO.File]::ReadAllBytes("$dir\locus-release.jks")) |
+       gh secret set LOCUS_KEYSTORE_BASE64 --repo $repo
+   gh secret set LOCUS_KEY_ALIAS --repo $repo --body "locus"
+   gh secret set LOCUS_KEYSTORE_PASSWORD --repo $repo   # fragt das Passwort ab (nicht sichtbar)
+   gh secret set LOCUS_KEY_PASSWORD --repo $repo        # dasselbe Passwort noch einmal
+   gh secret list --repo $repo
+   ```
+
+5. **Sichern:** `locus-release.jks` und das Passwort in den Passwortmanager bzw. auf einen
+   USB-Stick. Base64-Text nicht als Datei liegen lassen.
+
+### Linux/macOS
+
+```bash
+keytool -genkeypair -v -keystore locus-release.jks -storetype PKCS12 -alias locus \
+  -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=Locus, O=Privat, C=AT"
+base64 -w0 locus-release.jks   # macOS: base64 -i locus-release.jks
+```
+
+### Release auslösen
+
+Sobald die Secrets gesetzt sind und der Stand in `main` liegt, baut jeder Push auf `main` eine
+signierte Release-APK (Artefakt `locus-release-apk`). Für ein GitHub-Release mit APK:
+`git tag v1.0.0; git push origin v1.0.0` – oder im Browser unter *Releases → Draft a new release*
+einen neuen Tag `v1.0.0` auf `main` anlegen.
