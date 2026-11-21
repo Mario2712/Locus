@@ -42,8 +42,14 @@ interface PlaceRepository {
     suspend fun findByOsmId(osmId: String): Place?
     suspend fun upsert(place: Place)
     suspend fun delete(id: String)
-    /** Setzt [id] als einzige Homebase (alle anderen Orte verlieren die Markierung). */
+    /** Setzt [id] als einzige Homebase für alle Zeit (ohne Umzüge). */
     suspend fun setHomebase(id: String)
+
+    /** Umzug: [id] ist Homebase ab [since] (früher: [io.github.mario2712.locus.domain.model.UNKNOWN_DATE] = von Anfang an). */
+    suspend fun addHomebase(id: String, since: java.time.LocalDate)
+
+    /** [id] ist keine Homebase mehr (Zeitraum entfernen). */
+    suspend fun removeHomebase(id: String)
 }
 
 interface StayRepository {

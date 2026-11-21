@@ -14,6 +14,7 @@
     <string name="action_cancel">Abbrechen</string>
     <string name="action_delete">Löschen</string>
     <string name="action_ok">OK</string>
+    <string name="action_close">Schließen</string>
     <string name="action_remove">Entfernen</string>
     <string name="action_none">Keine</string>
     <string name="action_back">Zurück</string>
@@ -161,7 +162,15 @@
 
     <!-- Einstellungen (Stationen) -->
     <string name="settings_homebase">Homebase</string>
-    <string name="settings_homebase_hint">Dein Zuhause. Jeder Tag beginnt und endet hier, solange keine Reise läuft.</string>
+    <string name="settings_homebase_hint">Dein Zuhause. Jeder Tag beginnt und endet hier, solange keine Reise läuft. Bei Umzügen gilt je Zeitraum die damalige Homebase.</string>
+    <string name="homebase_add_move">+ Umzug / frühere Homebase</string>
+    <string name="homebase_always">immer (aktuell)</string>
+    <string name="homebase_since_current">seit %1$s (aktuell)</string>
+    <string name="homebase_since">seit %1$s</string>
+    <string name="homebase_until">von Anfang an bis %1$s</string>
+    <string name="homebase_from_start">Von Anfang an</string>
+    <string name="homebase_change_date">Einzugsdatum ändern</string>
+    <string name="homebase_remove">Zeitraum entfernen</string>
     <string name="settings_templates">Tagesvorlagen</string>
     <string name="settings_templates_hint">z. B. „Bürotag“ (Büro · Salzburg mit 🚆) oder „Hybrid“ (Büro → Homeoffice). Eine Vorlage trägt den ganzen Tag mit einem Tipp ein.</string>
     <string name="settings_template_new">+ Neue Vorlage</string>

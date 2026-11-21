@@ -42,8 +42,9 @@ class ReminderContentBuilder @Inject constructor(
         if (allStays.any { me in it.participants && it.startDate == date }) return null
 
         val allPlaces = places.observeAll().first()
-        val home = allPlaces.firstOrNull { it.isHomebase }
-        val resolved = Timeline.resolve(allStays, home?.id, date)
+        val homes = io.github.mario2712.locus.domain.timeline.Homebases.of(allPlaces)
+        val home = homes.at(date)
+        val resolved = Timeline.resolve(allStays, homes, date)
         Timeline.baseAtStart(date, me, resolved)?.let { base ->
             val name = allPlaces.firstOrNull { it.id == base.placeId }?.displayName ?: "?"
             return ReminderContent.OnTrip(date, name, canReturnHome = home != null)
@@ -81,9 +82,10 @@ class ReminderActions @Inject constructor(
 
     /** „Heimreise heute“: Station an der Homebase mit den Reisenden. */
     suspend fun returnHome(date: LocalDate) {
-        val home = places.observeAll().first().firstOrNull { it.isHomebase } ?: return
-        val resolved = Timeline.resolve(stays.observeAll().first(), home.id, date)
+        val homes = io.github.mario2712.locus.domain.timeline.Homebases.of(places.observeAll().first())
+        val homeId = homes.at(date) ?: return
+        val resolved = Timeline.resolve(stays.observeAll().first(), homes, date)
         val base = Timeline.baseAtStart(date, Defaults.ME, resolved) ?: return
-        commands.returnHome(date, base.participants, home.id)
+        commands.returnHome(date, base.participants, homeId)
     }
 }

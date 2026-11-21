@@ -57,7 +57,7 @@ class TripsViewModel @Inject constructor(
     val today: LocalDate = LocalDate.now(clock)
 
     val state: StateFlow<TripsUiState> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data) { s, v, editor ->
-        val home = editor.homebase?.id
+        val home = editor.homebases
         val trips = Trips.derive(s, v, editor.placesById, Defaults.ME, home, today)
         val resolved = Timeline.resolve(s, home, today)
         val allDays = TimelineDays.build(resolved, v, Defaults.ME, today)

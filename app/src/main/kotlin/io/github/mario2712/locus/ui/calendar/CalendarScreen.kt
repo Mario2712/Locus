@@ -48,6 +48,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.mario2712.locus.R
@@ -258,9 +259,17 @@ private fun DayCell(day: CalendarDay, selected: Boolean, modifier: Modifier) {
         Row(Modifier.align(Alignment.BottomEnd), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
             day.extraColors.take(3).forEach { TypeDot(it, 6.dp) }
         }
+        if (day.flags.isNotEmpty()) {
+            Text(
+                day.flags.take(2).joinToString("") + if (day.flags.size > 2) "…" else "",
+                modifier = Modifier.align(Alignment.TopEnd),
+                fontSize = 10.sp,
+                lineHeight = 10.sp,
+            )
+        }
         if (day.isGap) {
             Box(
-                Modifier.align(Alignment.TopEnd).size(6.dp)
+                Modifier.align(if (day.flags.isEmpty()) Alignment.TopEnd else Alignment.BottomStart).size(6.dp)
                     .background(MaterialTheme.colorScheme.error, CircleShape),
             )
         }

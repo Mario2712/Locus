@@ -84,4 +84,23 @@ class StationsRepositoryTest : DbTestBase() {
         places.setHomebase("p2")
         assertEquals(listOf("p2"), places.observeAll().first().filter { it.isHomebase }.map { it.id })
     }
+
+    @Test
+    fun `Umzuege - fruehere Homebase bleibt als Zeitraum, aktuelle ist die spaeteste`() = runTest {
+        val places = RoomPlaceRepository(db.placeDao(), meta)
+        places.upsert(Place("w1", "Eltern", PlaceKind.ADDRESS, "AT"))
+        places.upsert(Place("w2", "Wohnung 2", PlaceKind.ADDRESS, "AT"))
+        places.upsert(Place("w3", "Wohnung 3", PlaceKind.ADDRESS, "AT"))
+        places.setHomebase("w1")
+        places.addHomebase("w3", d("2022-08-01"))
+        places.addHomebase("w2", d("2018-02-05"))
+        val all = places.observeAll().first().associateBy { it.id }
+        assertEquals(io.github.mario2712.locus.domain.model.UNKNOWN_DATE, all.getValue("w1").homebaseSince)
+        assertEquals(listOf("w3"), all.values.filter { it.isHomebase }.map { it.id })
+        val homes = io.github.mario2712.locus.domain.timeline.Homebases.of(all.values)
+        assertEquals("w2", homes.at(d("2020-01-01")))
+
+        places.removeHomebase("w3")
+        assertEquals(listOf("w2"), places.observeAll().first().filter { it.isHomebase }.map { it.id })
+    }
 }

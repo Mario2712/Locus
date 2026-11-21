@@ -74,10 +74,10 @@ class CountriesViewModel @Inject constructor(
     ) { s, v, w, editor ->
         val a = editor.persons.firstOrNull { it.isMe } ?: return@combine CountriesUiState(editor = editor)
         val b = editor.persons.firstOrNull { !it.isMe }
-        val resolved = Timeline.resolve(s, editor.homebase?.id, today)
+        val resolved = Timeline.resolve(s, editor.homebases, today)
         val points = calculator.calculate(resolved, v, editor.placesById, editor.typesById, editor.categoriesById)
         // Für Tage-Zählungen ist die Homebase an Tagen mit Start/Ende zuhause implizit dabei.
-        val withHome = io.github.mario2712.locus.domain.timeline.ImplicitHome.augment(resolved, v, a.id, editor.homebase?.id, today)
+        val withHome = io.github.mario2712.locus.domain.timeline.ImplicitHome.augment(resolved, v, a.id, editor.homebases, today)
         val overview = CountryOverview.build(points, a.id, b?.id, w, CountryOverview.countryDays(withHome, editor.placesById, a.id))
 
         // Tage je Ort (Stationen tagesgenau + Besuche), dann je Stadt zusammengefasst.
@@ -108,7 +108,7 @@ class CountriesViewModel @Inject constructor(
             val iso = ReferenceData.countableCountry(city.countryIso2)?.iso2 ?: return@mapNotNull null
             iso to CityRow(cityId, dates.size, cityLocations[cityId]?.size ?: 0)
         }.groupBy({ it.first }, { it.second }).mapValues { (_, rows) -> rows.sortedByDescending { it.days } }
-        val trips = Trips.derive(s, v, editor.placesById, a.id, editor.homebase?.id, today)
+        val trips = Trips.derive(s, v, editor.placesById, a.id, editor.homebases, today)
         val tripsByCountry = trips.flatMap { t -> t.countryIso2s.map { it to t } }.groupBy({ it.first }, { it.second })
 
         val undated = s.filter { it.precision == DatePrecision.UNKNOWN }.mapNotNull { stay ->

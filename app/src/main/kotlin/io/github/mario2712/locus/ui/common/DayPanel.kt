@@ -40,7 +40,7 @@ fun DayPanel(state: DayState, viewModel: BaseDayViewModel) {
     var journeyMode by remember { mutableStateOf<JourneyMode?>(null) }
     var showReturnHome by remember { mutableStateOf(false) }
     val editor = state.editor
-    val homeName = editor.homebase?.displayName ?: stringResource(R.string.chain_home)
+    val homeName = (editor.homebaseAt(state.date) ?: editor.homebase)?.displayName ?: stringResource(R.string.chain_home)
 
     // Reise-Kopf
     val tripBase = state.baseAtEnd ?: state.baseAtStart

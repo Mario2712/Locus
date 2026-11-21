@@ -53,7 +53,7 @@ class PlacesViewModel @Inject constructor(
 
     val items: StateFlow<List<PlaceListItem>> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data) { s, v, editor ->
         // Homebase zählt an Tagen mit Start/Ende zuhause mit.
-        val resolved = io.github.mario2712.locus.domain.timeline.ImplicitHome.augment(Timeline.resolve(s, editor.homebase?.id, today), v, Defaults.ME, editor.homebase?.id, today)
+        val resolved = io.github.mario2712.locus.domain.timeline.ImplicitHome.augment(Timeline.resolve(s, editor.homebases, today), v, Defaults.ME, editor.homebases, today)
         val children = editor.places.filter { it.parentPlaceId != null }.groupBy({ it.parentPlaceId!! }, { it.id })
         editor.places.filter { it.kind != io.github.mario2712.locus.domain.model.PlaceKind.COUNTRY }.map { place ->
             val record = PlaceStats.record(place.id, Defaults.ME, resolved, v, children[place.id].orEmpty().toSet())
@@ -87,13 +87,17 @@ class PlaceDetailViewModel @Inject constructor(
 
     val state: StateFlow<PlaceDetailState> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data) { s, v, editor ->
         val place = editor.placesById[placeId]
-        val resolved = io.github.mario2712.locus.domain.timeline.ImplicitHome.augment(Timeline.resolve(s, editor.homebase?.id, today), v, Defaults.ME, editor.homebase?.id, today)
+        val resolved = io.github.mario2712.locus.domain.timeline.ImplicitHome.augment(Timeline.resolve(s, editor.homebases, today), v, Defaults.ME, editor.homebases, today)
         val children = editor.places.filter { it.parentPlaceId == placeId }.map { it.id }.toSet()
         PlaceDetailState(place, place?.let { PlaceStats.record(it.id, Defaults.ME, resolved, v, children) }, editor)
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), PlaceDetailState())
 
     fun save(place: Place) = viewModelScope.launch { places.upsert(place) }
-    fun setHomebase() = viewModelScope.launch { places.setHomebase(placeId) }
+    /** Ohne bisherige Homebase: von Anfang an; sonst Umzug ab heute (frühere Zeiträume bleiben). */
+    fun setHomebase() = viewModelScope.launch {
+        val hasHome = state.value.editor.places.any { it.isHomebase || it.homebaseSince != null }
+        if (hasHome) places.addHomebase(placeId, java.time.LocalDate.now()) else places.setHomebase(placeId)
+    }
     fun delete() = viewModelScope.launch { places.delete(placeId) }
 
     suspend fun searchOnline(query: String): SearchResult<List<PlaceCandidate>> = search.search(query)

@@ -20,14 +20,17 @@ object Timeline {
     val chronological: Comparator<Stay> = compareBy<Stay>({ it.startDate }, { it.sortIndex })
 
     /** Stationen mit effektivem Enddatum (laufende Basen werden bis zur nächsten Basis verlängert). */
-    fun resolve(stays: List<Stay>, homebaseId: String?, today: LocalDate): List<Stay> {
+    fun resolve(stays: List<Stay>, homebaseId: String?, today: LocalDate): List<Stay> =
+        resolve(stays, Homebases.single(homebaseId), today)
+
+    fun resolve(stays: List<Stay>, homebases: Homebases, today: LocalDate): List<Stay> {
         val sorted = stays.sortedWith(chronological)
         return sorted.mapIndexed { index, stay ->
             if (!stay.isOpenBase()) return@mapIndexed stay
             val next = sorted.asSequence().drop(index + 1).firstOrNull { other ->
                 other.precision == DatePrecision.DAY &&
                     other.participants.any { it in stay.participants } &&
-                    (other.overnight || other.placeId == homebaseId)
+                    (other.overnight || homebases.isHome(other.placeId, other.startDate))
             }
             val end = next?.startDate ?: maxOf(stay.startDate, today)
             stay.copy(endDate = end)
@@ -53,11 +56,19 @@ object Timeline {
         resolved: List<Stay>,
         homebaseId: String?,
         today: LocalDate? = null,
+    ): Stay? = baseAtEnd(date, person, resolved, Homebases.single(homebaseId), today)
+
+    fun baseAtEnd(
+        date: LocalDate,
+        person: PersonId,
+        resolved: List<Stay>,
+        homebases: Homebases,
+        today: LocalDate? = null,
     ): Stay? {
         val dayStays = resolved
             .filter { person in it.participants && it.precision == DatePrecision.DAY && it.startDate == date }
             .sortedWith(chronological)
-        val lastChange = dayStays.lastOrNull { it.overnight || it.placeId == homebaseId }
+        val lastChange = dayStays.lastOrNull { it.overnight || homebases.isHome(it.placeId, date) }
         return when {
             lastChange == null -> baseAtStart(date, person, resolved)?.takeIf { it.endDate > date || date == today }
             lastChange.overnight -> lastChange

@@ -33,7 +33,6 @@ import io.github.mario2712.locus.domain.model.DayTemplate
 import io.github.mario2712.locus.ui.common.Format
 import io.github.mario2712.locus.ui.common.SectionCard
 import io.github.mario2712.locus.ui.editor.ParticipantChips
-import io.github.mario2712.locus.ui.editor.PlacePickerDialog
 import io.github.mario2712.locus.ui.editor.SwitchRow
 import io.github.mario2712.locus.ui.editor.TimePickerDialog
 import io.github.mario2712.locus.ui.editor.ValueButtonRow
@@ -49,7 +48,6 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
     var editDay by remember { mutableStateOf<DayOfWeek?>(null) }
     var editTemplate by remember { mutableStateOf<DayTemplate?>(null) }
     var newTemplate by remember { mutableStateOf(false) }
-    var pickHomebase by remember { mutableStateOf(false) }
     var pickTime by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -69,15 +67,14 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             SectionCard(stringResource(R.string.settings_homebase)) {
-                Text(
-                    stringResource(R.string.settings_homebase_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                HomebaseSection(
+                    editor = editor,
+                    today = java.time.LocalDate.now(),
+                    onSetSingle = viewModel::setHomebase,
+                    onAdd = viewModel::addHomebase,
+                    onRemove = viewModel::removeHomebase,
+                    onCreatePlace = viewModel::createPlace,
                 )
-                ValueButtonRow(
-                    stringResource(R.string.settings_homebase),
-                    editor.homebase?.displayName ?: stringResource(R.string.editor_choose_place),
-                ) { pickHomebase = true }
             }
 
             SectionCard(stringResource(R.string.settings_templates)) {
@@ -152,14 +149,6 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
         }
     }
 
-    if (pickHomebase) {
-        PlacePickerDialog(
-            places = editor.sortedPlaces,
-            onDismiss = { pickHomebase = false },
-            onSelect = { viewModel.setHomebase(it); pickHomebase = false },
-            onCreatePlace = viewModel::createPlace,
-        )
-    }
     editDay?.let { day ->
         RuleDialog(
             day = day,

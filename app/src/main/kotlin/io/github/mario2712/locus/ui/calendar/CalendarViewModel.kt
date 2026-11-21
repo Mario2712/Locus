@@ -41,6 +41,8 @@ data class CalendarDay(
     /** Vergangener Tag ohne Eintrag (nach dem ersten Eintrag überhaupt). */
     val isGap: Boolean,
     val isToday: Boolean,
+    /** Flaggen von Ländern außerhalb des damaligen Homebase-Landes (zählende Aufenthalte und Besuche). */
+    val flags: List<String> = emptyList(),
 )
 
 data class CalendarUiState(
@@ -56,6 +58,7 @@ data class CalendarUiState(
 class CalendarViewModel @Inject constructor(
     clock: Clock,
     private val stays: StayRepository,
+    private val visits: io.github.mario2712.locus.domain.repository.VisitRepository,
     private val editorCatalog: EditorCatalog,
     private val editing: StationActions,
 ) : ViewModel() {
@@ -69,11 +72,15 @@ class CalendarViewModel @Inject constructor(
     val messages = messageChannel.receiveAsFlow()
 
     val state: StateFlow<CalendarUiState> = combine(
-        month, stays.observeAll(), editorCatalog.data, selection,
-    ) { m, all, editor, sel ->
+        month, stays.observeAll(), visits.observeAll(), editorCatalog.data, selection,
+    ) { m, all, allVisits, editor, sel ->
         // Laufende Reisen (Basis ohne Ende) werden bis zur nächsten Basis bzw. bis heute aufgelöst.
-        val resolved = Timeline.resolve(all, editor.homebase?.id, today)
+        val resolved = Timeline.resolve(all, editor.homebases, today)
         val summaries = DayInsights.summaries(m.atDay(1), m.atEndOfMonth(), me, resolved, editor.rank)
+        val foreign = io.github.mario2712.locus.domain.countrypoints.ForeignDays.of(
+            m.atDay(1), m.atEndOfMonth(), me, resolved, allVisits, editor.placesById, editor.typesById,
+            editor.categoriesById, editor.homebases,
+        )
         val earliest = DayInsights.staysOf(me, all).minOfOrNull { it.startDate }
         val days = (1..m.lengthOfMonth()).map { dayOfMonth ->
             val date = m.atDay(dayOfMonth)
@@ -85,6 +92,7 @@ class CalendarViewModel @Inject constructor(
                 holiday = AustrianHolidays.nameOf(date),
                 isGap = summary == null && earliest != null && !date.isBefore(earliest) && date.isBefore(today),
                 isToday = date == today,
+                flags = foreign[date].orEmpty().mapNotNull { io.github.mario2712.locus.domain.reference.ReferenceData.country(it)?.flag },
             )
         }
         val legend = summaries.values.flatMap { it.typeIds }.distinct()

@@ -118,6 +118,8 @@ data class Place(
     val isHomebase: Boolean = false,
     /** Adresse zur Unterscheidung gleichnamiger Orte, z. B. „Davisstraße 12, 5400 Hallein“. */
     val address: String? = null,
+    /** Homebase ab diesem Datum (Umzüge); [UNKNOWN_DATE] = von Anfang an; `null` = keine Homebase. */
+    val homebaseSince: LocalDate? = null,
 ) {
     val displayName: String get() = alias ?: name
 }
@@ -130,6 +132,7 @@ enum class TransportMode(val emoji: String, val nameDe: String) {
     BUS("🚌", "Bus"),
     TRAM("🚊", "U-Bahn/Tram"),
     TRAIN("🚆", "Zug"),
+    TAXI("🚕", "Taxi"),
     PLANE("✈️", "Flug"),
     FERRY("⛴️", "Fähre"),
 }

@@ -59,6 +59,7 @@ data class PlaceDto(
     val parentPlaceId: String? = null, val osmId: String? = null, val poiCategory: String? = null,
     val alias: String? = null, val isFavorite: Boolean = false, val note: String? = null,
     val isHomebase: Boolean = false, val meta: MetaDto, val address: String? = null,
+    val homebaseSince: String? = null,
 )
 
 @Serializable

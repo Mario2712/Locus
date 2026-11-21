@@ -61,7 +61,7 @@ class ProfileViewModel @Inject constructor(
     val state: StateFlow<ProfileUiState> = combine(
         persons.observeAll(), stays.observeAll(), visits.observeAll(), editorCatalog.data,
     ) { people, allStays, allVisits, editor ->
-        val resolved = Timeline.resolve(allStays, editor.homebase?.id, today)
+        val resolved = Timeline.resolve(allStays, editor.homebases, today)
         val points = countryPoints.calculate(resolved, allVisits, editor.placesById, editor.typesById, editor.categoriesById)
         val profiles = people.map { person ->
             val countries = points.byPerson[person.id].orEmpty().values

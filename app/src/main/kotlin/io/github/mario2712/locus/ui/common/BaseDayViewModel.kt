@@ -91,13 +91,14 @@ abstract class BaseDayViewModel(
     protected fun buildDayState(input: TimelineInputs): DayState {
         lastInputs = input
         val editor = input.editor
-        val homeId = editor.homebase?.id
-        val resolved = Timeline.resolve(input.stays, homeId, today)
+        val homes = editor.homebases
+        val homeId = homes.at(date)
+        val resolved = Timeline.resolve(input.stays, homes, today)
         val raw = input.stays.filter { it.covers(date) && (it.startDate == date || !it.overnight) }
             .sortedWith(compareBy({ if (it.startDate < date) 0 else 1 }, { it.sortIndex }))
         val own = raw.filter { me in it.participants }
         val baseAtStart = Timeline.baseAtStart(date, me, resolved)
-        val baseAtEnd = Timeline.baseAtEnd(date, me, resolved, homeId, today)
+        val baseAtEnd = Timeline.baseAtEnd(date, me, resolved, homes, today)
         val tripBase = baseAtEnd ?: baseAtStart
         val dayVisits = input.visits.filter { it.date == date }.sortedBy { it.time }
 
@@ -110,7 +111,7 @@ abstract class BaseDayViewModel(
             baseAtEnd = baseAtEnd,
             tripDay = tripBase?.let { ChronoUnit.DAYS.between(Timeline.tripStart(it, me, resolved), date).toInt() + 1 },
             trip = tripBase?.let {
-                io.github.mario2712.locus.domain.trips.Trips.derive(input.stays, input.visits, editor.placesById, me, homeId, today)
+                io.github.mario2712.locus.domain.trips.Trips.derive(input.stays, input.visits, editor.placesById, me, homes, today)
                     .firstOrNull { t -> t.precision == io.github.mario2712.locus.domain.model.DatePrecision.DAY && date in t.start..t.end }
             },
             stations = own.map(editor::stayItem),
@@ -179,7 +180,7 @@ abstract class BaseDayViewModel(
     }
 
     fun returnHome(state: DayState, transport: Set<TransportMode>) = viewModelScope.launch {
-        val home = state.editor.homebase ?: return@launch
+        val home = state.editor.homebaseAt(date) ?: state.editor.homebase ?: return@launch
         send(actions.returnHome(date, defaultParticipants(state), home.id, transport, live()))
     }
 

@@ -57,7 +57,7 @@ class TodayViewModel @Inject constructor(
 
     val state: StateFlow<TodayUiState> = combine(inputs, settings.observeReminder()) { input, reminder ->
         val editor = input.editor
-        val resolved = Timeline.resolve(input.stays, editor.homebase?.id, today)
+        val resolved = Timeline.resolve(input.stays, editor.homebases, today)
 
         val weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
         val summaries = DayInsights.summaries(weekStart, weekStart.plusDays(6), me, resolved, editor.rank)

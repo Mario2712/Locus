@@ -28,18 +28,27 @@ object ImplicitHome {
         person: PersonId,
         homebaseId: String?,
         today: LocalDate,
+    ): List<Stay> = augment(resolved, visits, person, Homebases.single(homebaseId), today)
+
+    fun augment(
+        resolved: List<Stay>,
+        visits: List<Visit>,
+        person: PersonId,
+        homebases: Homebases,
+        today: LocalDate,
     ): List<Stay> {
-        if (homebaseId == null) return resolved
+        if (homebases.periods.isEmpty()) return resolved
         val own = resolved.filter { person in it.participants && it.precision == DatePrecision.DAY }
         val days = (
             own.flatMap { stay -> generateSequence(stay.startDate) { it.plusDays(1) }.takeWhile { !it.isAfter(stay.endDate) }.toList() } +
                 visits.filter { person in it.participants && it.precision == DatePrecision.DAY }.map { it.date }
             ).toSortedSet()
-        val extra = days.filter { day ->
-            own.none { it.placeId == homebaseId && it.covers(day) } &&
-                (Timeline.baseAtStart(day, person, own) == null || Timeline.baseAtEnd(day, person, own, homebaseId, today) == null)
-        }.map { day ->
-            Stay(id = "implicit-${person.value}-$day", placeId = homebaseId, typeId = TYPE_ID, startDate = day, participants = setOf(person))
+        val extra = days.mapNotNull { day ->
+            val home = homebases.at(day) ?: return@mapNotNull null
+            val atHome = own.none { it.placeId == home && it.covers(day) } &&
+                (Timeline.baseAtStart(day, person, own) == null || Timeline.baseAtEnd(day, person, own, homebases, today) == null)
+            if (!atHome) return@mapNotNull null
+            Stay(id = "implicit-${person.value}-$day", placeId = home, typeId = TYPE_ID, startDate = day, participants = setOf(person))
         }
         return resolved + extra
     }

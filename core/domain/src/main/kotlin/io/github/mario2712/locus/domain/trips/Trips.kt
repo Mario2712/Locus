@@ -7,6 +7,7 @@ import io.github.mario2712.locus.domain.model.Stay
 import io.github.mario2712.locus.domain.model.Visit
 import io.github.mario2712.locus.domain.reference.Defaults
 import io.github.mario2712.locus.domain.reference.ReferenceData
+import io.github.mario2712.locus.domain.timeline.Homebases
 import io.github.mario2712.locus.domain.timeline.Timeline
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -58,14 +59,23 @@ object Trips {
         person: PersonId,
         homebaseId: String?,
         today: LocalDate,
+    ): List<TripSummary> = derive(stays, visits, places, person, Homebases.single(homebaseId), today)
+
+    fun derive(
+        stays: List<Stay>,
+        visits: List<Visit>,
+        places: Map<String, Place>,
+        person: PersonId,
+        homebases: Homebases,
+        today: LocalDate,
     ): List<TripSummary> {
-        val resolved = Timeline.resolve(stays, homebaseId, today).filter { person in it.participants }
+        val resolved = Timeline.resolve(stays, homebases, today).filter { person in it.participants }
         val ownVisits = visits.filter { person in it.participants }
-        val currentBase = Timeline.baseAtEnd(today, person, resolved, homebaseId, today)
+        val currentBase = Timeline.baseAtEnd(today, person, resolved, homebases, today)
 
         val exact = resolved.filter { it.precision == DatePrecision.DAY }
         val bases = exact
-            .filter { (it.overnight || it.endDate > it.startDate) && it.placeId != homebaseId }
+            .filter { (it.overnight || it.endDate > it.startDate) && !homebases.isHome(it.placeId, it.startDate) }
             .sortedWith(Timeline.chronological)
 
         val groups = mutableListOf<MutableList<Stay>>()
@@ -83,7 +93,7 @@ object Trips {
                     !it.startDate.isBefore(baseStart.minusDays(2))
             }
             val start = (transitBefore.map { it.startDate } + baseStart).min()
-            val inRange = exact.filter { it.startDate <= end && it.endDate >= start && it.placeId != homebaseId }
+            val inRange = exact.filter { it.startDate <= end && it.endDate >= start && !homebases.isHome(it.placeId, it.startDate) }
             build(
                 group, start, end, DatePrecision.DAY,
                 ongoing = currentBase != null && group.any { it.id == currentBase.id },

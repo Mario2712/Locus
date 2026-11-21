@@ -106,7 +106,7 @@ class StatsViewModel @Inject constructor(
             is StatsPeriod.Custom -> p.from to p.to
         }
         val stats = YearStats.compute(
-            from, to, Defaults.ME, s, v, editor.placesById, editor.typesById, editor.categoriesById, editor.rank, editor.homebase?.id, today,
+            from, to, Defaults.ME, s, v, editor.placesById, editor.typesById, editor.categoriesById, editor.rank, editor.homebases, today,
         )
         StatsUiState(p, years, stats, editor)
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), StatsUiState(StatsPeriod.Year(today.year)))

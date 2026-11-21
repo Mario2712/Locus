@@ -31,6 +31,7 @@ import io.github.mario2712.locus.domain.repository.TripRepository
 import io.github.mario2712.locus.domain.repository.VisitRepository
 import io.github.mario2712.locus.domain.repository.WishRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import javax.inject.Inject
@@ -76,7 +77,36 @@ class RoomPlaceRepository @Inject constructor(
     override suspend fun findByOsmId(osmId: String) = dao.findByOsmId(osmId)?.toDomain()
     override suspend fun upsert(place: Place) = dao.upsert(place.toEntity(meta.forSave(dao.createdAt(place.id))))
     override suspend fun delete(id: String) = dao.softDelete(id, meta.now(), meta.deviceId())
-    override suspend fun setHomebase(id: String) = dao.setHomebase(id, meta.now(), meta.deviceId())
+    override suspend fun setHomebase(id: String) {
+        dao.setHomebase(id, meta.now(), meta.deviceId())
+        updateHomebases { places -> places.map { it.copy(homebaseSince = if (it.id == id) io.github.mario2712.locus.domain.model.UNKNOWN_DATE else null) } }
+    }
+
+    override suspend fun addHomebase(id: String, since: LocalDate) = updateHomebases { places ->
+        places.map { p ->
+            when {
+                p.id == id -> p.copy(homebaseSince = since)
+                // Bisherige Homebase ohne Datum gilt ab jetzt „von Anfang an“, damit sie als früherer Zeitraum erhalten bleibt.
+                p.isHomebase && p.homebaseSince == null -> p.copy(homebaseSince = io.github.mario2712.locus.domain.model.UNKNOWN_DATE)
+                else -> p
+            }
+        }
+    }
+
+    override suspend fun removeHomebase(id: String) = updateHomebases { places ->
+        places.map { if (it.id == id) it.copy(homebaseSince = null, isHomebase = false) else it }
+    }
+
+    /** Wendet [change] an und setzt `isHomebase` auf die Homebase mit dem spätesten Beginn (= aktuelle). */
+    private suspend fun updateHomebases(change: (List<Place>) -> List<Place>) {
+        val before = dao.observeAll().first().map { it.toDomain() }
+        val changed = change(before)
+        val current = changed.filter { it.homebaseSince != null }.maxByOrNull { it.homebaseSince!! }?.id
+        val after = changed.map { it.copy(isHomebase = it.id == current) }
+        after.zip(before).filter { (new, old) -> new != old }.forEach { (new, _) ->
+            dao.upsert(new.toEntity(meta.forSave(dao.createdAt(new.id))))
+        }
+    }
 }
 
 class RoomStayRepository @Inject constructor(

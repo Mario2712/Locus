@@ -83,7 +83,7 @@ class MapViewModel @Inject constructor(
     ) { s, v, w, editor, f ->
         val a = editor.persons.firstOrNull { it.isMe } ?: return@combine MapUiState(filter = f, editor = editor)
         val b = editor.persons.firstOrNull { !it.isMe }
-        val home = editor.homebase?.id
+        val home = editor.homebases
         val resolvedAll = Timeline.resolve(s, home, today)
         val years = (resolvedAll.map { it.startDate.year } + v.map { it.date.year }).distinct().sortedDescending()
 
@@ -132,7 +132,7 @@ class MapViewModel @Inject constructor(
                     fun coordsOf(placeId: String) = editor.placesById[placeId]?.let { p ->
                         p.latitude?.let { lat -> p.longitude?.let { lon -> lat to lon } }
                     }
-                    val homeCoords = home?.let(::coordsOf)
+                    val homeCoords = home.at(trip.start)?.let(::coordsOf)
                     val points = listOfNotNull(homeCoords) + trip.stays.mapNotNull { coordsOf(it.placeId) } +
                         listOfNotNull(homeCoords.takeIf { !trip.ongoing })
                     val line = points.fold(mutableListOf<Pair<Double, Double>>()) { acc, p -> if (acc.lastOrNull() != p) acc += p; acc }

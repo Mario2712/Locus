@@ -63,6 +63,8 @@ class SettingsViewModel @Inject constructor(
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), SettingsUiState())
 
     fun setHomebase(placeId: String) = viewModelScope.launch { places.setHomebase(placeId) }
+    fun addHomebase(placeId: String, since: java.time.LocalDate) = viewModelScope.launch { places.addHomebase(placeId, since) }
+    fun removeHomebase(placeId: String) = viewModelScope.launch { places.removeHomebase(placeId) }
 
     fun saveTemplate(template: DayTemplate) = viewModelScope.launch { templates.upsert(template) }
     fun deleteTemplate(id: String) = viewModelScope.launch { templates.delete(id) }

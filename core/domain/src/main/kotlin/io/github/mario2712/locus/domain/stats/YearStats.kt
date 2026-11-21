@@ -78,7 +78,7 @@ object YearStats {
         today: LocalDate,
     ): YearStatsData = compute(
         LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31), person, stays, visits, places, stayTypes, visitCategories,
-        rank, homebaseId, today,
+        rank, io.github.mario2712.locus.domain.timeline.Homebases.single(homebaseId), today,
     )
 
     fun compute(
@@ -93,10 +93,27 @@ object YearStats {
         rank: (String) -> Int,
         homebaseId: String?,
         today: LocalDate,
+    ): YearStatsData = compute(
+        rangeFrom, rangeTo, person, stays, visits, places, stayTypes, visitCategories, rank,
+        io.github.mario2712.locus.domain.timeline.Homebases.single(homebaseId), today,
+    )
+
+    fun compute(
+        rangeFrom: LocalDate,
+        rangeTo: LocalDate,
+        person: PersonId,
+        stays: List<Stay>,
+        visits: List<Visit>,
+        places: Map<String, Place>,
+        stayTypes: Map<String, StayType>,
+        visitCategories: Map<String, VisitCategory>,
+        rank: (String) -> Int,
+        homebases: io.github.mario2712.locus.domain.timeline.Homebases,
+        today: LocalDate,
     ): YearStatsData {
         val from = rangeFrom
         val to = minOf(rangeTo, today)
-        val resolved = Timeline.resolve(stays, homebaseId, today)
+        val resolved = Timeline.resolve(stays, homebases, today)
         val own = resolved.filter { person in it.participants }
         val summaries = DayInsights.summaries(from, to, person, resolved, rank)
 
@@ -113,15 +130,15 @@ object YearStats {
             )
         }
 
-        // Urlaub Inland/Ausland (Inland = Land der Homebase)
-        val homeCountry = homebaseId?.let { places[it]?.countryIso2?.uppercase() }
+        // Urlaub Inland/Ausland (Inland = Land der damaligen Homebase)
+        fun homeCountry(date: LocalDate) = homebases.at(date)?.let { places[it]?.let { p -> ReferenceData.countableCountry(p.countryIso2)?.iso2 } }
         var domestic = 0
         var abroad = 0
         summaries.forEach { (date, summary) ->
             if (stayTypes[summary.mainTypeId]?.group != StayGroup.VACATION) return@forEach
             val vacationAbroad = own.any { stay ->
                 stay.precision == DatePrecision.DAY && stay.covers(date) && stayTypes[stay.typeId]?.group == StayGroup.VACATION &&
-                    places[stay.placeId]?.let { ReferenceData.countableCountry(it.countryIso2)?.iso2 } != homeCountry
+                    places[stay.placeId]?.let { ReferenceData.countableCountry(it.countryIso2)?.iso2 } != homeCountry(date)
             }
             if (vacationAbroad) abroad++ else domestic++
         }
@@ -142,7 +159,7 @@ object YearStats {
         }
         val cityDates = mutableMapOf<String, MutableSet<LocalDate>>()
         // Homebase zählt an Tagen mit Start/Ende zuhause mit (z. B. Bürotag).
-        io.github.mario2712.locus.domain.timeline.ImplicitHome.augment(own, visits, person, homebaseId, today)
+        io.github.mario2712.locus.domain.timeline.ImplicitHome.augment(own, visits, person, homebases, today)
             .filter { it.precision == DatePrecision.DAY }.forEach { stay ->
             val city = cityOf(stay.placeId) ?: return@forEach
             var d = stay.startDate
@@ -157,11 +174,11 @@ object YearStats {
         var nights = 0
         var d = from
         while (!d.isAfter(to)) {
-            if (Timeline.baseAtEnd(d, person, own, homebaseId, today) != null) nights++
+            if (Timeline.baseAtEnd(d, person, own, homebases, today) != null) nights++
             d = d.plusDays(1)
         }
 
-        val trips = Trips.derive(stays, visits, places, person, homebaseId, today)
+        val trips = Trips.derive(stays, visits, places, person, homebases, today)
             .count { it.start <= to && it.end >= from }
 
         return YearStatsData(

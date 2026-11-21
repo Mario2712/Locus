@@ -57,7 +57,7 @@ class TimelineViewModel @Inject constructor(
 ) : ViewModel() {
     private val today = LocalDate.now(clock)
     val state: StateFlow<TimelineUiState> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data) { s, v, editor ->
-        val resolved = Timeline.resolve(s, editor.homebase?.id, today)
+        val resolved = Timeline.resolve(s, editor.homebases, today)
         TimelineUiState(TimelineDays.build(resolved, v, Defaults.ME, today), editor)
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), TimelineUiState())
 }

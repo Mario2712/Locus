@@ -38,7 +38,12 @@ data class EditorData(
     val typesById: Map<String, StayType> by lazy { stayTypes.associateBy { it.id } }
     val categoriesById: Map<String, VisitCategory> by lazy { visitCategories.associateBy { it.id } }
     val templatesById: Map<String, DayTemplate> by lazy { templates.associateBy { it.id } }
+    /** Aktuelle Homebase (spätester Beginn). */
     val homebase: Place? by lazy { places.firstOrNull { it.isHomebase } }
+    /** Homebase-Zeiträume (Umzüge). */
+    val homebases: io.github.mario2712.locus.domain.timeline.Homebases by lazy { io.github.mario2712.locus.domain.timeline.Homebases.of(places) }
+    /** Homebase, die am [date] galt. */
+    fun homebaseAt(date: java.time.LocalDate): Place? = homebases.at(date)?.let(placesById::get)
     val rank: (String) -> Int by lazy { StayPriority.ranker(typesById) }
 
     /** Aktive Arten für Auswahllisten. */
