@@ -31,6 +31,7 @@ data class PersonEntity(
     @ColumnInfo(name = "color_argb") val colorArgb: Long,
     @ColumnInfo(name = "is_me") val isMe: Boolean,
     @Embedded val meta: SyncMeta,
+    @ColumnInfo(name = "birth_date") val birthDate: LocalDate? = null,
 )
 
 @Entity(tableName = "stay_type")

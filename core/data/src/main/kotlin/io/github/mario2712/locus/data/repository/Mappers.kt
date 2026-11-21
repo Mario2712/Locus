@@ -34,8 +34,8 @@ import io.github.mario2712.locus.domain.model.VisitCategory
 import io.github.mario2712.locus.domain.model.Wish
 import java.time.DayOfWeek
 
-internal fun PersonEntity.toDomain() = Person(PersonId(id), name, isMe, colorArgb)
-internal fun Person.toEntity(meta: SyncMeta) = PersonEntity(id.value, name, colorArgb, isMe, meta)
+internal fun PersonEntity.toDomain() = Person(PersonId(id), name, isMe, colorArgb, birthDate)
+internal fun Person.toEntity(meta: SyncMeta) = PersonEntity(id.value, name, colorArgb, isMe, meta, birthDate)
 
 internal fun StayTypeEntity.toDomain() =
     StayType(id, name, group, countsForCountryPoints, icon, colorArgb, sortOrder, isArchived)

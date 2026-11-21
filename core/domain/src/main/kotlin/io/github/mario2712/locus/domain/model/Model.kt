@@ -16,6 +16,8 @@ data class Person(
     val isMe: Boolean,
     /** Farbe als ARGB, z. B. für Karte und Statistik. */
     val colorArgb: Long = 0xFF1F6F5C,
+    /** Für Geburtstags-Statistiken (optional). */
+    val birthDate: LocalDate? = null,
 )
 
 enum class Continent(val nameDe: String) {

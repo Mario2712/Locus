@@ -27,11 +27,13 @@ import io.github.mario2712.locus.ui.navigation.CountriesRoute
 import io.github.mario2712.locus.ui.navigation.DayRoute
 import io.github.mario2712.locus.ui.navigation.MapRoute
 import io.github.mario2712.locus.ui.navigation.MoreRoute
+import io.github.mario2712.locus.ui.navigation.ProfileRoute
 import io.github.mario2712.locus.ui.navigation.SettingsRoute
 import io.github.mario2712.locus.ui.navigation.TodayRoute
 import io.github.mario2712.locus.ui.navigation.TopLevelDestination
 import io.github.mario2712.locus.ui.screens.CountriesScreen
 import io.github.mario2712.locus.ui.screens.MapScreen
+import io.github.mario2712.locus.ui.profile.ProfileScreen
 import io.github.mario2712.locus.ui.settings.SettingsScreen
 import io.github.mario2712.locus.ui.today.TodayScreen
 import java.time.LocalDate
@@ -69,9 +71,15 @@ fun LocusApp() {
             composable<CalendarRoute> { CalendarScreen(onOpenDay = openDay) }
             composable<MapRoute> { MapScreen() }
             composable<CountriesRoute> { CountriesScreen() }
-            composable<MoreRoute> { MoreScreen(onOpenSettings = { navController.navigate(SettingsRoute) }) }
+            composable<MoreRoute> {
+                MoreScreen(
+                    onOpenSettings = { navController.navigate(SettingsRoute) },
+                    onOpenProfile = { navController.navigate(ProfileRoute) },
+                )
+            }
             composable<DayRoute> { DayScreen(onBack = { navController.popBackStack() }) }
             composable<SettingsRoute> { SettingsScreen(onBack = { navController.popBackStack() }) }
+            composable<ProfileRoute> { ProfileScreen(onBack = { navController.popBackStack() }) }
         }
     }
 }

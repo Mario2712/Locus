@@ -2,6 +2,7 @@ package io.github.mario2712.locus.data
 
 import androidx.room.Room
 import io.github.mario2712.locus.data.db.LocusDatabase
+import io.github.mario2712.locus.data.repository.RoomPersonRepository
 import io.github.mario2712.locus.data.repository.RoomPlaceRepository
 import io.github.mario2712.locus.data.repository.RoomStayRepository
 import io.github.mario2712.locus.data.repository.RoomVisitRepository
@@ -27,7 +28,7 @@ class MigrationTest {
     private val schemaDir = File("schemas/io.github.mario2712.locus.data.db.LocusDatabase")
 
     @Test
-    fun `v1 zu v2 behaelt Aufenthalte, Orte und Besuche`() = runTest {
+    fun `v1 bis aktuell behaelt Aufenthalte, Orte, Besuche und Personen`() = runTest {
         val context = RuntimeEnvironment.getApplication()
         val name = "migration-test.db"
         context.deleteDatabase(name)
@@ -65,6 +66,10 @@ class MigrationTest {
                     "VALUES ('v1', 'p1', 'visit-shopping', '2026-11-16', NULL, 'DAY', NULL, NULL, NULL, NULL, NULL, 'MANUAL', 1, 1, 0, 'dev')",
             )
             db.execSQL("INSERT INTO visit_person (visit_id, person_id) VALUES ('v1', 'person-me')")
+            db.execSQL(
+                "INSERT INTO person (id, name, color_argb, is_me, created_at, updated_at, deleted, origin_device) " +
+                    "VALUES ('person-me', 'Ich', 4280250204, 1, 1, 1, 0, 'dev')",
+            )
             db.version = 1
         }
 
@@ -84,6 +89,10 @@ class MigrationTest {
             assertEquals(setOf("visit-shopping"), visit.categoryIds)
 
             assertTrue(room.dayTemplateDao().observeAll().first().isEmpty())
+
+            val person = RoomPersonRepository(room.personDao(), meta).observeAll().first().single()
+            assertEquals("Ich", person.name)
+            assertEquals(null, person.birthDate)
         } finally {
             room.close()
             context.deleteDatabase(name)

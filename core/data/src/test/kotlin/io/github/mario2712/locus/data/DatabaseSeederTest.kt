@@ -50,4 +50,13 @@ class DatabaseSeederTest : DbTestBase() {
 
         assertEquals(Defaults.visitCategories, catalog.observeVisitCategories().first())
     }
+
+    @Test
+    fun `Geburtsdatum wird gespeichert und vom Seeder nicht ueberschrieben`() = runTest {
+        seeder.seed()
+        val me = Defaults.persons.first().copy(birthDate = java.time.LocalDate.parse("1996-05-10"))
+        persons.upsert(me)
+        seeder.seed()
+        assertEquals(java.time.LocalDate.parse("1996-05-10"), persons.observeAll().first().first { it.isMe }.birthDate)
+    }
 }

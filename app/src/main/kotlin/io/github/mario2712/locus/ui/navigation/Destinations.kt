@@ -11,6 +11,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object CountriesRoute
 @Serializable data object MoreRoute
 @Serializable data object SettingsRoute
+@Serializable data object ProfileRoute
 
 /** Detailansicht eines Tages; Datum als ISO-Text (yyyy-MM-dd). */
 @Serializable data class DayRoute(val date: String)

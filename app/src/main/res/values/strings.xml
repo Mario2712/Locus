@@ -160,6 +160,30 @@
     <string name="reminder_text_trip">Die Reise läuft weiter. Falls du heute heimgereist bist, tippe „Heimreise heute“.</string>
     <string name="reminder_action_return_home">Heimreise heute</string>
 
+    <!-- Profil -->
+    <string name="profile_title">Profil &amp; Geburtstage</string>
+    <string name="profile_birth_date">Geburtsdatum</string>
+    <string name="profile_set_birth_date">festlegen</string>
+    <string name="profile_no_birth_date">Mit Geburtsdatum siehst du hier Länder bis zu runden Geburtstagen und wo du deine Geburtstage verbracht hast.</string>
+    <string name="profile_countries">Länderpunkte: %1$d</string>
+    <string name="profile_birthday_today">🎉 Heute ist der %1$d. Geburtstag!</string>
+    <plurals name="profile_age_next">
+        <item quantity="one">%1$d Jahre · nächster Geburtstag in %2$d Tag</item>
+        <item quantity="other">%1$d Jahre · nächster Geburtstag in %2$d Tagen</item>
+    </plurals>
+    <string name="profile_milestones">Länder bis zu runden Geburtstagen</string>
+    <string name="profile_milestone_reached">bis zum %1$d.</string>
+    <string name="profile_milestone_next">bis zum %1$d. (am %2$s) – bisher</string>
+    <plurals name="profile_countries_count">
+        <item quantity="one">%1$d Land</item>
+        <item quantity="other">%1$d Länder</item>
+    </plurals>
+    <string name="profile_birthdays">Wo warst du an deinen Geburtstagen?</string>
+    <string name="profile_birthdays_empty">Noch keine Einträge an Geburtstagen.</string>
+    <string name="profile_birthdays_abroad">Geburtstage im Ausland: %1$d</string>
+    <string name="profile_birthday_entry">%1$d · %2$d Jahre · %3$s</string>
+    <string name="profile_privacy">Geburtsdaten bleiben lokal auf deinem Gerät und sind nicht Teil des Codes auf GitHub.</string>
+
     <!-- Platzhalter (bis M3/M4) -->
     <string name="map_title">Karte</string>
     <string name="map_placeholder">Weltkarte mit besuchten Ländern, Städten und Orten.</string>
