@@ -213,6 +213,8 @@
     <string name="places_no_coordinates">ohne Koordinaten</string>
     <string name="place_coordinates">%1$s, %2$s</string>
     <string name="place_edit">Bearbeiten</string>
+    <string name="place_edit_inline">✎ Ort bearbeiten</string>
+    <string name="place_long_press_hint">Tipp: Lange drücken, um einen gespeicherten Ort zu bearbeiten.</string>
     <string name="place_link_osm">Mit OSM verknüpfen</string>
     <string name="place_make_homebase">Als Homebase festlegen</string>
     <string name="place_record">Orts-Akte</string>

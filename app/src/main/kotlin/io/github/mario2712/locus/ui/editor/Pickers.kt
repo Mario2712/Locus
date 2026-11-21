@@ -4,6 +4,7 @@ import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -104,8 +105,23 @@ fun PlaceField(
     preferLocations: Boolean = false,
 ) {
     var showPicker by remember { mutableStateOf(false) }
-    val label = places.firstOrNull { it.id == selectedId }?.displayName ?: stringResource(R.string.editor_choose_place)
+    var editPlace by remember { mutableStateOf<Place?>(null) }
+    val controller = LocalPlaceSearch.current
+    val scope = rememberCoroutineScope()
+    val selected = places.firstOrNull { it.id == selectedId }
+    val label = selected?.displayName ?: stringResource(R.string.editor_choose_place)
     OutlinedButton(onClick = { showPicker = true }, modifier = Modifier.fillMaxWidth()) { Text(label) }
+    if (selected != null && controller != null) {
+        TextButton(onClick = { editPlace = selected }) { Text(stringResource(R.string.place_edit_inline)) }
+    }
+    editPlace?.let { place ->
+        PlaceEditDialog(
+            place = place,
+            cities = places.filter { it.kind == PlaceKind.CITY && it.id != place.id },
+            onDismiss = { editPlace = null },
+            onSave = { updated -> scope.launch { controller?.save(updated) }; editPlace = null },
+        )
+    }
     if (showPicker) {
         PlacePickerDialog(
             places = places,
@@ -128,6 +144,7 @@ private sealed interface OnlineState {
  * Ortsauswahl: gespeicherte Orte, Online-Suche (OpenStreetMap) und „Hier“ (aktueller Standort).
  * Ein Online-Treffer wird erst bei Auswahl gespeichert; bestehende Orte werden dabei ergänzt.
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun PlacePickerDialog(
     places: List<Place>,
@@ -140,6 +157,7 @@ fun PlacePickerDialog(
     val scope = rememberCoroutineScope()
     var query by remember { mutableStateOf("") }
     var showCreate by remember { mutableStateOf(false) }
+    var editPlace by remember { mutableStateOf<Place?>(null) }
     var online by remember { mutableStateOf<OnlineState>(OnlineState.Idle) }
     val filtered = places.filter {
         query.isBlank() || it.displayName.contains(query, ignoreCase = true) || it.name.contains(query, ignoreCase = true)
@@ -245,7 +263,9 @@ fun PlacePickerDialog(
                         }
                         items(list, key = { it.id }) { place ->
                             Column(
-                                Modifier.fillMaxWidth().clickable { onSelect(place.id) }.padding(vertical = 10.dp),
+                                Modifier.fillMaxWidth()
+                                    .combinedClickable(onClick = { onSelect(place.id) }, onLongClick = { editPlace = place })
+                                    .padding(vertical = 10.dp),
                             ) {
                                 val country = ReferenceData.countableCountry(place.countryIso2)
                                 val parent = place.parentPlaceId?.let { id -> places.firstOrNull { it.id == id }?.displayName }
@@ -265,11 +285,26 @@ fun PlacePickerDialog(
                     }
                 }
                 if (places.isEmpty() && online == OnlineState.Idle) Text(stringResource(R.string.editor_no_places))
+                if (places.isNotEmpty() && controller != null) {
+                    Text(
+                        stringResource(R.string.place_long_press_hint),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         },
         confirmButton = { TextButton(onClick = { showCreate = true }) { Text(stringResource(R.string.editor_new_place)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
+    editPlace?.let { place ->
+        PlaceEditDialog(
+            place = place,
+            cities = places.filter { it.kind == PlaceKind.CITY && it.id != place.id },
+            onDismiss = { editPlace = null },
+            onSave = { updated -> scope.launch { controller?.save(updated) }; editPlace = null },
+        )
+    }
     if (showCreate) {
         PlaceCreateDialog(
             initialName = query,

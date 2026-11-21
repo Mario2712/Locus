@@ -86,6 +86,9 @@ class PlaceSearchController @Inject constructor(
         return city
     }
 
+    /** Speichert einen bearbeiteten Ort. */
+    suspend fun save(place: Place) = places.upsert(place)
+
     /** Verknüpft einen bestehenden Ort mit einem Treffer (Koordinaten, OSM-ID, Region). */
     suspend fun link(place: Place, candidate: PlaceCandidate): Place {
         val linked = PlaceCandidates.enrich(place.copy(latitude = null, longitude = null, osmId = null), candidate)
