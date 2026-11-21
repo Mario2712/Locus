@@ -3,76 +3,63 @@ package io.github.mario2712.locus.domain.day
 import io.github.mario2712.locus.domain.model.DatePrecision
 import io.github.mario2712.locus.domain.model.PersonId
 import io.github.mario2712.locus.domain.model.Stay
+import io.github.mario2712.locus.domain.reference.Defaults
+import io.github.mario2712.locus.domain.reference.Defaults.StayTypeIds
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
-import java.time.LocalTime
 
 class DayClassifierTest {
 
     private val me = setOf(PersonId("me"))
-    private val classifier = DayClassifier()
+    private val classifier = DayClassifier(StayPriority.ranker(Defaults.stayTypes.associateBy { it.id }))
     private val day = LocalDate.of(2026, 11, 17)
 
-    private fun t(s: String) = LocalTime.parse(s)
-
     @Test
-    fun `ganztaegiger Homeoffice-Tag`() {
-        val summary = classifier.classify(day, listOf(Stay("1", "hallein", "homeoffice", day, participants = me)))!!
-        assertEquals("homeoffice", summary.mainTypeId)
-        assertTrue(summary.isExclusively("homeoffice"))
-        assertEquals(mapOf("homeoffice" to 1440), summary.minutesByType)
+    fun `Homeoffice-Tag`() {
+        val summary = classifier.classify(day, listOf(Stay("1", "hallein", StayTypeIds.HOMEOFFICE, day, participants = me)))!!
+        assertEquals(StayTypeIds.HOMEOFFICE, summary.mainTypeId)
+        assertTrue(summary.isExclusively(StayTypeIds.HOMEOFFICE))
     }
 
     @Test
-    fun `vormittags Buero, ab 12 Uhr Homeoffice - Ende des Bueros wird abgeleitet`() {
+    fun `Buero dann Homeoffice - Hauptart Buero, beide Arten zaehlen`() {
         val stays = listOf(
-            Stay("1", "salzburg", "buero", day, startTime = t("08:00"), sortIndex = 0, participants = me),
-            Stay("2", "hallein", "homeoffice", day, startTime = t("12:00"), endTime = t("17:00"), sortIndex = 1, participants = me),
+            Stay("1", "salzburg", StayTypeIds.OFFICE, day, sortIndex = 0, participants = me),
+            Stay("2", "hallein", StayTypeIds.HOMEOFFICE, day, sortIndex = 1, participants = me),
         )
         val summary = classifier.classify(day, stays)!!
-        assertEquals(setOf("buero", "homeoffice"), summary.typeIds)
-        assertEquals(mapOf("buero" to 240, "homeoffice" to 300), summary.minutesByType)
-        assertEquals("homeoffice", summary.mainTypeId)
-        assertFalse(summary.isExclusively("homeoffice"))
+        assertEquals(setOf(StayTypeIds.OFFICE, StayTypeIds.HOMEOFFICE), summary.typeIds)
+        assertEquals(StayTypeIds.OFFICE, summary.mainTypeId)
+        assertFalse(summary.isExclusively(StayTypeIds.HOMEOFFICE))
     }
 
     @Test
-    fun `ohne Uhrzeiten ist die erste Art die Hauptart`() {
+    fun `Buero dann Urlaub - Hauptart Urlaub, unabhaengig von der Reihenfolge`() {
         val stays = listOf(
-            Stay("1", "salzburg", "buero", day, sortIndex = 0, participants = me),
-            Stay("2", "hallein", "homeoffice", day, sortIndex = 1, participants = me),
+            Stay("1", "salzburg", StayTypeIds.OFFICE, day, sortIndex = 0, participants = me),
+            Stay("2", "ljubljana", StayTypeIds.VACATION, day, day.plusDays(2), sortIndex = 1, participants = me),
         )
-        val summary = classifier.classify(day, stays)!!
-        assertEquals("buero", summary.mainTypeId)
-        assertNull(summary.minutesByType)
+        assertEquals(StayTypeIds.VACATION, classifier.classify(day, stays)!!.mainTypeId)
+        assertTrue(classifier.classify(day.plusDays(1), stays)!!.isExclusively(StayTypeIds.VACATION))
     }
 
     @Test
-    fun `vormittags Buero, ab 13 Uhr mehrtaegiger Urlaub`() {
-        val friday = LocalDate.of(2026, 11, 20)
+    fun `ohne Rangfolge gewinnt die erste Station`() {
         val stays = listOf(
-            Stay("1", "salzburg", "buero", friday, sortIndex = 0, participants = me),
-            Stay(
-                "2", "ljubljana", "urlaub", friday, friday.plusDays(2),
-                startTime = t("13:00"), sortIndex = 1, participants = me,
-            ),
+            Stay("1", "a", "x", day, sortIndex = 0, participants = me),
+            Stay("2", "b", "y", day, sortIndex = 1, participants = me),
         )
-        val fri = classifier.classify(friday, stays)!!
-        assertEquals(mapOf("buero" to 780, "urlaub" to 660), fri.minutesByType)
-        assertEquals("buero", fri.mainTypeId)
-
-        val sat = classifier.classify(friday.plusDays(1), stays)!!
-        assertTrue(sat.isExclusively("urlaub"))
+        assertEquals("x", DayClassifier().classify(day, stays)!!.mainTypeId)
     }
 
     @Test
     fun `unscharfe Aufenthalte und leere Tage werden ignoriert`() {
         val fuzzy = Stay(
-            "1", "rom", "urlaub", LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30),
+            "1", "rom", StayTypeIds.VACATION, LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30),
             precision = DatePrecision.MONTH, participants = me,
         )
         assertNull(classifier.classify(day, listOf(fuzzy)))
@@ -82,12 +69,12 @@ class DayClassifierTest {
     @Test
     fun `Statistik zaehlt geteilte Tage in beiden Arten, Hauptart nur einmal`() {
         val days = listOf(
-            DaySummary(day, setOf("homeoffice"), "homeoffice", null),
-            DaySummary(day.plusDays(1), setOf("buero", "homeoffice"), "homeoffice", null),
-            DaySummary(day.plusDays(2), setOf("buero"), "buero", null),
+            DaySummary(day, setOf("homeoffice"), "homeoffice"),
+            DaySummary(day.plusDays(1), setOf("buero", "homeoffice"), "buero"),
+            DaySummary(day.plusDays(2), setOf("buero"), "buero"),
         )
         assertEquals(mapOf("homeoffice" to 2, "buero" to 2), DayStatistics.daysWithType(days))
-        assertEquals(mapOf("homeoffice" to 2, "buero" to 1), DayStatistics.daysByMainType(days))
+        assertEquals(mapOf("homeoffice" to 1, "buero" to 2), DayStatistics.daysByMainType(days))
         assertEquals(1, DayStatistics.exclusiveDays(days, "homeoffice"))
     }
 }

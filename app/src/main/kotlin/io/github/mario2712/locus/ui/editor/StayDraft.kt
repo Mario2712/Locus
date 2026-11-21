@@ -4,6 +4,7 @@ import io.github.mario2712.locus.domain.model.DatePrecision
 import io.github.mario2712.locus.domain.model.EntrySource
 import io.github.mario2712.locus.domain.model.PersonId
 import io.github.mario2712.locus.domain.model.Stay
+import io.github.mario2712.locus.domain.model.TransportMode
 import io.github.mario2712.locus.domain.reference.Defaults
 import java.time.LocalDate
 import java.time.LocalTime
@@ -24,6 +25,8 @@ data class StayDraft(
     val tripId: String? = null,
     val precision: DatePrecision = DatePrecision.DAY,
     val source: EntrySource = EntrySource.MANUAL,
+    val overnight: Boolean = false,
+    val transport: Set<TransportMode> = emptySet(),
 ) {
     val isNew: Boolean get() = id == null
 
@@ -48,6 +51,8 @@ data class StayDraft(
         tripId = tripId,
         note = note.trim().takeIf { it.isNotEmpty() },
         source = source,
+        overnight = overnight,
+        transport = transport,
     )
 
     companion object {
@@ -57,7 +62,7 @@ data class StayDraft(
             startTime = stay.startTime, endTime = stay.endTime,
             participants = stay.participants, note = stay.note.orEmpty(),
             sortIndex = stay.sortIndex, tripId = stay.tripId, precision = stay.precision,
-            source = stay.source,
+            source = stay.source, overnight = stay.overnight, transport = stay.transport,
         )
     }
 }

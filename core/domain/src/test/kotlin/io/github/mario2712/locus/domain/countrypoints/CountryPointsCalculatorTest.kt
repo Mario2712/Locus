@@ -137,4 +137,13 @@ class CountryPointsCalculatorTest {
         )
         assertEquals(setOf("DK"), points.countriesOf(me))
     }
+
+    @Test
+    fun `Besuch mit mehreren Kategorien zaehlt, wenn eine davon zaehlt`() {
+        val visit = Visit(
+            "v", "tankstelle-si", "rast", d("2023-08-01"), participants = setOf(me),
+            extraCategoryIds = setOf("restaurant"),
+        )
+        assertEquals(setOf("SI"), calc(visits = listOf(visit)).countriesOf(me))
+    }
 }

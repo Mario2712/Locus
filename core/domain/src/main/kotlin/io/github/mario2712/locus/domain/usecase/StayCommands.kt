@@ -4,6 +4,9 @@ import io.github.mario2712.locus.domain.model.DatePrecision
 import io.github.mario2712.locus.domain.model.EntrySource
 import io.github.mario2712.locus.domain.model.PersonId
 import io.github.mario2712.locus.domain.model.Stay
+import io.github.mario2712.locus.domain.model.TemplateStep
+import io.github.mario2712.locus.domain.model.TransportMode
+import io.github.mario2712.locus.domain.reference.Defaults
 import io.github.mario2712.locus.domain.repository.StayRepository
 import kotlinx.coroutines.flow.first
 import java.time.DayOfWeek
@@ -11,7 +14,15 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
 
-/** Schreibende Abläufe rund um Aufenthalte: Einchecken, Wechseln, Nachtragen. */
+/** Ein Abschnitt einer Reise: Wegpunkt (Umstieg, Abflughafen) oder Ziel. */
+data class JourneyLeg(
+    val placeId: String,
+    val transport: Set<TransportMode> = emptySet(),
+    /** Ankunft relativ zum Reisebeginn, z. B. 1 für „Ankunft am Folgetag“. */
+    val dayOffset: Int = 0,
+)
+
+/** Schreibende Abläufe rund um Stationen: Einchecken, Weiter, Reisen, Nachtragen. */
 class StayCommands(
     private val stays: StayRepository,
 ) {
@@ -40,6 +51,90 @@ class StayCommands(
         stays.upsert(stay)
         return stay
     }
+
+    /**
+     * Hängt eine Station an die Kette von [date] an („Weiter nach …“).
+     * [liveTime] wird bei Live-Erfassung automatisch gesetzt, beim Nachtragen bleibt sie leer.
+     */
+    suspend fun addStation(
+        date: LocalDate,
+        participants: Set<PersonId>,
+        stayTypeId: String,
+        placeId: String,
+        transport: Set<TransportMode> = emptySet(),
+        overnight: Boolean = false,
+        liveTime: LocalTime? = null,
+        source: EntrySource = EntrySource.MANUAL,
+    ): Stay {
+        val stay = Stay(
+            id = newId(), placeId = placeId, typeId = stayTypeId, startDate = date,
+            startTime = liveTime, sortIndex = nextSortIndex(date, participants.first()),
+            participants = participants, source = source, overnight = overnight, transport = transport,
+        )
+        stays.upsert(stay)
+        return stay
+    }
+
+    /**
+     * Wendet eine Tagesvorlage an (z. B. „Büro → Homeoffice“), sofern der Tag noch leer ist.
+     * @return angelegte Stationen, leer wenn der Tag schon belegt war.
+     */
+    suspend fun applyTemplate(
+        date: LocalDate,
+        participants: Set<PersonId>,
+        steps: List<TemplateStep>,
+        source: EntrySource = EntrySource.PATTERN,
+    ): List<Stay> {
+        if (dayStays(date, participants.first()).isNotEmpty()) return emptyList()
+        val created = steps.mapIndexed { index, step ->
+            Stay(
+                id = newId(), placeId = step.placeId, typeId = step.stayTypeId, startDate = date,
+                sortIndex = index, participants = participants, source = source,
+                overnight = step.overnight, transport = step.transport,
+            )
+        }
+        created.forEach { stays.upsert(it) }
+        return created
+    }
+
+    /**
+     * Reise starten oder fortsetzen: Wegpunkte werden als „Transit“ (ohne Länderpunkt) angelegt,
+     * das letzte Teilstück ist das Ziel mit Übernachtung (neue Basis).
+     * Beispiel: München (Abflug, 🚗) → Y (Umstieg, ✈️, +1 Tag) → X (✈️, +1 Tag, Urlaub).
+     */
+    suspend fun journey(
+        startDate: LocalDate,
+        participants: Set<PersonId>,
+        legs: List<JourneyLeg>,
+        destinationTypeId: String,
+        liveTime: LocalTime? = null,
+    ): List<Stay> {
+        require(legs.isNotEmpty()) { "Eine Reise braucht ein Ziel" }
+        return legs.mapIndexed { index, leg ->
+            val isDestination = index == legs.lastIndex
+            val date = startDate.plusDays(leg.dayOffset.toLong())
+            addStation(
+                date = date,
+                participants = participants,
+                stayTypeId = if (isDestination) destinationTypeId else Defaults.StayTypeIds.TRANSIT,
+                placeId = leg.placeId,
+                transport = leg.transport,
+                overnight = isDestination,
+                liveTime = liveTime.takeIf { index == 0 && leg.dayOffset == 0 },
+            )
+        }
+    }
+
+    /** Heimreise: Station an der Homebase; damit ist die Homebase wieder die Basis. */
+    suspend fun returnHome(
+        date: LocalDate,
+        participants: Set<PersonId>,
+        homebaseId: String,
+        transport: Set<TransportMode> = emptySet(),
+        liveTime: LocalTime? = null,
+    ): Stay = addStation(
+        date, participants, Defaults.StayTypeIds.FREE, homebaseId, transport, overnight = false, liveTime = liveTime,
+    )
 
     /**
      * „Wechsel ab [time]“: beendet den laufenden Aufenthalt zu [time] und beginnt einen neuen.

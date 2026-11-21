@@ -55,8 +55,8 @@ class ReminderNotifier @Inject constructor(
                 Intent(context, ReminderActionReceiver::class.java).apply {
                     action = ReminderActionReceiver.ACTION_CONFIRM
                     putExtra(ReminderActionReceiver.EXTRA_DATE, content.date.toString())
-                    putExtra(ReminderActionReceiver.EXTRA_TYPE, suggestion.stayTypeId)
-                    putExtra(ReminderActionReceiver.EXTRA_PLACE, suggestion.placeId)
+                    putExtra(ReminderActionReceiver.EXTRA_TYPE, suggestion.first.stayTypeId)
+                    putExtra(ReminderActionReceiver.EXTRA_PLACE, suggestion.first.placeId)
                 },
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )

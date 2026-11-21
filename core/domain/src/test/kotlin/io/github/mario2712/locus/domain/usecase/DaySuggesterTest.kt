@@ -22,14 +22,14 @@ class DaySuggesterTest {
 
     @Test
     fun `Montag Homeoffice Hallein, Dienstag Buero Salzburg`() {
-        assertEquals("hallein", suggester.suggest(d("2026-11-16"), Defaults.ME, rules, types)!!.placeId)
-        assertEquals(StayTypeIds.OFFICE, suggester.suggest(d("2026-11-17"), Defaults.ME, rules, types)!!.stayTypeId)
+        assertEquals("hallein", suggester.suggest(d("2026-11-16"), Defaults.ME, rules, types)!!.first.placeId)
+        assertEquals(StayTypeIds.OFFICE, suggester.suggest(d("2026-11-17"), Defaults.ME, rules, types)!!.first.stayTypeId)
     }
 
     @Test
     fun `ohne Regel kein Vorschlag, Regeln anderer Personen zaehlen nicht`() {
         assertNull(suggester.suggest(d("2026-11-18"), Defaults.ME, rules, types))
-        assertEquals("linz", suggester.suggest(d("2026-11-16"), Defaults.JOHANNA, rules, types)!!.placeId)
+        assertEquals("linz", suggester.suggest(d("2026-11-16"), Defaults.JOHANNA, rules, types)!!.first.placeId)
     }
 
     @Test
@@ -37,7 +37,7 @@ class DaySuggesterTest {
         // Ostermontag 2026
         assertNull(suggester.suggest(d("2026-04-06"), Defaults.ME, rules, types))
         // Samstag, 26.10.2024 Nationalfeiertag – Freizeit-Regel bleibt
-        assertEquals(StayTypeIds.FREE, suggester.suggest(d("2024-10-26"), Defaults.ME, rules, types)!!.stayTypeId)
+        assertEquals(StayTypeIds.FREE, suggester.suggest(d("2024-10-26"), Defaults.ME, rules, types)!!.first.stayTypeId)
     }
 
     @Test
@@ -48,5 +48,22 @@ class DaySuggesterTest {
         )
         assertEquals("di-neu", suggester.suggest(d("2026-11-17"), Defaults.ME, rules + newer, types)!!.ruleId)
         assertEquals("di", suggester.suggest(d("2026-10-27"), Defaults.ME, rules + newer, types)!!.ruleId)
+    }
+
+    @Test
+    fun `Muster mit Tagesvorlage liefert alle Schritte`() {
+        val hybrid = io.github.mario2712.locus.domain.model.DayTemplate(
+            "t-hybrid", "Hybrid",
+            listOf(
+                io.github.mario2712.locus.domain.model.TemplateStep(StayTypeIds.OFFICE, "salzburg"),
+                io.github.mario2712.locus.domain.model.TemplateStep(StayTypeIds.HOMEOFFICE, "hallein"),
+            ),
+        )
+        val thursday = PatternRule("do", Defaults.ME, DayOfWeek.THURSDAY, StayTypeIds.OFFICE, "salzburg", templateId = "t-hybrid")
+        val suggestion = suggester.suggest(d("2026-11-19"), Defaults.ME, listOf(thursday), types, mapOf(hybrid.id to hybrid))!!
+        assertEquals(listOf("salzburg", "hallein"), suggestion.steps.map { it.placeId })
+        assertEquals("Hybrid", suggestion.templateName)
+        // An Feiertagen (Fronleichnam 2026 ist ein Donnerstag) entfällt die Vorlage mit Arbeit.
+        assertNull(suggester.suggest(d("2026-06-04"), Defaults.ME, listOf(thursday), types, mapOf(hybrid.id to hybrid)))
     }
 }

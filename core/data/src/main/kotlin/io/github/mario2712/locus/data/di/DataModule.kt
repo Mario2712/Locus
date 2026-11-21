@@ -14,6 +14,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.github.mario2712.locus.data.db.LocusDatabase
 import io.github.mario2712.locus.data.repository.RoomCatalogRepository
+import io.github.mario2712.locus.data.repository.RoomDayTemplateRepository
 import io.github.mario2712.locus.data.repository.RoomPatternRuleRepository
 import io.github.mario2712.locus.data.repository.RoomPersonRepository
 import io.github.mario2712.locus.data.repository.RoomPlaceRepository
@@ -27,6 +28,7 @@ import io.github.mario2712.locus.data.sync.SharedPrefsDeviceIdProvider
 import io.github.mario2712.locus.data.sync.SyncMetaFactory
 import io.github.mario2712.locus.data.sync.TimeProvider
 import io.github.mario2712.locus.domain.repository.CatalogRepository
+import io.github.mario2712.locus.domain.repository.DayTemplateRepository
 import io.github.mario2712.locus.domain.repository.PatternRuleRepository
 import io.github.mario2712.locus.domain.repository.PersonRepository
 import io.github.mario2712.locus.domain.repository.PlaceRepository
@@ -66,6 +68,7 @@ object DatabaseModule {
     @Provides fun tripDao(db: LocusDatabase) = db.tripDao()
     @Provides fun wishDao(db: LocusDatabase) = db.wishDao()
     @Provides fun patternRuleDao(db: LocusDatabase) = db.patternRuleDao()
+    @Provides fun dayTemplateDao(db: LocusDatabase) = db.dayTemplateDao()
 }
 
 @Module
@@ -79,5 +82,6 @@ abstract class RepositoryModule {
     @Binds abstract fun tripRepository(impl: RoomTripRepository): TripRepository
     @Binds abstract fun wishRepository(impl: RoomWishRepository): WishRepository
     @Binds abstract fun patternRuleRepository(impl: RoomPatternRuleRepository): PatternRuleRepository
+    @Binds abstract fun dayTemplateRepository(impl: RoomDayTemplateRepository): DayTemplateRepository
     @Binds abstract fun settingsRepository(impl: DataStoreSettingsRepository): SettingsRepository
 }

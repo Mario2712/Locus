@@ -2,7 +2,9 @@ package io.github.mario2712.locus.data
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import io.github.mario2712.locus.data.settings.DataStoreSettingsRepository
+import io.github.mario2712.locus.domain.model.EntryDefaults
 import io.github.mario2712.locus.domain.model.ReminderSettings
+import io.github.mario2712.locus.domain.reference.Defaults
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -30,5 +32,10 @@ class SettingsRepositoryTest {
 
         repo.setReminder(ReminderSettings(enabled = false, time = LocalTime.of(21, 15)))
         assertEquals(ReminderSettings(false, LocalTime.of(21, 15)), repo.observeReminder().first())
+
+        assertEquals(EntryDefaults(), repo.observeEntryDefaults().first())
+        val custom = EntryDefaults(prefillTransport = false, dailyParticipants = setOf(Defaults.ME, Defaults.JOHANNA))
+        repo.setEntryDefaults(custom)
+        assertEquals(custom, repo.observeEntryDefaults().first())
     }
 }

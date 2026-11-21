@@ -1,5 +1,7 @@
 package io.github.mario2712.locus.domain.repository
 
+import io.github.mario2712.locus.domain.model.DayTemplate
+import io.github.mario2712.locus.domain.model.EntryDefaults
 import io.github.mario2712.locus.domain.model.Person
 import io.github.mario2712.locus.domain.model.PatternRule
 import io.github.mario2712.locus.domain.model.Place
@@ -39,6 +41,8 @@ interface PlaceRepository {
     suspend fun findByOsmId(osmId: String): Place?
     suspend fun upsert(place: Place)
     suspend fun delete(id: String)
+    /** Setzt [id] als einzige Homebase (alle anderen Orte verlieren die Markierung). */
+    suspend fun setHomebase(id: String)
 }
 
 interface StayRepository {
@@ -80,7 +84,15 @@ interface PatternRuleRepository {
     suspend fun delete(id: String)
 }
 
+interface DayTemplateRepository {
+    fun observeAll(): Flow<List<DayTemplate>>
+    suspend fun upsert(template: DayTemplate)
+    suspend fun delete(id: String)
+}
+
 interface SettingsRepository {
     fun observeReminder(): Flow<ReminderSettings>
     suspend fun setReminder(settings: ReminderSettings)
+    fun observeEntryDefaults(): Flow<EntryDefaults>
+    suspend fun setEntryDefaults(defaults: EntryDefaults)
 }

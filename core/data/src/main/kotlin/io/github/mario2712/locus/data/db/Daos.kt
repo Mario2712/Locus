@@ -80,6 +80,24 @@ interface PlaceDao {
 
     @Query("UPDATE place SET deleted = 1, updated_at = :now, origin_device = :device WHERE id = :id")
     suspend fun softDelete(id: String, now: Long, device: String)
+
+    @Query("UPDATE place SET is_homebase = 0, updated_at = :now, origin_device = :device WHERE is_homebase = 1 AND id != :id")
+    suspend fun clearHomebaseExcept(id: String, now: Long, device: String)
+
+    @Query("UPDATE place SET is_homebase = 1, updated_at = :now, origin_device = :device WHERE id = :id")
+    suspend fun markHomebase(id: String, now: Long, device: String)
+
+    @Transaction
+    suspend fun setHomebase(id: String, now: Long, device: String) {
+        clearHomebaseExcept(id, now, device)
+        markHomebase(id, now, device)
+    }
+
+    @Query("SELECT COUNT(*) FROM place WHERE is_homebase = 1 AND deleted = 0")
+    suspend fun homebaseCount(): Int
+
+    @Query("SELECT * FROM place WHERE deleted = 0 AND LOWER(alias) = LOWER(:alias)")
+    suspend fun findByAlias(alias: String): List<PlaceEntity>
 }
 
 @Dao
@@ -223,5 +241,19 @@ interface PatternRuleDao {
     @Upsert suspend fun upsert(entity: PatternRuleEntity)
 
     @Query("UPDATE pattern_rule SET deleted = 1, updated_at = :now, origin_device = :device WHERE id = :id")
+    suspend fun softDelete(id: String, now: Long, device: String)
+}
+
+@Dao
+interface DayTemplateDao {
+    @Query("SELECT * FROM day_template WHERE deleted = 0 ORDER BY sort_order, name")
+    fun observeAll(): Flow<List<DayTemplateEntity>>
+
+    @Query("SELECT created_at FROM day_template WHERE id = :id")
+    suspend fun createdAt(id: String): Long?
+
+    @Upsert suspend fun upsert(entity: DayTemplateEntity)
+
+    @Query("UPDATE day_template SET deleted = 1, updated_at = :now, origin_device = :device WHERE id = :id")
     suspend fun softDelete(id: String, now: Long, device: String)
 }

@@ -103,9 +103,9 @@ fun TodayScreen(
                     val suggestion = state.suggestion
                     if (suggestion != null) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            TypeDot(state.editor.typeColor(suggestion.stayTypeId))
+                            TypeDot(state.editor.typeColor(suggestion.first.stayTypeId))
                             Text(
-                                "${state.editor.typeName(suggestion.stayTypeId)} · ${state.editor.placeName(suggestion.placeId)}",
+                                "${state.editor.typeName(suggestion.first.stayTypeId)} · ${state.editor.placeName(suggestion.first.placeId)}",
                                 style = MaterialTheme.typography.titleMedium,
                             )
                         }

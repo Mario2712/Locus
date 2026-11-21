@@ -34,8 +34,8 @@ class ReminderContentBuilder @Inject constructor(
 
         val types = catalog.observeStayTypes().first().associateBy { it.id }
         val suggestion = suggester.suggest(date, me, patterns.observeAll().first(), types)
-        val place = suggestion?.let { places.get(it.placeId) }
-        val type = suggestion?.let { types[it.stayTypeId] }
+        val place = suggestion?.let { places.get(it.first.placeId) }
+        val type = suggestion?.let { types[it.first.stayTypeId] }
         return if (suggestion != null && place != null && type != null) {
             ReminderContent(date, suggestion, "${type.name} · ${place.displayName}")
         } else {

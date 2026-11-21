@@ -84,6 +84,7 @@ data class PlaceEntity(
     @ColumnInfo(name = "is_favorite") val isFavorite: Boolean,
     val note: String?,
     @Embedded val meta: SyncMeta,
+    @ColumnInfo(name = "is_homebase", defaultValue = "0") val isHomebase: Boolean = false,
 )
 
 // Bewusst ohne Foreign Keys: Soft-Deletes und ein späterer Import in beliebiger Reihenfolge
@@ -107,6 +108,10 @@ data class StayEntity(
     val note: String?,
     val source: EntrySource,
     @Embedded val meta: SyncMeta,
+    /** Übernachtung → neue Basis. */
+    @ColumnInfo(name = "overnight", defaultValue = "0") val overnight: Boolean = false,
+    /** Verkehrsmittel als kommagetrennte Namen von TransportMode. */
+    @ColumnInfo(name = "transport", defaultValue = "") val transport: String = "",
 )
 
 @Entity(tableName = "stay_person", primaryKeys = ["stay_id", "person_id"], indices = [Index("person_id")])
@@ -139,6 +144,8 @@ data class VisitEntity(
     @ColumnInfo(name = "photo_uri") val photoUri: String?,
     val source: EntrySource,
     @Embedded val meta: SyncMeta,
+    /** Weitere Kategorien, kommagetrennt (z. B. Einkaufen + Restaurant). */
+    @ColumnInfo(name = "extra_category_ids", defaultValue = "") val extraCategoryIds: String = "",
 )
 
 @Entity(tableName = "visit_person", primaryKeys = ["visit_id", "person_id"], indices = [Index("person_id")])
@@ -201,5 +208,16 @@ data class PatternRuleEntity(
     @ColumnInfo(name = "place_id") val placeId: String,
     @ColumnInfo(name = "valid_from") val validFrom: LocalDate?,
     @ColumnInfo(name = "valid_to") val validTo: LocalDate?,
+    @Embedded val meta: SyncMeta,
+    @ColumnInfo(name = "template_id") val templateId: String? = null,
+)
+
+/** Tagesvorlage; Schritte zeilenweise kodiert (siehe Mapper). */
+@Entity(tableName = "day_template")
+data class DayTemplateEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    @ColumnInfo(name = "steps") val steps: String,
+    @ColumnInfo(name = "sort_order") val sortOrder: Int,
     @Embedded val meta: SyncMeta,
 )

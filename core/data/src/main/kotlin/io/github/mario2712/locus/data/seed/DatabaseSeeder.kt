@@ -26,6 +26,12 @@ class DatabaseSeeder @Inject constructor(
                 insertVisitCategoriesIfMissing(Defaults.visitCategories.map { it.toEntity(m) })
                 insertRegionCollectionsIfMissing(Defaults.regionCollections.map { it.toEntity(m) })
             }
+            // Einmalige Übernahme: Ort mit Kurzname „Zuhause“ wird Homebase, falls noch keine gesetzt ist.
+            db.placeDao().apply {
+                if (homebaseCount() == 0) {
+                    findByAlias("Zuhause").singleOrNull()?.let { setHomebase(it.id, meta.now(), meta.deviceId()) }
+                }
+            }
         }
     }
 }

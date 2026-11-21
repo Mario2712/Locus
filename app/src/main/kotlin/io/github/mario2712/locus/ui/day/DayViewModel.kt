@@ -72,7 +72,7 @@ class DayViewModel @Inject constructor(
             holiday = AustrianHolidays.nameOf(date),
             stays = items,
             suggestion = if (ownEmpty) {
-                suggester.suggest(date, me, rules, editor.typesById)?.takeIf { it.placeId in editor.placesById }
+                suggester.suggest(date, me, rules, editor.typesById)?.takeIf { it.first.placeId in editor.placesById }
             } else {
                 null
             },
@@ -83,7 +83,7 @@ class DayViewModel @Inject constructor(
     fun newDraft() = StayDraft(startDate = date)
 
     fun confirmSuggestion(suggestion: DaySuggestion) = viewModelScope.launch {
-        commands.checkIn(date, me, suggestion.stayTypeId, suggestion.placeId, EntrySource.PATTERN)
+        commands.checkIn(date, me, suggestion.first.stayTypeId, suggestion.first.placeId, EntrySource.PATTERN)
     }
 
     fun save(draft: StayDraft) = viewModelScope.launch { messageChannel.send(editing.save(draft)) }

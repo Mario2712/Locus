@@ -1,6 +1,7 @@
 package io.github.mario2712.locus.data.repository
 
 import io.github.mario2712.locus.data.db.CatalogDao
+import io.github.mario2712.locus.data.db.DayTemplateDao
 import io.github.mario2712.locus.data.db.PatternRuleDao
 import io.github.mario2712.locus.data.db.PersonDao
 import io.github.mario2712.locus.data.db.PlaceDao
@@ -9,6 +10,7 @@ import io.github.mario2712.locus.data.db.TripDao
 import io.github.mario2712.locus.data.db.VisitDao
 import io.github.mario2712.locus.data.db.WishDao
 import io.github.mario2712.locus.data.sync.SyncMetaFactory
+import io.github.mario2712.locus.domain.model.DayTemplate
 import io.github.mario2712.locus.domain.model.PatternRule
 import io.github.mario2712.locus.domain.model.Person
 import io.github.mario2712.locus.domain.model.Place
@@ -20,6 +22,7 @@ import io.github.mario2712.locus.domain.model.Visit
 import io.github.mario2712.locus.domain.model.VisitCategory
 import io.github.mario2712.locus.domain.model.Wish
 import io.github.mario2712.locus.domain.repository.CatalogRepository
+import io.github.mario2712.locus.domain.repository.DayTemplateRepository
 import io.github.mario2712.locus.domain.repository.PatternRuleRepository
 import io.github.mario2712.locus.domain.repository.PersonRepository
 import io.github.mario2712.locus.domain.repository.PlaceRepository
@@ -73,6 +76,7 @@ class RoomPlaceRepository @Inject constructor(
     override suspend fun findByOsmId(osmId: String) = dao.findByOsmId(osmId)?.toDomain()
     override suspend fun upsert(place: Place) = dao.upsert(place.toEntity(meta.forSave(dao.createdAt(place.id))))
     override suspend fun delete(id: String) = dao.softDelete(id, meta.now(), meta.deviceId())
+    override suspend fun setHomebase(id: String) = dao.setHomebase(id, meta.now(), meta.deviceId())
 }
 
 class RoomStayRepository @Inject constructor(
@@ -128,5 +132,15 @@ class RoomPatternRuleRepository @Inject constructor(
 ) : PatternRuleRepository {
     override fun observeAll() = dao.observeAll().mapList { it.toDomain() }
     override suspend fun upsert(rule: PatternRule) = dao.upsert(rule.toEntity(meta.forSave(dao.createdAt(rule.id))))
+    override suspend fun delete(id: String) = dao.softDelete(id, meta.now(), meta.deviceId())
+}
+
+class RoomDayTemplateRepository @Inject constructor(
+    private val dao: DayTemplateDao,
+    private val meta: SyncMetaFactory,
+) : DayTemplateRepository {
+    override fun observeAll() = dao.observeAll().mapList { it.toDomain() }
+    override suspend fun upsert(template: DayTemplate) =
+        dao.upsert(template.toEntity(meta.forSave(dao.createdAt(template.id))))
     override suspend fun delete(id: String) = dao.softDelete(id, meta.now(), meta.deviceId())
 }

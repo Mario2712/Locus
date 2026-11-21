@@ -125,7 +125,7 @@ class TodayViewModel @Inject constructor(
             todayStays = todayStays,
             suggestion = if (todayStays.isEmpty()) {
                 suggester.suggest(today, me, input.rules, editor.typesById)
-                    ?.takeIf { it.placeId in editor.placesById }
+                    ?.takeIf { it.first.placeId in editor.placesById }
             } else {
                 null
             },
@@ -141,7 +141,7 @@ class TodayViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState(today))
 
     fun confirmSuggestion(suggestion: DaySuggestion) = viewModelScope.launch {
-        commands.checkIn(today, me, suggestion.stayTypeId, suggestion.placeId, EntrySource.PATTERN)
+        commands.checkIn(today, me, suggestion.first.stayTypeId, suggestion.first.placeId, EntrySource.PATTERN)
     }
 
     fun quickCheckIn(combo: StayCombo) = viewModelScope.launch {
@@ -149,7 +149,7 @@ class TodayViewModel @Inject constructor(
     }
 
     fun newDraft(suggestion: DaySuggestion? = null) =
-        StayDraft(startDate = today, typeId = suggestion?.stayTypeId, placeId = suggestion?.placeId)
+        StayDraft(startDate = today, typeId = suggestion?.first?.stayTypeId, placeId = suggestion?.first?.placeId)
 
     fun save(draft: StayDraft) = viewModelScope.launch { messageChannel.send(editing.save(draft)) }
 

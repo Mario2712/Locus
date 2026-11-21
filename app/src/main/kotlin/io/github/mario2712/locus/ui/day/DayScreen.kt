@@ -76,7 +76,7 @@ fun DayScreen(onBack: () -> Unit, viewModel: DayViewModel = hiltViewModel()) {
             }
             state.suggestion?.let { suggestion ->
                 SectionCard(stringResource(R.string.day_suggestion)) {
-                    Text("${state.editor.typeName(suggestion.stayTypeId)} · ${state.editor.placeName(suggestion.placeId)}")
+                    Text("${state.editor.typeName(suggestion.first.stayTypeId)} · ${state.editor.placeName(suggestion.first.placeId)}")
                     Button(onClick = { viewModel.confirmSuggestion(suggestion) }) { Text(stringResource(R.string.today_confirm)) }
                 }
             }

@@ -79,4 +79,24 @@ class StayCommandsTest {
             repo.all.filter { it.typeId == StayTypeIds.OFFICE }.map { it.startDate },
         )
     }
+
+    @Test
+    fun `Vorlage anwenden - Hybrid-Tag in einem Schritt, nur wenn der Tag leer ist`() = runTest {
+        val steps = listOf(
+            io.github.mario2712.locus.domain.model.TemplateStep(StayTypeIds.OFFICE, "salzburg", setOf(io.github.mario2712.locus.domain.model.TransportMode.TRAIN)),
+            io.github.mario2712.locus.domain.model.TemplateStep(StayTypeIds.HOMEOFFICE, "hallein"),
+        )
+        val created = commands.applyTemplate(d("2026-11-19"), setOf(ME), steps)
+        assertEquals(listOf(0, 1), created.map { it.sortIndex })
+        assertEquals(setOf(io.github.mario2712.locus.domain.model.TransportMode.TRAIN), created.first().transport)
+        assertEquals(emptyList<Stay>(), commands.applyTemplate(d("2026-11-19"), setOf(ME), steps))
+    }
+
+    @Test
+    fun `Station anhaengen setzt Reihenfolge und Live-Uhrzeit`() = runTest {
+        commands.addStation(d("2026-11-17"), setOf(ME), StayTypeIds.OFFICE, "salzburg")
+        val next = commands.addStation(d("2026-11-17"), setOf(ME), StayTypeIds.HOMEOFFICE, "hallein", liveTime = t("12:03"))
+        assertEquals(1, next.sortIndex)
+        assertEquals(t("12:03"), next.startTime)
+    }
 }

@@ -1,5 +1,6 @@
 package io.github.mario2712.locus.data.db
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
@@ -19,9 +20,14 @@ import androidx.room.TypeConverters
         TripPersonEntity::class,
         WishEntity::class,
         PatternRuleEntity::class,
+        DayTemplateEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
+    autoMigrations = [
+        // v2: Stationen-Konzept (Homebase, Übernachtung, Verkehrsmittel, Besuchs-Kategorien, Vorlagen)
+        AutoMigration(from = 1, to = 2),
+    ],
 )
 @TypeConverters(Converters::class)
 abstract class LocusDatabase : RoomDatabase() {
@@ -33,6 +39,7 @@ abstract class LocusDatabase : RoomDatabase() {
     abstract fun tripDao(): TripDao
     abstract fun wishDao(): WishDao
     abstract fun patternRuleDao(): PatternRuleDao
+    abstract fun dayTemplateDao(): DayTemplateDao
 
     companion object {
         const val NAME = "locus.db"

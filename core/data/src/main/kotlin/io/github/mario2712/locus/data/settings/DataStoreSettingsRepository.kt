@@ -5,6 +5,9 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
+import io.github.mario2712.locus.domain.model.EntryDefaults
+import io.github.mario2712.locus.domain.model.PersonId
 import io.github.mario2712.locus.domain.model.ReminderSettings
 import io.github.mario2712.locus.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
@@ -35,7 +38,31 @@ class DataStoreSettingsRepository @Inject constructor(
         }
     }
 
+    override fun observeEntryDefaults(): Flow<EntryDefaults> = store.data
+        .map { prefs ->
+            val defaults = EntryDefaults()
+            EntryDefaults(
+                prefillTransport = prefs[PREFILL_TRANSPORT] ?: defaults.prefillTransport,
+                dailyParticipants = prefs[DAILY_PARTICIPANTS]?.mapTo(linkedSetOf(), ::PersonId)
+                    ?.takeIf { it.isNotEmpty() } ?: defaults.dailyParticipants,
+                tripParticipants = prefs[TRIP_PARTICIPANTS]?.mapTo(linkedSetOf(), ::PersonId)
+                    ?.takeIf { it.isNotEmpty() } ?: defaults.tripParticipants,
+            )
+        }
+        .distinctUntilChanged()
+
+    override suspend fun setEntryDefaults(defaults: EntryDefaults) {
+        store.edit { prefs ->
+            prefs[PREFILL_TRANSPORT] = defaults.prefillTransport
+            prefs[DAILY_PARTICIPANTS] = defaults.dailyParticipants.mapTo(linkedSetOf()) { it.value }
+            prefs[TRIP_PARTICIPANTS] = defaults.tripParticipants.mapTo(linkedSetOf()) { it.value }
+        }
+    }
+
     private companion object {
+        val PREFILL_TRANSPORT = booleanPreferencesKey("prefill_transport")
+        val DAILY_PARTICIPANTS = stringSetPreferencesKey("daily_participants")
+        val TRIP_PARTICIPANTS = stringSetPreferencesKey("trip_participants")
         val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
         val REMINDER_MINUTES = intPreferencesKey("reminder_minutes")
     }

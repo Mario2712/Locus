@@ -1,5 +1,6 @@
 package io.github.mario2712.locus.domain.model
 
+import io.github.mario2712.locus.domain.reference.Defaults
 import io.github.mario2712.locus.domain.util.flagEmoji
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -103,12 +104,32 @@ data class Place(
     val alias: String? = null,
     val isFavorite: Boolean = false,
     val note: String? = null,
+    /** Zuhause; Tage beginnen und enden hier, sofern keine Reise läuft. Höchstens ein Ort. */
+    val isHomebase: Boolean = false,
 ) {
     val displayName: String get() = alias ?: name
 }
 
+/** Verkehrsmittel für den Weg zu einer Station; mehrere möglich, ohne Reihenfolge. */
+enum class TransportMode(val emoji: String, val nameDe: String) {
+    WALK("🚶", "zu Fuß"),
+    BIKE("🚲", "Rad"),
+    CAR("🚗", "Auto"),
+    BUS("🚌", "Bus"),
+    TRAM("🚊", "U-Bahn/Tram"),
+    TRAIN("🚆", "Zug"),
+    PLANE("✈️", "Flug"),
+    FERRY("⛴️", "Fähre"),
+}
+
 /**
- * Ein Aufenthalt: an Ort X, Art Y, von–bis, mit Personen Z.
+ * Eine Station (Aufenthalt): an Ort X, Art Y, mit Personen Z.
+ *
+ * Stationen eines Tages bilden eine Kette in der Reihenfolge von [sortIndex]; Uhrzeiten sind
+ * optional (bei Live-Erfassung automatisch). Eine Station mit [overnight] wird zur neuen Basis
+ * (Übernachtungsort) und läuft weiter, bis eine andere Basis beginnt – siehe
+ * [io.github.mario2712.locus.domain.timeline.Timeline]. Ohne [overnight] endet sie am Tagesende
+ * und man ist zurück an der aktuellen Basis.
  *
  * Bei unscharfer Genauigkeit (MONTH/YEAR) decken [startDate]..[endDate] den gesamten
  * Zeitraum ab (z. B. 2014-07-01..2014-07-31 für „Juli 2014“).
@@ -129,6 +150,10 @@ data class Stay(
     val tripId: String? = null,
     val note: String? = null,
     val source: EntrySource = EntrySource.MANUAL,
+    /** Übernachtung hier → neue Basis (Urlaub, Dienstreise mit Übernachtung). */
+    val overnight: Boolean = false,
+    /** Verkehrsmittel auf dem Weg zu dieser Station. */
+    val transport: Set<TransportMode> = emptySet(),
 ) {
     init {
         require(!endDate.isBefore(startDate)) { "endDate darf nicht vor startDate liegen" }
@@ -140,10 +165,15 @@ data class Stay(
     fun covers(date: LocalDate): Boolean = date in dateRange
 }
 
-/** Ein konkreter, bemerkenswerter Ort an einem Datum (Sehenswürdigkeit, Restaurant, Gipfel …). */
+/**
+ * Ein Besuch: an einem Tag kurz an einem Ort gewesen (Einkaufen in Oberalm, Restaurant, Museum …).
+ * Unterbricht die Stationen-Kette nicht, zählt aber für Orts-Statistik, Karte und – je nach
+ * Kategorie bzw. [countsForCountryPointsOverride] – für Länderpunkte.
+ */
 data class Visit(
     val id: String,
     val placeId: String,
+    /** Hauptkategorie; weitere in [extraCategoryIds] (z. B. Einkaufen + Restaurant). */
     val categoryId: String,
     val date: LocalDate,
     val time: LocalTime? = null,
@@ -158,7 +188,10 @@ data class Visit(
     /** Verweis auf ein Foto in der Galerie (content://…), keine Kopie. */
     val photoUri: String? = null,
     val source: EntrySource = EntrySource.MANUAL,
+    val extraCategoryIds: Set<String> = emptySet(),
 ) {
+    val categoryIds: Set<String> get() = linkedSetOf(categoryId) + extraCategoryIds
+
     init {
         require(participants.isNotEmpty()) { "Ein Besuch braucht mindestens eine Person" }
         require(rating == null || rating in 1..5) { "Bewertung muss zwischen 1 und 5 liegen" }
@@ -209,7 +242,30 @@ data class Wish(
     val isFulfilled: Boolean get() = fulfilledVisitId != null
 }
 
-/** Wochentag-Muster, z. B. „Dienstag: Büro Salzburg“. */
+/** Ein Schritt einer Tagesvorlage, z. B. „Büro · Salzburg mit 🚆“. */
+data class TemplateStep(
+    val stayTypeId: String,
+    val placeId: String,
+    val transport: Set<TransportMode> = emptySet(),
+    val overnight: Boolean = false,
+)
+
+/** Benannte Tagesvorlage, z. B. „Bürotag“ oder „Hybrid: Büro → Homeoffice“. */
+data class DayTemplate(
+    val id: String,
+    val name: String,
+    val steps: List<TemplateStep>,
+    val sortOrder: Int = 0,
+) {
+    init {
+        require(steps.isNotEmpty()) { "Eine Vorlage braucht mindestens einen Schritt" }
+    }
+}
+
+/**
+ * Wochentag-Muster: entweder eine [DayTemplate] ([templateId]) oder eine einzelne Station
+ * ([stayTypeId] · [placeId]).
+ */
 data class PatternRule(
     val id: String,
     val personId: PersonId,
@@ -218,12 +274,25 @@ data class PatternRule(
     val placeId: String,
     val validFrom: LocalDate? = null,
     val validTo: LocalDate? = null,
+    val templateId: String? = null,
 ) {
+    /** Schritte des Musters; nutzt die Vorlage, falls vorhanden. */
+    fun steps(templates: Map<String, DayTemplate>): List<TemplateStep> =
+        templateId?.let { templates[it]?.steps } ?: listOf(TemplateStep(stayTypeId, placeId))
+
     fun appliesTo(date: LocalDate): Boolean =
         date.dayOfWeek == weekday &&
             (validFrom == null || !date.isBefore(validFrom)) &&
             (validTo == null || !date.isAfter(validTo))
 }
+
+/** Standardwerte für neue Einträge (gerätelokal, konfigurierbar). */
+data class EntryDefaults(
+    /** Verkehrsmittel aus Vorlage bzw. letzter gleicher Strecke vorbelegen. */
+    val prefillTransport: Boolean = true,
+    val dailyParticipants: Set<PersonId> = setOf(Defaults.ME),
+    val tripParticipants: Set<PersonId> = setOf(Defaults.ME, Defaults.JOHANNA),
+)
 
 /** Einstellungen der Abend-Erinnerung (gerätelokal, nicht synchronisiert). */
 data class ReminderSettings(

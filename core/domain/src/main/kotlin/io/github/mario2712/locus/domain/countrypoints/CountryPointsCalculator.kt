@@ -85,7 +85,7 @@ class CountryPointsCalculator {
         val fromVisits = visits
             .filter { visit ->
                 visit.countsForCountryPointsOverride
-                    ?: (visitCategories[visit.categoryId]?.countsForCountryPoints == true)
+                    ?: visit.categoryIds.any { visitCategories[it]?.countsForCountryPoints == true }
             }
             .flatMap { visit ->
                 val iso = countableIso(places[visit.placeId]) ?: return@flatMap emptyList()
