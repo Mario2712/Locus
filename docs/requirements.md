@@ -194,7 +194,7 @@ Unter „Mehr“: Timeline, Reisen, Statistik, Orte, Wunschliste, Einstellungen,
 ## 6. Datenmodell (Entwurf)
 
 ```
-person         id, name, color, isMe
+person         id, name, color, isMe, birthDate?
 region_collection  countryIso2 PK, enabled
 place          id, kind[CITY|POI|ADDRESS], name, lat, lon, countryIso2,
                regionCode?, cityName?, parentPlaceId?, osmId?, poiCategory?,
@@ -260,6 +260,7 @@ Länderpunkte, Übernachtungsort und Statistiken werden berechnet, nicht gespeic
 | M0 | Projektgerüst, CI-Workflow, Debug-APK aus GitHub Actions | ✔ |
 | M1 | Datenmodell, Room, Stammdaten (Länder, Arten, Personen), Domain-Regeln mit Tests | ✔ |
 | M2 | Heute-Screen, Muster, Erinnerung, Kalender mit Nachtragen, Feiertage | ✔ |
+| M2.6 | Profil mit Geburtsdaten: Länder bis zu runden Geburtstagen, Geburtstagsorte | ✔ |
 | M2.5 | Stationen-Konzept: Homebase/Basis, Tagesvorlagen, Reisen (Weiter-/Heimreise, Umstiege), Verkehrsmittel, Besuche mit mehreren Kategorien | ✔ |
 | M3 | Ortssuche, Favoriten, Besuche, Reisen, Timeline | offen |
 | M4 | Länderliste mit Flaggen, Weltkarte | offen |
