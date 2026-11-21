@@ -141,7 +141,9 @@ object YearStats {
             return if (place.kind == PlaceKind.CITY) place.id else place.parentPlaceId
         }
         val cityDates = mutableMapOf<String, MutableSet<LocalDate>>()
-        own.filter { it.precision == DatePrecision.DAY }.forEach { stay ->
+        // Homebase zählt an Tagen mit Start/Ende zuhause mit (z. B. Bürotag).
+        io.github.mario2712.locus.domain.timeline.ImplicitHome.augment(own, visits, person, homebaseId, today)
+            .filter { it.precision == DatePrecision.DAY }.forEach { stay ->
             val city = cityOf(stay.placeId) ?: return@forEach
             var d = stay.startDate
             while (!d.isAfter(stay.endDate)) { cityDates.getOrPut(city) { mutableSetOf() } += d; d = d.plusDays(1) }

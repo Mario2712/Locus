@@ -76,11 +76,13 @@ class CountriesViewModel @Inject constructor(
         val b = editor.persons.firstOrNull { !it.isMe }
         val resolved = Timeline.resolve(s, editor.homebase?.id, today)
         val points = calculator.calculate(resolved, v, editor.placesById, editor.typesById, editor.categoriesById)
-        val overview = CountryOverview.build(points, a.id, b?.id, w, CountryOverview.countryDays(resolved, editor.placesById, a.id))
+        // Für Tage-Zählungen ist die Homebase an Tagen mit Start/Ende zuhause implizit dabei.
+        val withHome = io.github.mario2712.locus.domain.timeline.ImplicitHome.augment(resolved, v, a.id, editor.homebase?.id, today)
+        val overview = CountryOverview.build(points, a.id, b?.id, w, CountryOverview.countryDays(withHome, editor.placesById, a.id))
 
         // Tage je Ort (Stationen tagesgenau + Besuche), dann je Stadt zusammengefasst.
         val datesByPlace = mutableMapOf<String, MutableSet<LocalDate>>()
-        resolved.filter { a.id in it.participants && it.precision == DatePrecision.DAY }.forEach { stay ->
+        withHome.filter { a.id in it.participants && it.precision == DatePrecision.DAY }.forEach { stay ->
             var day = stay.startDate
             while (!day.isAfter(stay.endDate)) { datesByPlace.getOrPut(stay.placeId) { mutableSetOf() } += day; day = day.plusDays(1) }
         }

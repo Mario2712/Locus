@@ -47,7 +47,8 @@ object PlaceStats {
         val allDates = (stayDates + ownVisits.map { it.date }).toSortedSet()
         return PlaceRecord(
             stayDays = stayDates.size,
-            daysByType = stayDayTypes.distinct().groupingBy { it.second }.eachCount(),
+            daysByType = stayDayTypes.distinct().filter { it.second != io.github.mario2712.locus.domain.timeline.ImplicitHome.TYPE_ID }
+                .groupingBy { it.second }.eachCount(),
             visitCount = ownVisits.size,
             visitsByCategory = ownVisits.flatMap { it.categoryIds }.groupingBy { it }.eachCount(),
             totalDays = allDates.size,

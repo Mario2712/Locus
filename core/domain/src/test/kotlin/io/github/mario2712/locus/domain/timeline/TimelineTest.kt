@@ -126,4 +126,17 @@ class TimelineTest {
         val stay = Stay("1", "rom", StayTypeIds.VACATION, d("2025-05-01"), d("2025-05-10"), participants = setOf(ME), overnight = true)
         assertEquals(d("2025-05-10"), Timeline.resolve(listOf(stay), home, d("2026-01-01")).single().endDate)
     }
+
+    @Test
+    fun `Homebase zaehlt implizit an Buero- und An-Abreisetagen, nicht an Tagen ganz auswaerts`() = runTest {
+        commands.addStation(d("2026-11-18"), setOf(ME), StayTypeIds.OFFICE, "salzburg")
+        commands.addStation(d("2026-11-24"), setOf(ME), StayTypeIds.BUSINESS_TRIP, "wien", overnight = true)
+        commands.returnHome(d("2026-11-26"), setOf(ME), home)
+        val resolved = resolved("2026-11-30")
+        val implicit = ImplicitHome.augment(resolved, emptyList(), ME, home, d("2026-11-30")).filter(ImplicitHome::isImplicit)
+        // 18.: Bürotag → zuhause; 24.: Abreise (morgens zuhause); 25.: ganz in Wien → nein; 26.: Heimreise hat eigene Station
+        assertEquals(listOf(d("2026-11-18"), d("2026-11-24")), implicit.map { it.startDate })
+        // Tagesart bleibt Büro
+        assertEquals(StayTypeIds.OFFICE, DayInsights.summaries(d("2026-11-18"), d("2026-11-18"), ME, resolved, rank).values.single().mainTypeId)
+    }
 }

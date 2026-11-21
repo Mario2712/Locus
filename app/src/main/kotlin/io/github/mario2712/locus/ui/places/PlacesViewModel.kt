@@ -52,7 +52,8 @@ class PlacesViewModel @Inject constructor(
     private val today = LocalDate.now(clock)
 
     val items: StateFlow<List<PlaceListItem>> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data) { s, v, editor ->
-        val resolved = Timeline.resolve(s, editor.homebase?.id, today)
+        // Homebase zählt an Tagen mit Start/Ende zuhause mit.
+        val resolved = io.github.mario2712.locus.domain.timeline.ImplicitHome.augment(Timeline.resolve(s, editor.homebase?.id, today), v, Defaults.ME, editor.homebase?.id, today)
         val children = editor.places.filter { it.parentPlaceId != null }.groupBy({ it.parentPlaceId!! }, { it.id })
         editor.places.filter { it.kind != io.github.mario2712.locus.domain.model.PlaceKind.COUNTRY }.map { place ->
             val record = PlaceStats.record(place.id, Defaults.ME, resolved, v, children[place.id].orEmpty().toSet())
@@ -86,7 +87,7 @@ class PlaceDetailViewModel @Inject constructor(
 
     val state: StateFlow<PlaceDetailState> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data) { s, v, editor ->
         val place = editor.placesById[placeId]
-        val resolved = Timeline.resolve(s, editor.homebase?.id, today)
+        val resolved = io.github.mario2712.locus.domain.timeline.ImplicitHome.augment(Timeline.resolve(s, editor.homebase?.id, today), v, Defaults.ME, editor.homebase?.id, today)
         val children = editor.places.filter { it.parentPlaceId == placeId }.map { it.id }.toSet()
         PlaceDetailState(place, place?.let { PlaceStats.record(it.id, Defaults.ME, resolved, v, children) }, editor)
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), PlaceDetailState())

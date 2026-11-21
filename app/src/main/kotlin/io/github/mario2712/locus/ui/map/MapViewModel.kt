@@ -123,7 +123,8 @@ class MapViewModel @Inject constructor(
             countries[mother]?.takeIf { it != MapCountryState.WISH }?.let { countries[territory] = it }
         }
 
-        val places = mapPlaces(resolved, yearVisits, editor, selected)
+        val withHome = selected.fold(resolved) { acc, person -> io.github.mario2712.locus.domain.timeline.ImplicitHome.augment(acc, yearVisits, person, home, today) }
+        val places = mapPlaces(withHome, yearVisits, editor, selected)
         val routes = if (f.showRoutes) {
             Trips.derive(s, v, editor.placesById, a.id, home, today)
                 .filter { f.year == null || it.start.year == f.year || it.end.year == f.year }

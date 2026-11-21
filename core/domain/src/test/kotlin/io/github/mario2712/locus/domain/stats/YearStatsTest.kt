@@ -52,7 +52,8 @@ class YearStatsTest {
         assertEquals(2, stats.vacationDaysDomestic) // Zell am See
         assertEquals(listOf("IT"), stats.newCountries)
         assertEquals(listOf("AT", "IT"), stats.countries)
-        assertEquals(setOf("hallein", "bologna", "zell"), stats.newCities.toSet()) // Salzburg schon 2025
+        // Salzburg schon 2025, Hallein ebenfalls (Homebase zählt beim Bürotag 2025 implizit mit)
+        assertEquals(setOf("bologna", "zell"), stats.newCities.toSet())
         assertEquals(3, stats.nightsAway) // Nächte 1.–3.8. in Bologna
         assertEquals("salzburg" to 3, stats.topCities.first { it.first == "salzburg" }) // 2 Bürotage + Museum
         assertEquals(StayTypeIds.OFFICE, stats.mainTypeByDate[d("2026-03-05")])
