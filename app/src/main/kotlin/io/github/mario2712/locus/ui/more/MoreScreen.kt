@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -21,19 +22,22 @@ import io.github.mario2712.locus.R
 import io.github.mario2712.locus.ui.theme.LocusTheme
 
 @Composable
-fun MoreScreen(viewModel: MoreViewModel = hiltViewModel()) {
+fun MoreScreen(onOpenSettings: () -> Unit, viewModel: MoreViewModel = hiltViewModel()) {
     val status by viewModel.status.collectAsStateWithLifecycle()
-    MoreContent(status)
+    MoreContent(status, onOpenSettings)
 }
 
 @Composable
-private fun MoreContent(status: DataStatus) {
+private fun MoreContent(status: DataStatus, onOpenSettings: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(stringResource(R.string.more_title), style = MaterialTheme.typography.headlineMedium)
         Text(stringResource(R.string.more_placeholder), style = MaterialTheme.typography.bodyLarge)
+        Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.settings_title))
+        }
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stringResource(R.string.data_status_title), style = MaterialTheme.typography.titleMedium)
@@ -55,6 +59,6 @@ private fun MoreContent(status: DataStatus) {
 @Composable
 private fun MorePreview() {
     LocusTheme(dynamicColor = false) {
-        MoreContent(DataStatus(persons = listOf("Ich", "Johanna"), stayTypes = 9, visitCategories = 12))
+        MoreContent(DataStatus(persons = listOf("Ich", "Johanna"), stayTypes = 9, visitCategories = 12), onOpenSettings = {})
     }
 }

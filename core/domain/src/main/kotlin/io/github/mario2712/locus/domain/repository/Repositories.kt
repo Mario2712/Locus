@@ -4,6 +4,7 @@ import io.github.mario2712.locus.domain.model.Person
 import io.github.mario2712.locus.domain.model.PatternRule
 import io.github.mario2712.locus.domain.model.Place
 import io.github.mario2712.locus.domain.model.RegionCollection
+import io.github.mario2712.locus.domain.model.ReminderSettings
 import io.github.mario2712.locus.domain.model.Stay
 import io.github.mario2712.locus.domain.model.StayType
 import io.github.mario2712.locus.domain.model.Trip
@@ -77,4 +78,9 @@ interface PatternRuleRepository {
     fun observeAll(): Flow<List<PatternRule>>
     suspend fun upsert(rule: PatternRule)
     suspend fun delete(id: String)
+}
+
+interface SettingsRepository {
+    fun observeReminder(): Flow<ReminderSettings>
+    suspend fun setReminder(settings: ReminderSettings)
 }

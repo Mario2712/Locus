@@ -10,6 +10,10 @@ import kotlinx.serialization.Serializable
 @Serializable data object MapRoute
 @Serializable data object CountriesRoute
 @Serializable data object MoreRoute
+@Serializable data object SettingsRoute
+
+/** Detailansicht eines Tages; Datum als ISO-Text (yyyy-MM-dd). */
+@Serializable data class DayRoute(val date: String)
 
 /** Die fünf Ziele der unteren Navigationsleiste. */
 enum class TopLevelDestination(

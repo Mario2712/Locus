@@ -1,6 +1,10 @@
 package io.github.mario2712.locus.data.di
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
 import dagger.Binds
 import dagger.Module
@@ -17,6 +21,7 @@ import io.github.mario2712.locus.data.repository.RoomStayRepository
 import io.github.mario2712.locus.data.repository.RoomTripRepository
 import io.github.mario2712.locus.data.repository.RoomVisitRepository
 import io.github.mario2712.locus.data.repository.RoomWishRepository
+import io.github.mario2712.locus.data.settings.DataStoreSettingsRepository
 import io.github.mario2712.locus.data.sync.DeviceIdProvider
 import io.github.mario2712.locus.data.sync.SharedPrefsDeviceIdProvider
 import io.github.mario2712.locus.data.sync.SyncMetaFactory
@@ -25,6 +30,7 @@ import io.github.mario2712.locus.domain.repository.CatalogRepository
 import io.github.mario2712.locus.domain.repository.PatternRuleRepository
 import io.github.mario2712.locus.domain.repository.PersonRepository
 import io.github.mario2712.locus.domain.repository.PlaceRepository
+import io.github.mario2712.locus.domain.repository.SettingsRepository
 import io.github.mario2712.locus.domain.repository.StayRepository
 import io.github.mario2712.locus.domain.repository.TripRepository
 import io.github.mario2712.locus.domain.repository.VisitRepository
@@ -38,6 +44,10 @@ object DatabaseModule {
     @Provides @Singleton
     fun database(@ApplicationContext context: Context): LocusDatabase =
         Room.databaseBuilder(context, LocusDatabase::class.java, LocusDatabase.NAME).build()
+
+    @Provides @Singleton
+    fun settingsDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
+        PreferenceDataStoreFactory.create { context.preferencesDataStoreFile("settings") }
 
     @Provides @Singleton
     fun timeProvider(): TimeProvider = TimeProvider(System::currentTimeMillis)
@@ -69,4 +79,5 @@ abstract class RepositoryModule {
     @Binds abstract fun tripRepository(impl: RoomTripRepository): TripRepository
     @Binds abstract fun wishRepository(impl: RoomWishRepository): WishRepository
     @Binds abstract fun patternRuleRepository(impl: RoomPatternRuleRepository): PatternRuleRepository
+    @Binds abstract fun settingsRepository(impl: DataStoreSettingsRepository): SettingsRepository
 }

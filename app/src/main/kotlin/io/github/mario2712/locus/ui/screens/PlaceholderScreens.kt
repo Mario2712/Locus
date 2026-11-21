@@ -12,23 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import io.github.mario2712.locus.BuildConfig
 import io.github.mario2712.locus.R
 import io.github.mario2712.locus.domain.util.flagEmoji
 import io.github.mario2712.locus.ui.theme.LocusTheme
 
 // Platzhalter für M0 – werden in den folgenden Meilensteinen durch echte Screens ersetzt.
-
-@Composable
-fun TodayScreen() = Placeholder(R.string.today_title, R.string.today_placeholder) {
-    Text(
-        stringResource(R.string.version_label, BuildConfig.VERSION_NAME),
-        style = MaterialTheme.typography.labelSmall,
-    )
-}
-
-@Composable
-fun CalendarScreen() = Placeholder(R.string.calendar_title, R.string.calendar_placeholder)
 
 @Composable
 fun MapScreen() = Placeholder(R.string.map_title, R.string.map_placeholder)

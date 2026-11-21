@@ -224,3 +224,9 @@ data class PatternRule(
             (validFrom == null || !date.isBefore(validFrom)) &&
             (validTo == null || !date.isAfter(validTo))
 }
+
+/** Einstellungen der Abend-Erinnerung (gerätelokal, nicht synchronisiert). */
+data class ReminderSettings(
+    val enabled: Boolean = true,
+    val time: LocalTime = LocalTime.of(20, 30),
+)

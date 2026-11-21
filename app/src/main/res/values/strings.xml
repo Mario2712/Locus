@@ -2,22 +2,128 @@
 <resources>
     <string name="app_name">Locus</string>
 
+    <!-- Navigation -->
     <string name="nav_today">Heute</string>
     <string name="nav_calendar">Kalender</string>
     <string name="nav_map">Karte</string>
     <string name="nav_countries">Länder</string>
     <string name="nav_more">Mehr</string>
 
+    <!-- Allgemeine Aktionen -->
+    <string name="action_save">Speichern</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_delete">Löschen</string>
+    <string name="action_ok">OK</string>
+    <string name="action_remove">Entfernen</string>
+    <string name="action_none">Keine</string>
+    <string name="action_back">Zurück</string>
+
+    <!-- Heute -->
     <string name="today_title">Heute</string>
-    <string name="today_placeholder">Hier checkst du bald mit einem Tipp ein – z. B. „Homeoffice · Hallein“.</string>
-    <string name="calendar_title">Kalender</string>
-    <string name="calendar_placeholder">Monatsansicht deiner Aufenthalte, Lücken zum Nachtragen.</string>
+    <string name="today_holiday">Feiertag: %1$s</string>
+    <string name="today_where">Wo bist du heute?</string>
+    <string name="today_confirm">Passt</string>
+    <string name="today_other">Anders …</string>
+    <string name="today_no_suggestion">Noch kein Muster für heute – wähle unten oder lege einen Eintrag an.</string>
+    <string name="today_recent">Zuletzt</string>
+    <string name="today_new_entry">Neuer Eintrag</string>
+    <string name="today_switch">Wechsel ab …</string>
+    <string name="today_edit">Bearbeiten</string>
+    <string name="today_week">Diese Woche</string>
+    <plurals name="today_missing">
+        <item quantity="one">%1$d Tag ohne Eintrag – nachtragen</item>
+        <item quantity="other">%1$d Tage ohne Eintrag – nachtragen</item>
+    </plurals>
+    <string name="today_country_points">Länderpunkte: %1$d</string>
+    <string name="today_no_countries">Noch keine Länder – trag deine erste Reise ein.</string>
+    <string name="today_notifications_title">Erinnerung erlauben</string>
+    <string name="today_notifications_text">Damit dich Locus am Abend an den Eintrag erinnern kann, braucht die App die Berechtigung für Benachrichtigungen.</string>
+    <string name="today_notifications_allow">Erlauben</string>
+
+    <!-- Kalender -->
+    <string name="calendar_previous">Vorheriger Monat</string>
+    <string name="calendar_next">Nächster Monat</string>
+    <string name="calendar_hint">Tippen öffnet den Tag. Lange drücken startet eine Mehrfachauswahl, um mehrere Tage auf einmal nachzutragen.</string>
+    <string name="calendar_selection">Auswahl: %1$s – %2$s (Ende antippen zum Ändern)</string>
+    <string name="calendar_fill">Festlegen …</string>
+
+    <!-- Tag -->
+    <string name="day_suggestion">Vorschlag</string>
+    <string name="day_stays">Aufenthalte</string>
+    <string name="day_empty">Noch nichts eingetragen.</string>
+    <string name="day_add">Hinzufügen</string>
+
+    <!-- Editor -->
+    <string name="editor_new_stay">Neuer Aufenthalt</string>
+    <string name="editor_edit_stay">Aufenthalt bearbeiten</string>
+    <string name="editor_type">Art</string>
+    <string name="editor_place">Ort</string>
+    <string name="editor_choose_place">Ort wählen</string>
+    <string name="editor_search">Suchen</string>
+    <string name="editor_no_places">Noch keine Orte angelegt.</string>
+    <string name="editor_new_place">Neuer Ort</string>
+    <string name="editor_from_date">Von</string>
+    <string name="editor_to_date">Bis</string>
+    <string name="editor_start_time">Beginn</string>
+    <string name="editor_end_time">Ende</string>
+    <string name="editor_no_time">ganztägig</string>
+    <string name="editor_invalid_times">Das Ende muss nach dem Beginn liegen.</string>
+    <string name="editor_participants">Wer war dabei?</string>
+    <string name="editor_note">Notiz</string>
+
+    <string name="place_name">Name (z. B. Hallein)</string>
+    <string name="place_alias">Kurzname (optional, z. B. Zuhause)</string>
+    <string name="place_country">Land</string>
+    <string name="place_region_optional">Bundesland (optional)</string>
+    <string name="place_favorite">Als Favorit merken</string>
+    <string name="place_search_hint">Die Ortssuche über OpenStreetMap mit Koordinaten folgt in einer späteren Version.</string>
+
+    <string name="switch_title">Wechsel ab …</string>
+    <string name="switch_from">Ab</string>
+    <string name="switch_until">Bis (Datum)</string>
+    <string name="switch_hint">Der laufende Aufenthalt endet zur gewählten Uhrzeit. Für einen Kurzurlaub ein späteres Bis-Datum wählen.</string>
+
+    <string name="fill_title">%1$s – %2$s festlegen</string>
+    <string name="fill_skip_weekends">Wochenenden und Feiertage überspringen</string>
+    <string name="fill_hint">Bereits eingetragene Tage bleiben unverändert.</string>
+
+    <!-- Rückmeldungen -->
+    <string name="msg_saved">Gespeichert</string>
+    <string name="msg_deleted">Gelöscht</string>
+    <string name="msg_conflict">Gespeichert – überschneidet sich am %1$s mit einem anderen Aufenthalt.</string>
+    <plurals name="msg_filled">
+        <item quantity="one">%1$d Tag eingetragen</item>
+        <item quantity="other">%1$d Tage eingetragen</item>
+    </plurals>
+
+    <!-- Einstellungen -->
+    <string name="settings_title">Muster &amp; Erinnerung</string>
+    <string name="settings_patterns">Wochentag-Muster</string>
+    <string name="settings_patterns_hint">Daraus entstehen die Vorschläge am Heute-Screen und in der Erinnerung. An Feiertagen entfallen Arbeits-Muster.</string>
+    <string name="settings_no_rule">kein Muster</string>
+    <string name="settings_remove_rule">Muster entfernen</string>
+    <string name="settings_reminder">Abend-Erinnerung</string>
+    <string name="settings_reminder_enabled">Täglich erinnern</string>
+    <string name="settings_reminder_time">Uhrzeit</string>
+    <string name="settings_reminder_hint">Die Erinnerung kommt nur, wenn der Tag noch nicht eingetragen ist. Mit „Passt“ wird der Vorschlag direkt übernommen.</string>
+
+    <!-- Erinnerung -->
+    <string name="reminder_channel">Abend-Erinnerung</string>
+    <string name="reminder_channel_description">Erinnert dich, den Tag einzutragen.</string>
+    <string name="reminder_title">Wo warst du heute?</string>
+    <string name="reminder_text">Trag deinen Tag in Locus ein.</string>
+    <string name="reminder_text_suggestion">Vorschlag: %1$s</string>
+    <string name="reminder_action_confirm">Passt</string>
+
+    <!-- Platzhalter (bis M3/M4) -->
     <string name="map_title">Karte</string>
     <string name="map_placeholder">Weltkarte mit besuchten Ländern, Städten und Orten.</string>
     <string name="countries_title">Länder</string>
     <string name="countries_placeholder">Deine Länderpunkte – Ich, Johanna und gemeinsam.</string>
     <string name="more_title">Mehr</string>
     <string name="more_placeholder">Timeline, Reisen, Statistik, Orte, Wunschliste und Einstellungen.</string>
+
+    <!-- Datenbank-Status -->
     <string name="data_status_title">Datenbank</string>
     <string name="data_status_persons">Personen: %1$s</string>
     <string name="data_status_stay_types">Aufenthaltsarten: %1$d</string>
