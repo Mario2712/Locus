@@ -182,6 +182,8 @@
     <string name="profile_birthdays_empty">Noch keine Einträge an Geburtstagen.</string>
     <string name="profile_birthdays_abroad">Geburtstage im Ausland: %1$d</string>
     <string name="profile_birthday_entry">%1$d · %2$d Jahre · %3$s</string>
+    <string name="profile_documented_since_title">Lückenlos erfasst seit</string>
+    <string name="profile_documented_since_hint">Länder ohne Datum gelten als vor %1$d besucht – sie zählen bei allen Geburtstags-Meilensteinen ab dem 1.1. dieses Jahres.</string>
     <string name="profile_privacy">Geburtsdaten bleiben lokal auf deinem Gerät und sind nicht Teil des Codes auf GitHub.</string>
 
     <!-- Ortssuche -->
@@ -266,9 +268,9 @@
     <string name="countries_last_visit">Zuletzt: %1$s</string>
     <string name="countries_days">%1$s: %2$d Tage im Land</string>
     <string name="countries_places">Orte: %1$s</string>
-    <string name="countries_date_unknown">Datum unbekannt</string>
+    <string name="countries_before_year">vor %1$d</string>
     <string name="countries_undated_question">Schon dort gewesen, aber wann weißt du nicht mehr?</string>
-    <string name="countries_undated_hint">Zählt als Länderpunkt und auf der Karte – nicht aber in Timeline, Reisen, Jahresstatistik und Geburtstags-Meilensteinen.</string>
+    <string name="countries_undated_hint">Zählt als Länderpunkt und auf der Karte und gilt als vor dem Jahr besucht, ab dem du lückenlos erfasst hast (siehe Profil). Erscheint nicht in Timeline, Reisen und Zeitraum-Statistik.</string>
     <string name="countries_undated_entry">Ohne Datum erfasst: %1$s</string>
     <string name="countries_undated_remove">Eintrag ohne Datum entfernen</string>
     <string name="countries_wish_add">☆ Auf Wunschliste</string>

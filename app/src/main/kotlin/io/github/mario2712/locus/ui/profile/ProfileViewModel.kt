@@ -49,6 +49,7 @@ data class ProfileUiState(
 class ProfileViewModel @Inject constructor(
     clock: Clock,
     private val persons: PersonRepository,
+    private val settings: io.github.mario2712.locus.domain.repository.SettingsRepository,
     stays: StayRepository,
     visits: VisitRepository,
     editorCatalog: EditorCatalog,
@@ -75,7 +76,9 @@ class ProfileViewModel @Inject constructor(
                     nextBirthday = next,
                     daysToBirthday = ChronoUnit.DAYS.between(today, next),
                     countries = countries.size,
-                    milestones = BirthdayStats.milestones(birth, countries, today),
+                    milestones = BirthdayStats.milestones(
+                        birth, countries, today, undatedVisitedBefore = LocalDate.of(editor.defaults.documentedSinceYear, 1, 1),
+                    ),
                     birthdays = BirthdayStats.birthdayPlaces(
                         birth, person.id, resolved, allVisits, editor.placesById, editor.rank, today,
                     ),
@@ -84,6 +87,10 @@ class ProfileViewModel @Inject constructor(
         }
         ProfileUiState(profiles, editor, today)
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), ProfileUiState())
+
+    fun setDocumentedSince(year: Int) = viewModelScope.launch {
+        settings.setEntryDefaults(state.value.editor.defaults.copy(documentedSinceYear = year))
+    }
 
     fun setBirthDate(person: Person, date: LocalDate?) = viewModelScope.launch {
         persons.upsert(person.copy(birthDate = date))

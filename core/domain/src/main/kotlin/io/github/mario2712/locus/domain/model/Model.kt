@@ -305,6 +305,8 @@ data class EntryDefaults(
     val prefillTransport: Boolean = true,
     val dailyParticipants: Set<PersonId> = setOf(Defaults.ME),
     val tripParticipants: Set<PersonId> = setOf(Defaults.ME, Defaults.JOHANNA),
+    /** Ab diesem Jahr ist alles lückenlos erfasst; Länder ohne Datum gelten als davor besucht. */
+    val documentedSinceYear: Int = 2014,
 )
 
 /** Einstellungen der Abend-Erinnerung (gerätelokal, nicht synchronisiert). */

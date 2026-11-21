@@ -62,6 +62,19 @@ fun ProfileScreen(onBack: () -> Unit, viewModel: ProfileViewModel = hiltViewMode
             state.profiles.forEach { profile ->
                 PersonCard(profile, state, onEditBirthDate = { editPerson = profile.person })
             }
+            SectionCard(stringResource(R.string.profile_documented_since_title)) {
+                val year = state.editor.defaults.documentedSinceYear
+                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    androidx.compose.material3.TextButton(onClick = { viewModel.setDocumentedSince(year - 1) }) { Text("‹") }
+                    Text(year.toString(), style = MaterialTheme.typography.titleLarge)
+                    androidx.compose.material3.TextButton(onClick = { viewModel.setDocumentedSince(year + 1) }) { Text("›") }
+                }
+                Text(
+                    stringResource(R.string.profile_documented_since_hint, year),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Text(
                 stringResource(R.string.profile_privacy),
                 style = MaterialTheme.typography.bodySmall,

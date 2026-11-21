@@ -49,6 +49,7 @@ class DataStoreSettingsRepository @Inject constructor(
                     ?.takeIf { it.isNotEmpty() } ?: defaults.dailyParticipants,
                 tripParticipants = prefs[TRIP_PARTICIPANTS]?.mapTo(linkedSetOf(), ::PersonId)
                     ?.takeIf { it.isNotEmpty() } ?: defaults.tripParticipants,
+                documentedSinceYear = prefs[DOCUMENTED_SINCE] ?: defaults.documentedSinceYear,
             )
         }
         .distinctUntilChanged()
@@ -58,6 +59,7 @@ class DataStoreSettingsRepository @Inject constructor(
             prefs[PREFILL_TRANSPORT] = defaults.prefillTransport
             prefs[DAILY_PARTICIPANTS] = defaults.dailyParticipants.mapTo(linkedSetOf()) { it.value }
             prefs[TRIP_PARTICIPANTS] = defaults.tripParticipants.mapTo(linkedSetOf()) { it.value }
+            prefs[DOCUMENTED_SINCE] = defaults.documentedSinceYear
         }
     }
 
@@ -78,6 +80,7 @@ class DataStoreSettingsRepository @Inject constructor(
         val PREFILL_TRANSPORT = booleanPreferencesKey("prefill_transport")
         val DAILY_PARTICIPANTS = stringSetPreferencesKey("daily_participants")
         val TRIP_PARTICIPANTS = stringSetPreferencesKey("trip_participants")
+        val DOCUMENTED_SINCE = intPreferencesKey("documented_since_year")
         val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
         val REMINDER_MINUTES = intPreferencesKey("reminder_minutes")
     }

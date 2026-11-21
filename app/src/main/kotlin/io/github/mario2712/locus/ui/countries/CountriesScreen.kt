@@ -52,8 +52,8 @@ fun statusLabel(status: CountryStatus, nameA: String, nameB: String): String = w
 }
 
 @Composable
-private fun dateOrUnknown(date: java.time.LocalDate): String =
-    if (date == UNKNOWN_DATE) stringResource(R.string.countries_date_unknown) else Format.fullDate(date)
+private fun dateOrUnknown(date: java.time.LocalDate, documentedSince: Int): String =
+    if (date == UNKNOWN_DATE) stringResource(R.string.countries_before_year, documentedSince) else Format.fullDate(date)
 
 @Composable
 fun CountriesScreen(viewModel: CountriesViewModel = hiltViewModel()) {
@@ -119,7 +119,8 @@ fun CountriesScreen(viewModel: CountriesViewModel = hiltViewModel()) {
                         val info = listOfNotNull(
                             statusLabel(row.status, nameA, nameB).takeIf { it.isNotEmpty() },
                             row.firstVisitA?.let {
-                                if (it == UNKNOWN_DATE) stringResource(R.string.countries_date_unknown) else stringResource(R.string.countries_since, it.year)
+                                if (it == UNKNOWN_DATE) stringResource(R.string.countries_before_year, state.editor.defaults.documentedSinceYear)
+                                else stringResource(R.string.countries_since, it.year)
                             },
                         ).joinToString(" · ")
                         if (info.isNotEmpty()) Text(info, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -138,8 +139,9 @@ fun CountriesScreen(viewModel: CountriesViewModel = hiltViewModel()) {
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     statusLabel(current.status, nameA, nameB).takeIf { it.isNotEmpty() }?.let { Text(it) }
-                    current.firstVisitA?.let { Text(stringResource(R.string.countries_first_visit, nameA, dateOrUnknown(it))) }
-                    current.firstVisitB?.let { Text(stringResource(R.string.countries_first_visit, nameB, dateOrUnknown(it))) }
+                    val since = state.editor.defaults.documentedSinceYear
+                    current.firstVisitA?.let { Text(stringResource(R.string.countries_first_visit, nameA, dateOrUnknown(it, since))) }
+                    current.firstVisitB?.let { Text(stringResource(R.string.countries_first_visit, nameB, dateOrUnknown(it, since))) }
                     current.lastVisit?.takeIf { it != UNKNOWN_DATE }?.let { Text(stringResource(R.string.countries_last_visit, Format.fullDate(it))) }
                     if (current.daysA > 0) Text(stringResource(R.string.countries_days, nameA, current.daysA))
                     val placeNames = state.placesByCountry[current.country.iso2].orEmpty().map { state.editor.placeName(it) }.sorted()

@@ -50,12 +50,22 @@ object BirthdayStats {
      * Länder bis zu den runden Geburtstagen: zählt Länder, deren erster Besuch **vor** dem jeweiligen
      * Geburtstag lag. Enthält alle erreichten Meilensteine und den nächsten noch offenen.
      */
-    fun milestones(birthDate: LocalDate, countries: Collection<CountryStats>, today: LocalDate): List<AgeMilestone> {
-        // Länder ohne bekanntes Datum lassen sich keinem Geburtstag zuordnen und bleiben hier außen vor.
+    /**
+     * @param undatedVisitedBefore Länder ohne Datum gelten als vor diesem Tag besucht (z. B. 1.1.2014, ab dann
+     *   ist alles erfasst) und zählen bei allen Meilensteinen ab diesem Tag. `null` = gar nicht.
+     */
+    fun milestones(
+        birthDate: LocalDate,
+        countries: Collection<CountryStats>,
+        today: LocalDate,
+        undatedVisitedBefore: LocalDate? = null,
+    ): List<AgeMilestone> {
         val dated = countries.filter { it.dateKnown }
+        val undated = countries.size - dated.size
         val reached = MILESTONE_AGES.map { age ->
             val date = birthdayAt(birthDate, age)
-            AgeMilestone(age, date, dated.count { it.firstDate < date }, reached = !date.isAfter(today))
+            val fromUndated = if (undatedVisitedBefore != null && !date.isBefore(undatedVisitedBefore)) undated else 0
+            AgeMilestone(age, date, dated.count { it.firstDate < date } + fromUndated, reached = !date.isAfter(today))
         }
         val done = reached.filter { it.reached }
         val next = reached.firstOrNull { !it.reached }?.copy(countries = countries.size)

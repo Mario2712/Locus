@@ -81,6 +81,13 @@ class CountryOverviewTest {
         )
         assertEquals(2, milestones.first { it.age == 30 }.countries) // IT 2015, CU 2019 (HR erst 2023, JP ohne Datum nicht)
         assertEquals(4, milestones.last().countries) // nächster Meilenstein: Stand heute inkl. JP
+        // „Lückenlos seit 2014“: JP gilt als vor 2014 besucht → zählt ab Meilensteinen nach dem 1.1.2014
+        val since2014 = io.github.mario2712.locus.domain.stats.BirthdayStats.milestones(
+            d("1990-01-01"), p.byPerson.getValue(ME).values, d("2026-11-21"), undatedVisitedBefore = d("2014-01-01"),
+        )
+        assertEquals(0, since2014.first { it.age == 20 }.countries) // 2010: weder datiert noch sicher JP
+        assertEquals(1, since2014.first { it.age == 25 }.countries) // 1.1.2015: Italien erst im Mai 2015 → nur JP
+        assertEquals(3, since2014.first { it.age == 30 }.countries) // IT, CU + JP
         // Keine Reise im Jahr 1
         val trips = io.github.mario2712.locus.domain.trips.Trips.derive(all, emptyList(), placesWithCountry, ME, null, d("2026-11-21"))
         assertTrue(trips.none { it.basePlaceIds.contains("place-jp") })
