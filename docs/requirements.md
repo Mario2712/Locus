@@ -83,7 +83,7 @@ Auch Johannas Alltag kann erfasst werden (Aufenthalte mit Teilnehmerin „nur Jo
   - Einreise in Peking und Besuch der Chinesischen Mauer während einer 10-stündigen Zwischenlandung: **Punkt** für China.
   - Durchfahrt durch Slowenien als „Anreise/Unterwegs“ mit Tankstopp: **kein** Punkt. Isst man dort richtig in einem Restaurant oder besichtigt etwas: **Punkt**.
 - **Gemeinsam** = beide waren zur selben Zeit im Land. Zusätzlich wird angezeigt, welche Länder beide schon besucht haben, aber zu unterschiedlichen Zeiten.
-- Länderliste: 193 UN-Staaten plus Kosovo, Vatikan und Taiwan. Gebiete werden dem Mutterland zugeordnet.
+- Länderliste: 193 UN-Staaten plus Kosovo, Vatikan, Taiwan und Palästina. Gebiete werden dem Mutterland zugeordnet.
 - **Wunschländer** werden auf der Karte separat (z. B. schraffiert) dargestellt.
 - **Regionen sammeln** (z. B. Bundesländer): pro Land in den Einstellungen aktivierbar. Zuerst für Österreich und Deutschland.
 
@@ -186,7 +186,7 @@ wish           id, placeId? | countryIso2?, note?, priority, createdAt, fulfille
 pattern_rule   id, weekday, stayTypeId, placeId, validFrom?, validTo?
 ```
 
-**Stammdaten im Code statt in der Datenbank** (Umsetzung M1): Länder (196, deutsche Namen,
+**Stammdaten im Code statt in der Datenbank** (Umsetzung M1): Länder (197, deutsche Namen,
 Kontinent, Flagge), Regionen (AT, DE) und die Zuordnung abhängiger Gebiete zum Mutterland
 (Grönland → Dänemark, Hongkong → China …) liegen in `:core:domain` (`ReferenceData`), erzeugt von
 `tools/generate_reference_data.py`. Sie ändern sich nur mit App-Updates und müssen nicht synchronisiert werden.

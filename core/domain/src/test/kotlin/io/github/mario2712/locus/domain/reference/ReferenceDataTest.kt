@@ -9,11 +9,11 @@ import org.junit.jupiter.api.Test
 class ReferenceDataTest {
 
     @Test
-    fun `196 zaehlbare Laender mit eindeutigen Codes`() {
+    fun `197 zaehlbare Laender mit eindeutigen Codes`() {
         val countries = ReferenceData.countries
-        assertEquals(196, countries.size)
-        assertEquals(196, countries.map { it.iso2 }.toSet().size)
-        assertEquals(196, countries.map { it.iso3 }.toSet().size)
+        assertEquals(197, countries.size)
+        assertEquals(197, countries.map { it.iso2 }.toSet().size)
+        assertEquals(197, countries.map { it.iso3 }.toSet().size)
         assertTrue(countries.all { it.nameDe.isNotBlank() })
     }
 
@@ -29,8 +29,9 @@ class ReferenceDataTest {
     }
 
     @Test
-    fun `Kosovo, Vatikan und Taiwan zaehlen zusaetzlich`() {
-        listOf("XK", "VA", "TW").forEach { assertTrue(ReferenceData.country(it) != null, it) }
+    fun `Kosovo, Vatikan, Taiwan und Palaestina zaehlen zusaetzlich`() {
+        assertEquals("Palästina", ReferenceData.country("PS")?.nameDe)
+        listOf("XK", "VA", "TW", "PS").forEach { assertTrue(ReferenceData.country(it) != null, it) }
     }
 
     @Test

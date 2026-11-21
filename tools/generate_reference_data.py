@@ -25,8 +25,10 @@ NON_UN = {
     "KY", "MF", "MO", "MP", "MQ", "MS", "NC", "NF", "NU", "PF", "PM", "PN", "PR", "PS",
     "RE", "SH", "SJ", "SX", "TC", "TF", "TK", "TW", "UM", "VA", "VG", "VI", "WF", "YT",
 }
-# Zusätzlich zu den 193 UN-Staaten gezählt (Abstimmung v0.3).
-EXTRA = {"XK": "XKX", "VA": "VAT", "TW": "TWN"}
+# Zusätzlich zu den 193 UN-Staaten gezählt (Abstimmung v0.3 und M1).
+EXTRA = {"XK": "XKX", "VA": "VAT", "TW": "TWN", "PS": "PSE"}
+# Kürzere Anzeigenamen als CLDR.
+NAME_OVERRIDES = {"PS": "Palästina"}
 
 CONTINENT_OVERRIDES = {"XK": "EU", "VA": "EU", "TL": "AS", "CY": "EU"}
 CONTINENT_ENUM = {
@@ -51,17 +53,17 @@ def main() -> None:
     assert len(un) == 193, f"Erwartet 193 UN-Staaten, gefunden {len(un)}"
     codes = {c.alpha_2: c.alpha_3 for c in un} | EXTRA
     for iso2, iso3 in codes.items():
-        name = de.territories[iso2]
+        name = NAME_OVERRIDES.get(iso2) or de.territories[iso2]
         cont = CONTINENT_OVERRIDES.get(iso2) or pcc.country_alpha2_to_continent_code(iso2)
         rows.append((name, iso2, iso3, CONTINENT_ENUM[cont]))
-    rows.sort(key=lambda r: Locale("de").territories[r[1]].lower()
+    rows.sort(key=lambda r: r[0].lower()
               .replace("ä", "a").replace("ö", "o").replace("ü", "u"))
 
     OUT.mkdir(parents=True, exist_ok=True)
     lines = [HEADER, "package io.github.mario2712.locus.domain.reference\n",
              "import io.github.mario2712.locus.domain.model.Continent",
              "import io.github.mario2712.locus.domain.model.Country\n",
-             f"/** {len(rows)} zählbare Länder: 193 UN-Mitgliedstaaten plus Kosovo, Vatikan und Taiwan. */",
+             f"/** {len(rows)} zählbare Länder: 193 UN-Mitgliedstaaten plus Kosovo, Vatikan, Taiwan und Palästina. */",
              "internal val COUNTRY_DATA: List<Country> = listOf("]
     for name, iso2, iso3, cont in rows:
         lines.append(f"    Country({kstr(iso2)}, {kstr(iso3)}, {kstr(name)}, Continent.{cont}),")

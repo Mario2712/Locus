@@ -51,6 +51,18 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
+      - name: Room-Schema prüfen
+        run: |
+          if [ -n "$(git status --porcelain core/data/schemas)" ]; then
+            echo "::warning::Room-Schema ist neu oder geändert und muss eingecheckt werden (Inhalt im Log)."
+            echo "SCHEMA_TAR_BASE64_BEGIN"
+            tar -czf - core/data/schemas | base64 -w0
+            echo
+            echo "SCHEMA_TAR_BASE64_END"
+          else
+            echo "Room-Schema ist aktuell."
+          fi
+
       - name: Room-Schemas hochladen
         uses: actions/upload-artifact@v4
         with:

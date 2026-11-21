@@ -5,7 +5,7 @@ package io.github.mario2712.locus.domain.reference
 import io.github.mario2712.locus.domain.model.Continent
 import io.github.mario2712.locus.domain.model.Country
 
-/** 196 zählbare Länder: 193 UN-Mitgliedstaaten plus Kosovo, Vatikan und Taiwan. */
+/** 197 zählbare Länder: 193 UN-Mitgliedstaaten plus Kosovo, Vatikan, Taiwan und Palästina. */
 internal val COUNTRY_DATA: List<Country> = listOf(
     Country("AF", "AFG", "Afghanistan", Continent.ASIA),
     Country("EG", "EGY", "Ägypten", Continent.AFRICA),
@@ -135,6 +135,7 @@ internal val COUNTRY_DATA: List<Country> = listOf(
     Country("OM", "OMN", "Oman", Continent.ASIA),
     Country("AT", "AUT", "Österreich", Continent.EUROPE),
     Country("PK", "PAK", "Pakistan", Continent.ASIA),
+    Country("PS", "PSE", "Palästina", Continent.ASIA),
     Country("PW", "PLW", "Palau", Continent.OCEANIA),
     Country("PA", "PAN", "Panama", Continent.NORTH_AMERICA),
     Country("PG", "PNG", "Papua-Neuguinea", Continent.OCEANIA),

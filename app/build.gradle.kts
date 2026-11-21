@@ -31,6 +31,14 @@ android {
     }
 
     signingConfigs {
+        // Fester Debug-Schlüssel im Repo, damit jede CI-Debug-APK dieselbe Signatur hat
+        // und sich über eine bestehende Installation aktualisieren lässt.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         if (releaseKeystore != null) {
             create("release") {
                 storeFile = file(releaseKeystore)

@@ -17,6 +17,8 @@ captures/
 # Signing (niemals committen)
 *.jks
 *.keystore
+# Fester Debug-Schlüssel (kein Geheimnis): gleiche Signatur über alle CI-Builds → Updates ohne Neuinstallation
+!app/debug.keystore
 keystore.properties
 
 # OS
