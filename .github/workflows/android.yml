@@ -49,6 +49,13 @@ jobs:
       - name: Debug-APK bauen
         run: ./gradlew :app:assembleDebug
 
+      - name: Debug-APK prüfen (Signatur und Version)
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          APK=$(ls app/build/outputs/apk/debug/*.apk)
+          "$BT/apksigner" verify --print-certs "$APK" | grep -E "SHA-256|DN"
+          "$BT/aapt2" dump badging "$APK" | grep -E "^package:|sdkVersion|targetSdkVersion"
+
       - name: Release-Build prüfen (unsigniert, inkl. R8)
         run: ./gradlew :app:assembleRelease
 

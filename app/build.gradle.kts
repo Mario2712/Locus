@@ -28,7 +28,8 @@ android {
         minSdk = 31
         targetSdk = 37
         versionCode = ciVersionCode ?: 1
-        versionName = ciVersionName ?: "$baseVersion-dev"
+        // Debug-Builds tragen die CI-Run-Nummer, damit man am Gerät sieht, welche Version installiert ist.
+        versionName = ciVersionName ?: "$baseVersion-dev" + (ciVersionCode?.let { ".$it" } ?: "")
     }
 
     signingConfigs {
