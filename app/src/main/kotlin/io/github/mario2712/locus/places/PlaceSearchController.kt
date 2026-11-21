@@ -57,12 +57,33 @@ class PlaceSearchController @Inject constructor(
         }
     }
 
-    /** Übernimmt einen Treffer: bestehender Ort wird ergänzt, sonst neu angelegt. */
+    /**
+     * Übernimmt einen Treffer: bestehender Ort wird ergänzt, sonst neu angelegt.
+     * Lokale, Museen usw. werden mit ihrer Stadt verknüpft (Stadt wird bei Bedarf angelegt),
+     * damit sie in der Orts-Akte der Stadt mitzählen.
+     */
     suspend fun import(candidate: PlaceCandidate): Place {
-        val existing = PlaceCandidates.findExisting(candidate, places.observeAll().first())
-        val place = existing?.let { PlaceCandidates.enrich(it, candidate) } ?: PlaceCandidates.toPlace(candidate)
+        val all = places.observeAll().first()
+        val existing = PlaceCandidates.findExisting(candidate, all)
+        var place = existing?.let { PlaceCandidates.enrich(it, candidate) } ?: PlaceCandidates.toPlace(candidate)
+        val cityName = candidate.cityName
+        if (place.kind != PlaceKind.CITY && place.parentPlaceId == null && cityName != null && !cityName.equals(candidate.name, true)) {
+            val city = resolveCity(candidate, cityName, all)
+            place = place.copy(parentPlaceId = city.id)
+        }
         places.upsert(place)
         return place
+    }
+
+    private suspend fun resolveCity(candidate: PlaceCandidate, cityName: String, all: List<Place>): Place {
+        PlaceCandidates.findCity(cityName, candidate.countryIso2, all)?.let { return it }
+        val online = runCatching { search.search(cityName, candidate.latitude, candidate.longitude) }.getOrNull()
+            ?.firstOrNull { it.kind == PlaceKind.CITY && it.name.equals(cityName, true) && it.countryIso2.equals(candidate.countryIso2, true) }
+        val city = online?.let { c ->
+            PlaceCandidates.findExisting(c, all)?.let { PlaceCandidates.enrich(it, c) } ?: PlaceCandidates.toPlace(c)
+        } ?: PlaceCandidates.cityStub(candidate, cityName)
+        places.upsert(city)
+        return city
     }
 
     /** Verknüpft einen bestehenden Ort mit einem Treffer (Koordinaten, OSM-ID, Region). */

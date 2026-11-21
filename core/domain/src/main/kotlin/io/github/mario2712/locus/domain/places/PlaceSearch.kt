@@ -88,6 +88,23 @@ object PlaceCandidates {
         poiCategory = existing.poiCategory ?: candidate.category,
     )
 
+    /** Gespeicherte Stadt mit [cityName] im selben Land (für die Zuordnung von Lokalen, Museen …). */
+    fun findCity(cityName: String, countryIso2: String, places: List<Place>): Place? =
+        places.firstOrNull {
+            it.kind == PlaceKind.CITY && it.name.equals(cityName, ignoreCase = true) &&
+                it.countryIso2.equals(countryIso2, ignoreCase = true)
+        }
+
+    /** Minimaler Stadt-Ort, falls die Stadt online nicht gefunden wird. */
+    fun cityStub(candidate: PlaceCandidate, cityName: String, id: String = UUID.randomUUID().toString()): Place = Place(
+        id = id,
+        name = cityName,
+        kind = PlaceKind.CITY,
+        countryIso2 = candidate.countryIso2.uppercase(),
+        regionCode = regionCode(candidate.countryIso2.uppercase(), candidate.stateName),
+        cityName = cityName,
+    )
+
     /** Großkreis-Entfernung (Haversine) in Metern. */
     fun distanceMeters(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val r = 6_371_000.0

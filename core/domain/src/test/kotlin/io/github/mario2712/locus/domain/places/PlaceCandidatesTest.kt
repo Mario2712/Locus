@@ -48,4 +48,15 @@ class PlaceCandidatesTest {
         val distance = PlaceCandidates.distanceMeters(47.6833, 13.0956, 47.8095, 13.0550) // Hallein–Salzburg
         assertTrue(distance in 13_000.0..16_000.0)
     }
+
+    @Test
+    fun `Stadt zu einem Museum finden oder minimal anlegen`() {
+        val museum = hallein.copy(osmId = "N1", name = "Keltenmuseum", kind = PlaceKind.POI, cityName = "Hallein", category = "museum")
+        val city = Place("p1", "Hallein", PlaceKind.CITY, "AT")
+        assertEquals("p1", PlaceCandidates.findCity("hallein", "AT", listOf(city))?.id)
+        assertNull(PlaceCandidates.findCity("Hallein", "DE", listOf(city)))
+        val stub = PlaceCandidates.cityStub(museum, "Hallein", id = "c")
+        assertEquals(PlaceKind.CITY, stub.kind)
+        assertEquals("AT-5", stub.regionCode)
+    }
 }

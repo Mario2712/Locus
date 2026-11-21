@@ -41,8 +41,9 @@ class PlacesViewModel @Inject constructor(
 
     val items: StateFlow<List<PlaceListItem>> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data) { s, v, editor ->
         val resolved = Timeline.resolve(s, editor.homebase?.id, today)
+        val children = editor.places.filter { it.parentPlaceId != null }.groupBy({ it.parentPlaceId!! }, { it.id })
         editor.places.map { place ->
-            val record = PlaceStats.record(place.id, Defaults.ME, resolved, v)
+            val record = PlaceStats.record(place.id, Defaults.ME, resolved, v, children[place.id].orEmpty().toSet())
             PlaceListItem(place, record.totalDays, record.lastDate)
         }.sortedWith(compareByDescending<PlaceListItem> { it.totalDays }.thenBy { it.place.displayName.lowercase() })
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -70,7 +71,8 @@ class PlaceDetailViewModel @Inject constructor(
     val state: StateFlow<PlaceDetailState> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data) { s, v, editor ->
         val place = editor.placesById[placeId]
         val resolved = Timeline.resolve(s, editor.homebase?.id, today)
-        PlaceDetailState(place, place?.let { PlaceStats.record(it.id, Defaults.ME, resolved, v) }, editor)
+        val children = editor.places.filter { it.parentPlaceId == placeId }.map { it.id }.toSet()
+        PlaceDetailState(place, place?.let { PlaceStats.record(it.id, Defaults.ME, resolved, v, children) }, editor)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlaceDetailState())
 
     fun save(place: Place) = viewModelScope.launch { places.upsert(place) }

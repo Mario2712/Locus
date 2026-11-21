@@ -112,4 +112,19 @@ class TripsTest {
         assertEquals(d("2026-11-17"), record.firstDate)
         assertEquals(d("2026-11-21"), record.lastDate)
     }
+
+    @Test
+    fun `Orts-Akte einer Stadt zaehlt Besuche in ihren Lokalen und Museen mit`() = runTest {
+        commands.addStation(d("2026-11-17"), setOf(ME), StayTypeIds.OFFICE, "salzburg")
+        val visits = listOf(
+            Visit("v1", "museum", VisitCategoryIds.MUSEUM, d("2026-11-21"), participants = setOf(ME)),
+            Visit("v2", "museum", VisitCategoryIds.MUSEUM, d("2026-11-22"), participants = setOf(ME)),
+        )
+        val resolved = Timeline.resolve(repo.all, home, d("2026-11-22"))
+        val city = PlaceStats.record("salzburg", ME, resolved, visits, childPlaceIds = setOf("museum"))
+        assertEquals(3, city.totalDays)
+        assertEquals(2, city.visitCount)
+        assertEquals(mapOf("museum" to 2), city.childVisits)
+        assertEquals(1, PlaceStats.record("salzburg", ME, resolved, visits).totalDays)
+    }
 }

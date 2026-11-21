@@ -21,12 +21,25 @@ data class PlaceRecord(
     val lastDate: LocalDate?,
     /** Neueste zuerst. */
     val dates: List<LocalDate>,
+    /** Besuche je zugehörigem Ort (z. B. Lokale/Museen einer Stadt), nur bei Städten. */
+    val childVisits: Map<String, Int> = emptyMap(),
 )
 
 object PlaceStats {
-    fun record(placeId: String, person: PersonId, resolved: List<Stay>, visits: List<Visit>): PlaceRecord {
-        val stays = resolved.filter { it.placeId == placeId && person in it.participants && it.precision == DatePrecision.DAY }
-        val ownVisits = visits.filter { it.placeId == placeId && person in it.participants }
+    /**
+     * Orts-Akte für [placeId]. Mit [childPlaceIds] (z. B. Lokale und Museen in einer Stadt) zählen
+     * deren Stationen und Besuche mit – „Tage in Salzburg“ inklusive Museumsbesuch.
+     */
+    fun record(
+        placeId: String,
+        person: PersonId,
+        resolved: List<Stay>,
+        visits: List<Visit>,
+        childPlaceIds: Set<String> = emptySet(),
+    ): PlaceRecord {
+        val ids = childPlaceIds + placeId
+        val stays = resolved.filter { it.placeId in ids && person in it.participants && it.precision == DatePrecision.DAY }
+        val ownVisits = visits.filter { it.placeId in ids && person in it.participants }
         val stayDayTypes = stays.flatMap { stay ->
             generateSequence(stay.startDate) { it.plusDays(1) }.takeWhile { !it.isAfter(stay.endDate) }.map { it to stay.typeId }.toList()
         }
@@ -41,6 +54,8 @@ object PlaceStats {
             firstDate = allDates.firstOrNull(),
             lastDate = allDates.lastOrNull(),
             dates = allDates.toList().asReversed(),
+            childVisits = (stays.map { it.placeId } + ownVisits.map { it.placeId })
+                .filter { it != placeId }.groupingBy { it }.eachCount(),
         )
     }
 }

@@ -210,6 +210,8 @@
     <string name="place_record_range">erstmals %1$s · zuletzt %2$s</string>
     <string name="place_record_visits">Besuche: %1$d</string>
     <string name="place_record_dates">Tage</string>
+    <string name="place_record_children">Davon an Orten in der Stadt</string>
+    <string name="place_in_city">in %1$s</string>
     <string name="place_delete_confirm">Ort löschen? Bestehende Einträge zeigen ihn dann als „?“.</string>
 
     <!-- Reisen -->

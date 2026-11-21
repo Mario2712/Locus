@@ -113,6 +113,9 @@ fun PlaceDetailScreen(onBack: () -> Unit, onOpenDay: (LocalDate) -> Unit, viewMo
         ) {
             val country = ReferenceData.countableCountry(place.countryIso2)
             SectionCard(place.displayName) {
+                place.parentPlaceId?.let { parent ->
+                    Text(stringResource(R.string.place_in_city, state.editor.placeName(parent)), style = MaterialTheme.typography.bodySmall)
+                }
                 Text(listOfNotNull(place.alias?.let { place.name }, country?.let { "${it.flag} ${it.nameDe}" },
                     place.regionCode?.let { ReferenceData.region(it)?.nameDe }).joinToString(" · "))
                 Text(
@@ -139,6 +142,12 @@ fun PlaceDetailScreen(onBack: () -> Unit, onOpenDay: (LocalDate) -> Unit, viewMo
                     }
                     record.daysByType.entries.sortedByDescending { it.value }.forEach { (typeId, count) ->
                         Text("• ${state.editor.typeName(typeId)}: $count")
+                    }
+                    if (record.childVisits.isNotEmpty()) {
+                        Text(stringResource(R.string.place_record_children), style = MaterialTheme.typography.labelLarge)
+                        record.childVisits.entries.sortedByDescending { it.value }.forEach { (childId, count) ->
+                            Text("• ${state.editor.placeName(childId)}: $count")
+                        }
                     }
                     if (record.visitCount > 0) {
                         Text(stringResource(R.string.place_record_visits, record.visitCount))
