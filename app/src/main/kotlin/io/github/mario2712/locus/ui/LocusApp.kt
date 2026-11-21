@@ -76,8 +76,15 @@ fun LocusApp() {
                         selected = selected,
                         onClick = {
                             // Erneut antippen → zurück zur obersten Ebene des Reiters
-                            val popped = selected && navController.popBackStack(dest.route, inclusive = false)
-                            if (!popped) navController.navigateTopLevel(dest.route)
+                            if (selected) {
+                                // Erneut antippen → oberste Ebene des Reiters (z. B. vom Tag zurück zum Monat)
+                                if (!navController.popBackStack(dest.route, inclusive = false)) navController.navigateTopLevel(dest.route)
+                            } else {
+                                // Beim Wechsel wird der Unterbildschirm wiederhergestellt (z. B. ein offener Tag) –
+                                // der Reiter gilt trotzdem sofort als aktiv, damit ein zweiter Tipp nach oben führt.
+                                activeTab = dest
+                                navController.navigateTopLevel(dest.route)
+                            }
                         },
                         icon = { Icon(painterResource(dest.icon), contentDescription = null) },
                         label = { Text(stringResource(dest.label)) },
@@ -93,7 +100,10 @@ fun LocusApp() {
             modifier = Modifier.padding(innerPadding),
         ) {
             composable<TodayRoute> {
-                TodayScreen(onOpenCalendar = { navController.navigateTopLevel(CalendarRoute) })
+                TodayScreen(onOpenCalendar = {
+                    activeTab = TopLevelDestination.CALENDAR
+                    navController.navigateTopLevel(CalendarRoute)
+                })
             }
             composable<CalendarRoute> { CalendarScreen(onOpenDay = openDay) }
             composable<MapRoute> { MapScreen() }
