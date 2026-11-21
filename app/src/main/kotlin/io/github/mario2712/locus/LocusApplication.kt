@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
+import io.github.mario2712.locus.backup.AutoBackupWorker
 import io.github.mario2712.locus.data.seed.DatabaseSeeder
 import io.github.mario2712.locus.di.ApplicationScope
 import io.github.mario2712.locus.domain.repository.SettingsRepository
@@ -35,5 +36,9 @@ class LocusApplication : Application(), Configuration.Provider {
         appScope.launch { seeder.seed() }
         // Erinnerung bei jeder Änderung der Einstellungen (und beim Start) neu planen.
         appScope.launch { settings.observeReminder().collect(reminderScheduler::apply) }
+        // Wöchentliche Sicherung nach Download/Locus, solange aktiviert.
+        appScope.launch {
+            settings.observeBackup().collect { AutoBackupWorker.apply(this@LocusApplication, it.autoBackup) }
+        }
     }
 }

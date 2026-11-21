@@ -28,7 +28,11 @@ import io.github.mario2712.locus.ui.navigation.CountriesRoute
 import io.github.mario2712.locus.ui.navigation.DayRoute
 import io.github.mario2712.locus.ui.navigation.MapRoute
 import io.github.mario2712.locus.ui.navigation.MoreRoute
+import io.github.mario2712.locus.ui.data.DataScreen
+import io.github.mario2712.locus.ui.navigation.DataRoute
 import io.github.mario2712.locus.ui.navigation.PlaceRoute
+import io.github.mario2712.locus.ui.navigation.StatsRoute
+import io.github.mario2712.locus.ui.stats.StatsScreen
 import io.github.mario2712.locus.ui.navigation.PlacesRoute
 import io.github.mario2712.locus.ui.navigation.ProfileRoute
 import io.github.mario2712.locus.ui.navigation.TimelineRoute
@@ -89,10 +93,14 @@ fun LocusApp() {
                     onOpenTimeline = { navController.navigate(TimelineRoute) },
                     onOpenTrips = { navController.navigate(TripsRoute) },
                     onOpenPlaces = { navController.navigate(PlacesRoute) },
+                    onOpenStats = { navController.navigate(StatsRoute) },
+                    onOpenData = { navController.navigate(DataRoute) },
                 )
             }
             composable<DayRoute> { DayScreen(onBack = { navController.popBackStack() }) }
             composable<SettingsRoute> { SettingsScreen(onBack = { navController.popBackStack() }) }
+            composable<StatsRoute> { StatsScreen(onBack = { navController.popBackStack() }, onOpenDay = openDay) }
+            composable<DataRoute> { DataScreen(onBack = { navController.popBackStack() }) }
             composable<ProfileRoute> { ProfileScreen(onBack = { navController.popBackStack() }) }
             composable<TimelineRoute> { TimelineScreen(onBack = { navController.popBackStack() }, onOpenDay = openDay) }
             composable<TripsRoute> {

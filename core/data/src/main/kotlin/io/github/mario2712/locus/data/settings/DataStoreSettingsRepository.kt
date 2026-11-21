@@ -6,6 +6,8 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
+import io.github.mario2712.locus.domain.model.BackupSettings
 import io.github.mario2712.locus.domain.model.EntryDefaults
 import io.github.mario2712.locus.domain.model.PersonId
 import io.github.mario2712.locus.domain.model.ReminderSettings
@@ -59,7 +61,20 @@ class DataStoreSettingsRepository @Inject constructor(
         }
     }
 
+    override fun observeBackup(): Flow<BackupSettings> = store.data
+        .map { prefs -> BackupSettings(prefs[AUTO_BACKUP] ?: true, prefs[LAST_BACKUP]) }
+        .distinctUntilChanged()
+
+    override suspend fun setBackup(settings: BackupSettings) {
+        store.edit { prefs ->
+            prefs[AUTO_BACKUP] = settings.autoBackup
+            settings.lastBackupEpochMillis?.let { prefs[LAST_BACKUP] = it } ?: prefs.remove(LAST_BACKUP)
+        }
+    }
+
     private companion object {
+        val AUTO_BACKUP = booleanPreferencesKey("auto_backup")
+        val LAST_BACKUP = longPreferencesKey("last_backup")
         val PREFILL_TRANSPORT = booleanPreferencesKey("prefill_transport")
         val DAILY_PARTICIPANTS = stringSetPreferencesKey("daily_participants")
         val TRIP_PARTICIPANTS = stringSetPreferencesKey("trip_participants")

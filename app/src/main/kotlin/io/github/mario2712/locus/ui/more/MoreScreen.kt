@@ -28,15 +28,19 @@ fun MoreScreen(
     onOpenTimeline: () -> Unit,
     onOpenTrips: () -> Unit,
     onOpenPlaces: () -> Unit,
+    onOpenStats: () -> Unit,
+    onOpenData: () -> Unit,
     viewModel: MoreViewModel = hiltViewModel(),
 ) {
     val status by viewModel.status.collectAsStateWithLifecycle()
     MoreContent(status, listOf(
+        R.string.stats_title to onOpenStats,
         R.string.timeline_title to onOpenTimeline,
         R.string.trips_title to onOpenTrips,
         R.string.places_title to onOpenPlaces,
         R.string.profile_title to onOpenProfile,
         R.string.settings_title to onOpenSettings,
+        R.string.data_title to onOpenData,
     ))
 }
 

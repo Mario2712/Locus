@@ -42,6 +42,7 @@ abstract class LocusDatabase : RoomDatabase() {
     abstract fun wishDao(): WishDao
     abstract fun patternRuleDao(): PatternRuleDao
     abstract fun dayTemplateDao(): DayTemplateDao
+    abstract fun backupDao(): io.github.mario2712.locus.data.backup.BackupDao
 
     companion object {
         const val NAME = "locus.db"

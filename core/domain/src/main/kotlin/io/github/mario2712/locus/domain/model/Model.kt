@@ -301,3 +301,9 @@ data class ReminderSettings(
     val enabled: Boolean = true,
     val time: LocalTime = LocalTime.of(20, 30),
 )
+
+/** Automatische Sicherung (gerätelokal). */
+data class BackupSettings(
+    val autoBackup: Boolean = true,
+    val lastBackupEpochMillis: Long? = null,
+)

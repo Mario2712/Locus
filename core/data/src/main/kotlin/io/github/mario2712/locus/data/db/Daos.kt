@@ -45,6 +45,9 @@ interface CatalogDao {
     @Query("SELECT created_at FROM region_collection WHERE country_iso2 = :iso2")
     suspend fun regionCollectionCreatedAt(iso2: String): Long?
 
+    @Query("UPDATE stay_type SET color_argb = :new, updated_at = :now, origin_device = :device WHERE id = :id AND color_argb = :old")
+    suspend fun recolorStayType(id: String, old: Long, new: Long, now: Long, device: String)
+
     @Upsert suspend fun upsertStayType(entity: StayTypeEntity)
     @Upsert suspend fun upsertVisitCategory(entity: VisitCategoryEntity)
     @Upsert suspend fun upsertRegionCollection(entity: RegionCollectionEntity)

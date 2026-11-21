@@ -49,6 +49,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.mario2712.locus.R
 import io.github.mario2712.locus.ui.common.Format
 import io.github.mario2712.locus.ui.common.TypeDot
+import io.github.mario2712.locus.ui.common.themedColor
 import io.github.mario2712.locus.ui.common.text
 import io.github.mario2712.locus.ui.editor.FillRangeDialog
 import java.time.DayOfWeek
@@ -195,7 +196,8 @@ private fun MonthGrid(
 @Composable
 private fun DayCell(day: CalendarDay, selected: Boolean, modifier: Modifier) {
     val shape = RoundedCornerShape(8.dp)
-    val background = day.mainColor?.let { Color(it).copy(alpha = 0.35f) } ?: MaterialTheme.colorScheme.surfaceVariant
+    val main = day.mainColor?.let { themedColor(it) }
+    val background = main?.copy(alpha = 0.35f) ?: MaterialTheme.colorScheme.surfaceVariant
     val borderColor = when {
         selected -> MaterialTheme.colorScheme.primary
         day.isToday -> MaterialTheme.colorScheme.onSurface

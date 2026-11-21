@@ -270,7 +270,7 @@ Länderpunkte, Übernachtungsort und Statistiken werden berechnet, nicht gespeic
 | M2.6 | Profil mit Geburtsdaten: Länder bis zu runden Geburtstagen, Geburtstagsorte | ✔ |
 | M3 | Ortssuche (OSM/Photon) mit Standort, Orte + Orts-Akte, Reisen-Übersicht + alte Reisen nachtragen, Timeline | ✔ |
 | M4 | Länderliste mit Flaggen (Ich/Johanna/gemeinsam, Kontinente, Wunschländer), Weltkarte (MapLibre, offline Länder + optionale OpenFreeMap-Detailkarte, Orte, Routen, Filter) | ✔ |
-| M5 | Basis-Statistik, Export/Import, Backup → Release v1.0 | offen |
+| M5 | Statistik (Tage nach Art, Arbeitsorte je Monat, Urlaub Inland/Ausland, neue Länder/Städte, Nächte auswärts, Top-Städte, Jahres-Heatmap), JSON-Export/-Import (zusammenführend), wöchentliche Sicherung nach Download/Locus, geprüfte Farbpalette → Release v1.0 | ✔ (Release offen) |
 
 ---
 

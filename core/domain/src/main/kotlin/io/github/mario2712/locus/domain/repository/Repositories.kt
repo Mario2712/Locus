@@ -1,5 +1,6 @@
 package io.github.mario2712.locus.domain.repository
 
+import io.github.mario2712.locus.domain.model.BackupSettings
 import io.github.mario2712.locus.domain.model.DayTemplate
 import io.github.mario2712.locus.domain.model.EntryDefaults
 import io.github.mario2712.locus.domain.model.Person
@@ -95,4 +96,6 @@ interface SettingsRepository {
     suspend fun setReminder(settings: ReminderSettings)
     fun observeEntryDefaults(): Flow<EntryDefaults>
     suspend fun setEntryDefaults(defaults: EntryDefaults)
+    fun observeBackup(): Flow<BackupSettings>
+    suspend fun setBackup(settings: BackupSettings)
 }

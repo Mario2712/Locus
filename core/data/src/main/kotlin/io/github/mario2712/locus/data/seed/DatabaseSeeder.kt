@@ -25,6 +25,10 @@ class DatabaseSeeder @Inject constructor(
                 insertStayTypesIfMissing(Defaults.stayTypes.map { it.toEntity(m) })
                 insertVisitCategoriesIfMissing(Defaults.visitCategories.map { it.toEntity(m) })
                 insertRegionCollectionsIfMissing(Defaults.regionCollections.map { it.toEntity(m) })
+                // Alte Standardfarben auf die geprüfte Palette umstellen (selbst gewählte Farben bleiben).
+                Defaults.legacyStayTypeColors.forEach { (id, colors) ->
+                    recolorStayType(id, colors.first, colors.second, meta.now(), meta.deviceId())
+                }
             }
             // Einmalige Übernahme: Ort mit Kurzname „Zuhause“ wird Homebase, falls noch keine gesetzt ist.
             db.placeDao().apply {

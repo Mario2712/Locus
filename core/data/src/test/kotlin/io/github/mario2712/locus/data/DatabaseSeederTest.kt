@@ -59,4 +59,16 @@ class DatabaseSeederTest : DbTestBase() {
         seeder.seed()
         assertEquals(java.time.LocalDate.parse("1996-05-10"), persons.observeAll().first().first { it.isMe }.birthDate)
     }
+
+    @Test
+    fun `alte Standardfarben werden umgestellt, eigene Farben bleiben`() = runTest {
+        seeder.seed()
+        val types = Defaults.stayTypes.associateBy { it.id }
+        catalog.upsertStayType(types.getValue(Defaults.StayTypeIds.HOMEOFFICE).copy(colorArgb = 0xFF5C6BC0))
+        catalog.upsertStayType(types.getValue(Defaults.StayTypeIds.OFFICE).copy(colorArgb = 0xFF123456))
+        seeder.seed()
+        val after = catalog.observeStayTypes().first().associateBy { it.id }
+        assertEquals(0xFF2A78D6, after.getValue(Defaults.StayTypeIds.HOMEOFFICE).colorArgb)
+        assertEquals(0xFF123456, after.getValue(Defaults.StayTypeIds.OFFICE).colorArgb)
+    }
 }

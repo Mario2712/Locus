@@ -273,6 +273,50 @@
     <string name="map_visited">besucht</string>
     <string name="map_days">Tage</string>
 
+    <!-- Statistik -->
+    <string name="stats_title">Statistik</string>
+    <string name="stats_overview">%1$d im Überblick</string>
+    <string name="stats_recorded_days">Tage erfasst</string>
+    <string name="stats_countries">Länder</string>
+    <string name="stats_new_countries">neue Länder</string>
+    <string name="stats_new_cities">neue Städte</string>
+    <string name="stats_trips">Reisen</string>
+    <string name="stats_nights_away">Nächte auswärts</string>
+    <string name="stats_new_countries_list">Neu: %1$s</string>
+    <string name="stats_days_by_type">Tage nach Art</string>
+    <string name="stats_days_by_type_hint">Jeder Tag zählt einmal – bei mehreren Stationen nach Rangfolge (z. B. Büro vor Homeoffice).</string>
+    <string name="stats_work">Arbeitsorte je Monat</string>
+    <string name="stats_month">Monat</string>
+    <string name="stats_ho_only">Nur HO</string>
+    <string name="stats_office">Büro</string>
+    <string name="stats_hybrid">Hybrid</string>
+    <string name="stats_business">Dienstr.</string>
+    <string name="stats_total">Summe</string>
+    <string name="stats_work_hint">„Nur HO“ = Tage ausschließlich im Homeoffice (relevant für die Homeoffice-Pauschale). Hybrid-Tage zählen beim Büro mit.</string>
+    <string name="stats_vacation">Urlaub</string>
+    <string name="stats_vacation_split">%1$d Urlaubstage – %2$d im Inland, %3$d im Ausland</string>
+    <string name="stats_top_cities">Top-Städte</string>
+    <string name="stats_heatmap">Jahr im Überblick</string>
+
+    <!-- Daten & Sicherung -->
+    <string name="data_title">Daten &amp; Sicherung</string>
+    <string name="data_backup">Sicherung</string>
+    <string name="data_last_backup">Letzte Sicherung: %1$s</string>
+    <string name="data_never">Noch keine Sicherung.</string>
+    <string name="data_auto_backup">Wöchentlich automatisch sichern</string>
+    <string name="data_backup_now">Jetzt sichern</string>
+    <string name="data_backup_hint">Sicherungen landen im Ordner „Download/Locus“ (die neuesten 5 bleiben). Sie bleiben auch erhalten, wenn die App deinstalliert wird.</string>
+    <string name="data_transfer">Export &amp; Import</string>
+    <string name="data_export">Exportieren …</string>
+    <string name="data_import">Importieren …</string>
+    <string name="data_import_hint">Der Import führt zusammen: Je Eintrag gewinnt der neuere Stand, nichts wird blind überschrieben. So lassen sich auch Daten zwischen Debug- und Release-App übertragen.</string>
+    <string name="data_import_confirm">Die Datei wird mit deinen Daten zusammengeführt. Neuere Stände aus der Datei ersetzen ältere, gelöschte Einträge werden übernommen.</string>
+    <string name="data_import_go">Zusammenführen</string>
+    <string name="data_saved">Gespeichert.</string>
+    <string name="data_saved_downloads">Gesichert als Download/Locus/%1$s</string>
+    <string name="data_imported">Import fertig: %1$d neu, %2$d aktualisiert, %3$d unverändert.</string>
+    <string name="data_failed">Das hat nicht geklappt: %1$s</string>
+
     <!-- Mehr -->
     <string name="countries_title">Länderpunkte</string>
     <string name="more_title">Mehr</string>

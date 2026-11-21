@@ -1,6 +1,7 @@
 package io.github.mario2712.locus.ui.common
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,9 +21,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
+/** Helle Palettenfarben → abgestimmte Variante für den Dunkelmodus (gleicher Farbton). */
+private val darkVariants: Map<Long, Long> = mapOf(
+    0xFF2A78D6 to 0xFF3987E5, 0xFFEB6834 to 0xFFD95926, 0xFF1BAF7A to 0xFF199E70, 0xFFEDA100 to 0xFFC98500,
+    0xFFE87BA4 to 0xFFD55181, 0xFF008300 to 0xFF0CA30C, 0xFF6250D6 to 0xFF9085E9, 0xFFE34948 to 0xFFE66767,
+)
+
+/** Farbe einer Art passend zum aktuellen Hell-/Dunkelmodus. */
+@Composable
+fun themedColor(colorArgb: Long): Color =
+    Color(if (isSystemInDarkTheme()) darkVariants[colorArgb] ?: colorArgb else colorArgb)
+
 @Composable
 fun TypeDot(colorArgb: Long, size: Dp = 12.dp, modifier: Modifier = Modifier) {
-    Box(modifier.size(size).background(Color(colorArgb), CircleShape))
+    Box(modifier.size(size).background(themedColor(colorArgb), CircleShape))
 }
 
 @Composable
