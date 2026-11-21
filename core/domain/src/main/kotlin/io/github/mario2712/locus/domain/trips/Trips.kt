@@ -80,7 +80,7 @@ object Trips {
             )
         }
 
-        val fuzzyTrips = resolved.filter { it.precision != DatePrecision.DAY }
+        val fuzzyTrips = resolved.filter { it.precision == DatePrecision.MONTH || it.precision == DatePrecision.YEAR }
             .groupBy { Triple(it.startDate, it.endDate, it.precision) }
             .map { (key, group) ->
                 build(group, key.first, key.second, key.third, ongoing = false, stays = group, visits = emptyList(), places = places)

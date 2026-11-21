@@ -52,7 +52,7 @@ data class EditorData(
 
     /** Favoriten zuerst, dann alphabetisch. */
     val sortedPlaces: List<Place>
-        get() = places.sortedWith(
+        get() = places.filter { it.kind != PlaceKind.COUNTRY }.sortedWith(
             compareByDescending<Place> { it.isHomebase }.thenByDescending { it.isFavorite }.thenBy { it.displayName.lowercase() },
         )
 

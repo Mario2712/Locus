@@ -57,6 +57,7 @@ fun tripTitle(trip: TripSummary, editor: EditorData): String =
 
 fun tripDates(trip: TripSummary): String = when (trip.precision) {
     DatePrecision.YEAR -> trip.start.year.toString()
+    DatePrecision.UNKNOWN -> "?"
     DatePrecision.MONTH -> Format.month(trip.start)
     DatePrecision.DAY -> if (trip.start == trip.end) Format.fullDate(trip.start) else "${Format.shortDate(trip.start)}–${Format.fullDate(trip.end)}"
 }
@@ -163,6 +164,7 @@ private fun PastTripDialog(editor: EditorData, viewModel: TripsViewModel, onDism
         DatePrecision.DAY -> start to end
         DatePrecision.MONTH -> yearValue?.let { YearMonth.of(it, month).let { m -> m.atDay(1) to m.atEndOfMonth() } }
         DatePrecision.YEAR -> yearValue?.let { LocalDate.of(it, 1, 1) to LocalDate.of(it, 12, 31) }
+        DatePrecision.UNKNOWN -> null
     }
 
     AlertDialog(

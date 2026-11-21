@@ -150,6 +150,20 @@ class StayCommands(
         return created
     }
 
+    /**
+     * „Schon dort gewesen – Datum unbekannt“: Eintrag für Länderpunkte ohne Datum (auf einen Länder-Ort).
+     * Erscheint nicht in Timeline, Reisen oder Tagesstatistiken.
+     */
+    suspend fun markVisitedUndated(countryPlaceId: String, participants: Set<PersonId>): Stay {
+        val stay = Stay(
+            id = newId(), placeId = countryPlaceId, typeId = Defaults.StayTypeIds.VACATION,
+            startDate = io.github.mario2712.locus.domain.model.UNKNOWN_DATE, precision = DatePrecision.UNKNOWN,
+            participants = participants, source = EntrySource.MANUAL,
+        )
+        stays.upsert(stay)
+        return stay
+    }
+
     /** Heimreise: Station an der Homebase; damit ist die Homebase wieder die Basis. */
     suspend fun returnHome(
         date: LocalDate,

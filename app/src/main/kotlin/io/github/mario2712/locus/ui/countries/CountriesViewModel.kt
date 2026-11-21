@@ -6,7 +6,15 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.mario2712.locus.domain.countrypoints.CountryOverview
 import io.github.mario2712.locus.domain.countrypoints.CountryOverviewData
 import io.github.mario2712.locus.domain.countrypoints.CountryPointsCalculator
+import io.github.mario2712.locus.domain.model.DatePrecision
 import io.github.mario2712.locus.domain.model.Person
+import io.github.mario2712.locus.domain.model.PersonId
+import io.github.mario2712.locus.domain.model.Place
+import io.github.mario2712.locus.domain.model.PlaceKind
+import io.github.mario2712.locus.domain.model.Stay
+import io.github.mario2712.locus.domain.repository.PlaceRepository
+import io.github.mario2712.locus.domain.usecase.StayCommands
+import kotlinx.coroutines.flow.first
 import io.github.mario2712.locus.domain.model.Wish
 import io.github.mario2712.locus.domain.reference.ReferenceData
 import io.github.mario2712.locus.domain.repository.StayRepository
@@ -36,6 +44,8 @@ data class CountriesUiState(
     /** Orte je Land (Person A), für die Detailansicht. */
     val placesByCountry: Map<String, List<String>> = emptyMap(),
     val tripsByCountry: Map<String, List<TripSummary>> = emptyMap(),
+    /** Einträge „Datum unbekannt“ je Land. */
+    val undatedByCountry: Map<String, List<Stay>> = emptyMap(),
     val editor: EditorData = EditorData(),
 )
 
@@ -47,6 +57,9 @@ class CountriesViewModel @Inject constructor(
     private val wishes: WishRepository,
     editorCatalog: EditorCatalog,
     private val calculator: CountryPointsCalculator,
+    private val places: PlaceRepository,
+    private val stayRepository: StayRepository,
+    private val commands: StayCommands,
 ) : ViewModel() {
     private val today = LocalDate.now(clock)
     private val clockRef = clock
@@ -68,13 +81,29 @@ class CountriesViewModel @Inject constructor(
         val trips = Trips.derive(s, v, editor.placesById, a.id, editor.homebase?.id, today)
         val tripsByCountry = trips.flatMap { t -> t.countryIso2s.map { it to t } }.groupBy({ it.first }, { it.second })
 
-        CountriesUiState(overview, a, b, placesByCountry, tripsByCountry, editor)
+        val undated = s.filter { it.precision == DatePrecision.UNKNOWN }.mapNotNull { stay ->
+            editor.placesById[stay.placeId]?.let { p -> ReferenceData.countableCountry(p.countryIso2)?.iso2?.let { it to stay } }
+        }.groupBy({ it.first }, { it.second })
+        CountriesUiState(overview, a, b, placesByCountry, tripsByCountry, undated, editor)
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), CountriesUiState())
 
     fun toggleWish(iso2: String, existing: List<Wish>) = viewModelScope.launch {
         val wish = existing.firstOrNull { it.countryIso2.equals(iso2, true) }
         if (wish != null) wishes.delete(wish.id)
         else wishes.upsert(Wish(UUID.randomUUID().toString(), countryIso2 = iso2, createdAtEpochMillis = clockRef.millis()))
+    }
+
+    /** „Schon dort gewesen – Datum unbekannt“ für ein Land. */
+    fun markUndated(iso2: String, participants: Set<PersonId>) = viewModelScope.launch {
+        val country = ReferenceData.country(iso2) ?: return@launch
+        val all = places.observeAll().first()
+        val place = all.firstOrNull { it.kind == PlaceKind.COUNTRY && it.countryIso2 == iso2 }
+            ?: Place(UUID.randomUUID().toString(), country.nameDe, PlaceKind.COUNTRY, iso2).also { places.upsert(it) }
+        commands.markVisitedUndated(place.id, participants)
+    }
+
+    fun removeUndated(stays: List<Stay>) = viewModelScope.launch {
+        stays.forEach { stayRepository.delete(it.id) }
     }
 
     val wishList: StateFlow<List<Wish>> = wishes.observeAll()

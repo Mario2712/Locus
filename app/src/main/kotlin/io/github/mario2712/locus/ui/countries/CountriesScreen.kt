@@ -17,6 +17,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -33,6 +34,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.mario2712.locus.R
 import io.github.mario2712.locus.domain.countrypoints.CountryRow
 import io.github.mario2712.locus.domain.countrypoints.CountryStatus
+import io.github.mario2712.locus.domain.model.UNKNOWN_DATE
 import io.github.mario2712.locus.ui.common.Format
 import io.github.mario2712.locus.ui.common.SectionCard
 import io.github.mario2712.locus.ui.trips.tripDates
@@ -48,6 +50,10 @@ fun statusLabel(status: CountryStatus, nameA: String, nameB: String): String = w
     CountryStatus.ONLY_B -> stringResource(R.string.countries_status_only, nameB)
     CountryStatus.NONE -> ""
 }
+
+@Composable
+private fun dateOrUnknown(date: java.time.LocalDate): String =
+    if (date == UNKNOWN_DATE) stringResource(R.string.countries_date_unknown) else Format.fullDate(date)
 
 @Composable
 fun CountriesScreen(viewModel: CountriesViewModel = hiltViewModel()) {
@@ -112,7 +118,9 @@ fun CountriesScreen(viewModel: CountriesViewModel = hiltViewModel()) {
                         Text(row.country.nameDe + if (row.wished) " ☆" else "")
                         val info = listOfNotNull(
                             statusLabel(row.status, nameA, nameB).takeIf { it.isNotEmpty() },
-                            row.firstVisitA?.let { stringResource(R.string.countries_since, it.year) },
+                            row.firstVisitA?.let {
+                                if (it == UNKNOWN_DATE) stringResource(R.string.countries_date_unknown) else stringResource(R.string.countries_since, it.year)
+                            },
                         ).joinToString(" · ")
                         if (info.isNotEmpty()) Text(info, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -130,14 +138,35 @@ fun CountriesScreen(viewModel: CountriesViewModel = hiltViewModel()) {
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     statusLabel(current.status, nameA, nameB).takeIf { it.isNotEmpty() }?.let { Text(it) }
-                    current.firstVisitA?.let { Text(stringResource(R.string.countries_first_visit, nameA, Format.fullDate(it))) }
-                    current.firstVisitB?.let { Text(stringResource(R.string.countries_first_visit, nameB, Format.fullDate(it))) }
-                    current.lastVisit?.let { Text(stringResource(R.string.countries_last_visit, Format.fullDate(it))) }
+                    current.firstVisitA?.let { Text(stringResource(R.string.countries_first_visit, nameA, dateOrUnknown(it))) }
+                    current.firstVisitB?.let { Text(stringResource(R.string.countries_first_visit, nameB, dateOrUnknown(it))) }
+                    current.lastVisit?.takeIf { it != UNKNOWN_DATE }?.let { Text(stringResource(R.string.countries_last_visit, Format.fullDate(it))) }
                     if (current.daysA > 0) Text(stringResource(R.string.countries_days, nameA, current.daysA))
                     val placeNames = state.placesByCountry[current.country.iso2].orEmpty().map { state.editor.placeName(it) }.sorted()
                     if (placeNames.isNotEmpty()) Text(stringResource(R.string.countries_places, placeNames.joinToString(", ")))
                     state.tripsByCountry[current.country.iso2].orEmpty().forEach { trip ->
                         Text("🧳 ${tripTitle(trip, state.editor)} · ${tripDates(trip)}", style = MaterialTheme.typography.bodySmall)
+                    }
+                    HorizontalDivider()
+                    val undated = state.undatedByCountry[current.country.iso2].orEmpty()
+                    if (undated.isNotEmpty()) {
+                        Text(
+                            stringResource(R.string.countries_undated_entry, undated.joinToString(", ") { state.editor.participantsLabel(it.participants) }),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        TextButton(onClick = { viewModel.removeUndated(undated) }) { Text(stringResource(R.string.countries_undated_remove)) }
+                    } else {
+                        Text(stringResource(R.string.countries_undated_question), style = MaterialTheme.typography.labelLarge)
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            state.personA?.let { a -> OutlinedButton(onClick = { viewModel.markUndated(current.country.iso2, setOf(a.id)) }) { Text(a.name) } }
+                            state.personB?.let { b -> OutlinedButton(onClick = { viewModel.markUndated(current.country.iso2, setOf(b.id)) }) { Text(b.name) } }
+                            if (state.personA != null && state.personB != null) {
+                                OutlinedButton(onClick = { viewModel.markUndated(current.country.iso2, setOf(state.personA!!.id, state.personB!!.id)) }) {
+                                    Text(stringResource(R.string.map_both))
+                                }
+                            }
+                        }
+                        Text(stringResource(R.string.countries_undated_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             },

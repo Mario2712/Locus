@@ -52,8 +52,15 @@ data class RegionCollection(
     val enabled: Boolean,
 )
 
-/** Genauigkeit einer Datumsangabe. Unscharfe Angaben zählen nicht für Tagesstatistiken. */
-enum class DatePrecision { DAY, MONTH, YEAR }
+/**
+ * Genauigkeit einer Datumsangabe. Unscharfe Angaben zählen nicht für Tagesstatistiken.
+ * [UNKNOWN]: „schon dort gewesen, wann ist unbekannt“ – zählt nur für Länderpunkte und Karte;
+ * das gespeicherte Datum ist dann [UNKNOWN_DATE].
+ */
+enum class DatePrecision { DAY, MONTH, YEAR, UNKNOWN }
+
+/** Platzhalter-Datum für Einträge mit unbekanntem Datum. */
+val UNKNOWN_DATE: LocalDate = LocalDate.of(1, 1, 1)
 
 /** Fachliche Gruppe einer Aufenthaltsart – Basis für Statistiken. */
 enum class StayGroup { WORK, FREE, VACATION, OTHER }
@@ -84,7 +91,8 @@ data class VisitCategory(
     val isArchived: Boolean = false,
 )
 
-enum class PlaceKind { CITY, POI, ADDRESS }
+/** COUNTRY: nur das Land als Ganzes (für Länderpunkte ohne bekannten Ort/Datum). */
+enum class PlaceKind { CITY, POI, ADDRESS, COUNTRY }
 
 data class Place(
     val id: String,
@@ -206,6 +214,7 @@ data class Visit(
             DatePrecision.DAY -> date..date
             DatePrecision.MONTH -> YearMonth.from(date).let { it.atDay(1)..it.atEndOfMonth() }
             DatePrecision.YEAR -> LocalDate.of(date.year, 1, 1)..LocalDate.of(date.year, 12, 31)
+            DatePrecision.UNKNOWN -> UNKNOWN_DATE..UNKNOWN_DATE
         }
 }
 

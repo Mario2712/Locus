@@ -51,12 +51,14 @@ object BirthdayStats {
      * Geburtstag lag. Enthält alle erreichten Meilensteine und den nächsten noch offenen.
      */
     fun milestones(birthDate: LocalDate, countries: Collection<CountryStats>, today: LocalDate): List<AgeMilestone> {
+        // Länder ohne bekanntes Datum lassen sich keinem Geburtstag zuordnen und bleiben hier außen vor.
+        val dated = countries.filter { it.dateKnown }
         val reached = MILESTONE_AGES.map { age ->
             val date = birthdayAt(birthDate, age)
-            AgeMilestone(age, date, countries.count { it.firstDate < date }, reached = !date.isAfter(today))
+            AgeMilestone(age, date, dated.count { it.firstDate < date }, reached = !date.isAfter(today))
         }
         val done = reached.filter { it.reached }
-        val next = reached.firstOrNull { !it.reached }?.copy(countries = countries.count { !it.firstDate.isAfter(today) })
+        val next = reached.firstOrNull { !it.reached }?.copy(countries = countries.size)
         return done + listOfNotNull(next)
     }
 

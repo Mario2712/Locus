@@ -59,4 +59,30 @@ class CountryOverviewTest {
         assertEquals(2, europe.visitedA)
         assertEquals(3, europe.visitedB)
     }
+
+    @Test
+    fun `Land ohne Datum zaehlt als Laenderpunkt, aber nicht fuer Meilensteine und Reisen`() {
+        val unknown = io.github.mario2712.locus.domain.model.UNKNOWN_DATE
+        val placesWithCountry = places + ("place-jp" to Place("place-jp", "Japan", PlaceKind.COUNTRY, "JP"))
+        val undated = Stay(
+            "u", "place-jp", StayTypeIds.VACATION, unknown, precision = io.github.mario2712.locus.domain.model.DatePrecision.UNKNOWN,
+            participants = setOf(ME),
+        )
+        val all = stays + undated
+        val p = CountryPointsCalculator().calculate(
+            all, emptyList(), placesWithCountry, Defaults.stayTypes.associateBy { it.id }, Defaults.visitCategories.associateBy { it.id },
+        )
+        val jp = p.byPerson.getValue(ME).getValue("JP")
+        assertEquals(false, jp.dateKnown)
+        assertTrue("JP" in p.countriesOf(ME))
+        // Meilensteine zählen nur datierte Länder
+        val milestones = io.github.mario2712.locus.domain.stats.BirthdayStats.milestones(
+            d("1990-01-01"), p.byPerson.getValue(ME).values, d("2026-11-21"),
+        )
+        assertEquals(2, milestones.first { it.age == 30 }.countries) // IT 2015, CU 2019 (HR erst 2023, JP ohne Datum nicht)
+        assertEquals(4, milestones.last().countries) // nächster Meilenstein: Stand heute inkl. JP
+        // Keine Reise im Jahr 1
+        val trips = io.github.mario2712.locus.domain.trips.Trips.derive(all, emptyList(), placesWithCountry, ME, null, d("2026-11-21"))
+        assertTrue(trips.none { it.basePlaceIds.contains("place-jp") })
+    }
 }

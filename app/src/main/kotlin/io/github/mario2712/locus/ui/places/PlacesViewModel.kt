@@ -54,7 +54,7 @@ class PlacesViewModel @Inject constructor(
     val items: StateFlow<List<PlaceListItem>> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data) { s, v, editor ->
         val resolved = Timeline.resolve(s, editor.homebase?.id, today)
         val children = editor.places.filter { it.parentPlaceId != null }.groupBy({ it.parentPlaceId!! }, { it.id })
-        editor.places.map { place ->
+        editor.places.filter { it.kind != io.github.mario2712.locus.domain.model.PlaceKind.COUNTRY }.map { place ->
             val record = PlaceStats.record(place.id, Defaults.ME, resolved, v, children[place.id].orEmpty().toSet())
             PlaceListItem(
                 place, record.totalDays, record.lastDate,

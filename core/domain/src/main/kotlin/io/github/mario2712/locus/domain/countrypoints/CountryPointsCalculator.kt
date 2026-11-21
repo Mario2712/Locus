@@ -19,9 +19,12 @@ data class CountryPresence(
 /** Kennzahlen eines Landes für eine Person. */
 data class CountryStats(
     val countryIso2: String,
+    /** Erster bekannter Besuch; [io.github.mario2712.locus.domain.model.UNKNOWN_DATE], wenn nur ohne Datum erfasst. */
     val firstDate: LocalDate,
     val lastDate: LocalDate,
-)
+) {
+    val dateKnown: Boolean get() = firstDate != io.github.mario2712.locus.domain.model.UNKNOWN_DATE
+}
 
 class CountryPoints internal constructor(
     private val presences: List<CountryPresence>,
@@ -30,10 +33,12 @@ class CountryPoints internal constructor(
     val byPerson: Map<PersonId, Map<String, CountryStats>> =
         presences.groupBy { it.person }.mapValues { (_, list) ->
             list.groupBy { it.countryIso2 }.mapValues { (iso, ps) ->
+                // Bekannte Daten haben Vorrang; nur ohne Datum erfasste Länder behalten den Platzhalter.
+                val known = ps.filter { it.range.start != io.github.mario2712.locus.domain.model.UNKNOWN_DATE }.ifEmpty { ps }
                 CountryStats(
                     countryIso2 = iso,
-                    firstDate = ps.minOf { it.range.start },
-                    lastDate = ps.maxOf { it.range.endInclusive },
+                    firstDate = known.minOf { it.range.start },
+                    lastDate = known.maxOf { it.range.endInclusive },
                 )
             }
         }
@@ -42,6 +47,7 @@ class CountryPoints internal constructor(
 
     /** Länder, in denen [a] und [b] **zur selben Zeit** waren. */
     fun together(a: PersonId, b: PersonId): Set<String> {
+        // Ohne Datum lässt sich „zur selben Zeit“ nur behaupten, wenn es ein gemeinsamer Eintrag ist (gleicher Platzhalter).
         val ofA = presences.filter { it.person == a }.groupBy { it.countryIso2 }
         val ofB = presences.filter { it.person == b }.groupBy { it.countryIso2 }
         return ofA.keys.intersect(ofB.keys).filterTo(sortedSetOf()) { iso ->

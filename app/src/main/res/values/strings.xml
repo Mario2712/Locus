@@ -266,6 +266,11 @@
     <string name="countries_last_visit">Zuletzt: %1$s</string>
     <string name="countries_days">%1$s: %2$d Tage im Land</string>
     <string name="countries_places">Orte: %1$s</string>
+    <string name="countries_date_unknown">Datum unbekannt</string>
+    <string name="countries_undated_question">Schon dort gewesen, aber wann weißt du nicht mehr?</string>
+    <string name="countries_undated_hint">Zählt als Länderpunkt und auf der Karte – nicht aber in Timeline, Reisen, Jahresstatistik und Geburtstags-Meilensteinen.</string>
+    <string name="countries_undated_entry">Ohne Datum erfasst: %1$s</string>
+    <string name="countries_undated_remove">Eintrag ohne Datum entfernen</string>
     <string name="countries_wish_add">☆ Auf Wunschliste</string>
     <string name="countries_wish_remove">Von Wunschliste entfernen</string>
 

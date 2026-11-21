@@ -19,7 +19,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -225,18 +227,29 @@ private fun PeriodSelector(state: StatsUiState, viewModel: StatsViewModel) {
                 }
             }
         }
-        Box {
-            FilterChip(p is StatsPeriod.Month, { monthMenu = true }, label = {
-                Text((p as? StatsPeriod.Month)?.let { Format.month(it.month.atDay(1)) } ?: stringResource(R.string.stats_choose_month))
-            })
-            DropdownMenu(expanded = monthMenu, onDismissRequest = { monthMenu = false }) {
-                (0L until 24L).map { YearMonth.from(viewModel.today).minusMonths(it) }.forEach { m ->
-                    DropdownMenuItem(text = { Text(Format.month(m.atDay(1))) }, onClick = { viewModel.select(StatsPeriod.Month(m)); monthMenu = false })
-                }
+        if (p is StatsPeriod.Month) {
+            // Gewählter Monat: direkt vor/zurück blättern, Antippen öffnet den Monatswähler.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = { viewModel.select(StatsPeriod.Month(p.month.minusMonths(1))) }) { Text("‹") }
+                FilterChip(true, { monthMenu = true }, label = { Text(Format.month(p.month.atDay(1))) })
+                TextButton(
+                    enabled = p.month < YearMonth.from(viewModel.today),
+                    onClick = { viewModel.select(StatsPeriod.Month(p.month.plusMonths(1))) },
+                ) { Text("›") }
             }
+        } else {
+            FilterChip(false, { monthMenu = true }, label = { Text(stringResource(R.string.stats_choose_month)) })
         }
         FilterChip(p == StatsPeriod.Last30, { viewModel.select(StatsPeriod.Last30) }, label = { Text(stringResource(R.string.stats_period_last30)) })
         FilterChip(p is StatsPeriod.Custom, { pickFrom = true }, label = { Text(stringResource(R.string.stats_period_custom)) })
+    }
+    if (monthMenu) {
+        MonthPickerDialog(
+            initial = (p as? StatsPeriod.Month)?.month ?: YearMonth.from(viewModel.today),
+            latest = YearMonth.from(viewModel.today),
+            onDismiss = { monthMenu = false },
+            onSelect = { viewModel.select(StatsPeriod.Month(it)); monthMenu = false },
+        )
     }
     if (pickFrom) {
         DatePickerDialogFor(viewModel.today.minusMonths(1), { pickFrom = false }) { from -> customFrom = from; pickFrom = false }
@@ -246,6 +259,38 @@ private fun PeriodSelector(state: StatsUiState, viewModel: StatsViewModel) {
             viewModel.select(StatsPeriod.Custom(minOf(from, to), maxOf(from, to))); customFrom = null
         }
     }
+}
+
+/** Kompakter Monatswähler: Jahr mit ‹ › blättern, darunter 12 Monate. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MonthPickerDialog(initial: YearMonth, latest: YearMonth, onDismiss: () -> Unit, onSelect: (YearMonth) -> Unit) {
+    var year by remember { mutableStateOf(initial.year) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = { year-- }) { Text("‹") }
+                Text(year.toString(), style = MaterialTheme.typography.titleLarge)
+                TextButton(enabled = year < latest.year, onClick = { year++ }) { Text("›") }
+            }
+        },
+        text = {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp), maxItemsInEachRow = 3) {
+                (1..12).forEach { m ->
+                    val month = YearMonth.of(year, m)
+                    FilterChip(
+                        selected = month == initial,
+                        enabled = !month.isAfter(latest),
+                        onClick = { onSelect(month) },
+                        label = { Text(month.month.getDisplayName(TextStyle.SHORT, Locale.GERMAN)) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+    )
 }
 
 @Composable
