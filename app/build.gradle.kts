@@ -73,7 +73,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":core:domain"))
+    implementation(project(":core:data"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
@@ -81,6 +81,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)

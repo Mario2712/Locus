@@ -18,5 +18,11 @@
     <string name="countries_placeholder">Deine Länderpunkte – Ich, Johanna und gemeinsam.</string>
     <string name="more_title">Mehr</string>
     <string name="more_placeholder">Timeline, Reisen, Statistik, Orte, Wunschliste und Einstellungen.</string>
+    <string name="data_status_title">Datenbank</string>
+    <string name="data_status_persons">Personen: %1$s</string>
+    <string name="data_status_stay_types">Aufenthaltsarten: %1$d</string>
+    <string name="data_status_visit_categories">Besuchskategorien: %1$d</string>
+    <string name="data_status_countries">Zählbare Länder: %1$d</string>
+    <string name="data_status_entries">Orte: %1$d · Aufenthalte: %2$d</string>
     <string name="version_label">Version %1$s</string>
 </resources>

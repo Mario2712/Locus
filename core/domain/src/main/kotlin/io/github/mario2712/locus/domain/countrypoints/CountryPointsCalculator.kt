@@ -6,6 +6,7 @@ import io.github.mario2712.locus.domain.model.Stay
 import io.github.mario2712.locus.domain.model.StayType
 import io.github.mario2712.locus.domain.model.Visit
 import io.github.mario2712.locus.domain.model.VisitCategory
+import io.github.mario2712.locus.domain.reference.ReferenceData
 import java.time.LocalDate
 
 /** Anwesenheit einer Person in einem Land über einen Zeitraum, abgeleitet aus einem Eintrag. */
@@ -62,6 +63,8 @@ class CountryPoints internal constructor(
  * - „Transit“, „Anreise/Unterwegs“ und „Rast/Tankstopp“ zählen nicht. Ein Restaurantbesuch oder
  *   eine Sehenswürdigkeit im selben Land gibt dagegen einen Punkt.
  * - Ein Besuch kann die Regel seiner Kategorie per Override überschreiben.
+ * - Abhängige Gebiete zählen für ihr Mutterland (Grönland → Dänemark); Orte ohne zählbares
+ *   Land (z. B. Antarktis) geben keinen Punkt.
  */
 class CountryPointsCalculator {
 
@@ -75,8 +78,8 @@ class CountryPointsCalculator {
         val fromStays = stays
             .filter { stayTypes[it.typeId]?.countsForCountryPoints == true }
             .flatMap { stay ->
-                val place = places[stay.placeId] ?: return@flatMap emptyList()
-                stay.participants.map { CountryPresence(place.countryIso2, it, stay.dateRange) }
+                val iso = countableIso(places[stay.placeId]) ?: return@flatMap emptyList()
+                stay.participants.map { CountryPresence(iso, it, stay.dateRange) }
             }
 
         val fromVisits = visits
@@ -85,12 +88,15 @@ class CountryPointsCalculator {
                     ?: (visitCategories[visit.categoryId]?.countsForCountryPoints == true)
             }
             .flatMap { visit ->
-                val place = places[visit.placeId] ?: return@flatMap emptyList()
-                visit.participants.map { CountryPresence(place.countryIso2, it, visit.dateRange) }
+                val iso = countableIso(places[visit.placeId]) ?: return@flatMap emptyList()
+                visit.participants.map { CountryPresence(iso, it, visit.dateRange) }
             }
 
         return CountryPoints(fromStays + fromVisits)
     }
+
+    private fun countableIso(place: Place?): String? =
+        place?.let { ReferenceData.countableCountry(it.countryIso2)?.iso2 }
 }
 
 internal fun <T : Comparable<T>> ClosedRange<T>.overlaps(other: ClosedRange<T>): Boolean =

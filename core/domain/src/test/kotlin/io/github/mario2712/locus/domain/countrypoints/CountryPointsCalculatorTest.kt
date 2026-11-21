@@ -40,6 +40,8 @@ class CountryPointsCalculatorTest {
         Place("gostilna-si", "Gostilna Slowenien", PlaceKind.POI, "SI"),
         Place("split", "Split", PlaceKind.CITY, "HR"),
         Place("rom", "Rom", PlaceKind.CITY, "IT"),
+        Place("nuuk", "Nuuk", PlaceKind.CITY, "GL"),
+        Place("mcmurdo", "McMurdo", PlaceKind.POI, "AQ"),
     ).associateBy { it.id }
 
     private val calculator = CountryPointsCalculator()
@@ -123,5 +125,16 @@ class CountryPointsCalculatorTest {
         val stats = points.byPerson.getValue(me).getValue("IT")
         assertEquals(d("2014-07-01"), stats.firstDate)
         assertEquals(d("2020-04-02"), stats.lastDate)
+    }
+
+    @Test
+    fun `Groenland zaehlt fuer Daenemark, Antarktis gibt keinen Punkt`() {
+        val points = calc(
+            stays = listOf(
+                Stay("1", "nuuk", "urlaub", d("2024-07-01"), participants = setOf(me)),
+                Stay("2", "mcmurdo", "urlaub", d("2025-01-01"), participants = setOf(me)),
+            ),
+        )
+        assertEquals(setOf("DK"), points.countriesOf(me))
     }
 }

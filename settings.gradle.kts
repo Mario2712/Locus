@@ -24,3 +24,4 @@ rootProject.name = "Locus"
 
 include(":app")
 include(":core:domain")
+include(":core:data")

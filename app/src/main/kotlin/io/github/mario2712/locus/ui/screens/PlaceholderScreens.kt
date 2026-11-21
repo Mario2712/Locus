@@ -42,9 +42,6 @@ fun CountriesScreen() = Placeholder(R.string.countries_title, R.string.countries
 }
 
 @Composable
-fun MoreScreen() = Placeholder(R.string.more_title, R.string.more_placeholder)
-
-@Composable
 private fun Placeholder(
     @StringRes title: Int,
     @StringRes body: Int,

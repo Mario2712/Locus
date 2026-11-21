@@ -27,7 +27,7 @@ import io.github.mario2712.locus.ui.navigation.TopLevelDestination
 import io.github.mario2712.locus.ui.screens.CalendarScreen
 import io.github.mario2712.locus.ui.screens.CountriesScreen
 import io.github.mario2712.locus.ui.screens.MapScreen
-import io.github.mario2712.locus.ui.screens.MoreScreen
+import io.github.mario2712.locus.ui.more.MoreScreen
 import io.github.mario2712.locus.ui.screens.TodayScreen
 
 @Composable
