@@ -260,8 +260,8 @@ Länderpunkte, Übernachtungsort und Statistiken werden berechnet, nicht gespeic
 | M0 | Projektgerüst, CI-Workflow, Debug-APK aus GitHub Actions | ✔ |
 | M1 | Datenmodell, Room, Stammdaten (Länder, Arten, Personen), Domain-Regeln mit Tests | ✔ |
 | M2 | Heute-Screen, Muster, Erinnerung, Kalender mit Nachtragen, Feiertage | ✔ |
-| M2.6 | Profil mit Geburtsdaten: Länder bis zu runden Geburtstagen, Geburtstagsorte | ✔ |
 | M2.5 | Stationen-Konzept: Homebase/Basis, Tagesvorlagen, Reisen (Weiter-/Heimreise, Umstiege), Verkehrsmittel, Besuche mit mehreren Kategorien | ✔ |
+| M2.6 | Profil mit Geburtsdaten: Länder bis zu runden Geburtstagen, Geburtstagsorte | ✔ |
 | M3 | Ortssuche, Favoriten, Besuche, Reisen, Timeline | offen |
 | M4 | Länderliste mit Flaggen, Weltkarte | offen |
 | M5 | Basis-Statistik, Export/Import, Backup → Release v1.0 | offen |
