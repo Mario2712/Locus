@@ -62,6 +62,7 @@ object Defaults {
         const val SPORT = "visit-sport"
         const val ACCOMMODATION = "visit-accommodation"
         const val REST_STOP = "visit-rest-stop"
+        const val HEALTH = "visit-health"
         const val OTHER = "visit-other"
     }
 
@@ -77,6 +78,8 @@ object Defaults {
         VisitCategory(VisitCategoryIds.EVENT, "Konzert / Event", true, "music_note", 5),
         VisitCategory(VisitCategoryIds.MUSEUM, "Museum", true, "museum", 6),
         VisitCategory(VisitCategoryIds.SHOPPING, "Einkaufen", true, "shopping_bag", 7),
+        // Gleiche Sortierung wie in der Datenbank (sortOrder, dann Name): „Arzt …“ vor „Sport“.
+        VisitCategory(VisitCategoryIds.HEALTH, "Arzt / Gesundheit", false, "medical_services", 8),
         VisitCategory(VisitCategoryIds.SPORT, "Sport", true, "sports", 8),
         VisitCategory(VisitCategoryIds.ACCOMMODATION, "Unterkunft", true, "hotel", 9),
         VisitCategory(VisitCategoryIds.REST_STOP, "Rast / Tankstopp", false, "local_gas_station", 10),

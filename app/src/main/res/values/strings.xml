@@ -164,6 +164,15 @@
     <string name="settings_homebase">Homebase</string>
     <string name="settings_homebase_hint">Dein Zuhause. Jeder Tag beginnt und endet hier, solange keine Reise läuft. Bei Umzügen gilt je Zeitraum die damalige Homebase.</string>
     <string name="settings_sort_by_usage">Häufig genutzte Arten und Kategorien zuerst</string>
+    <string name="timeline_filter_place">Ort suchen</string>
+    <string name="timeline_filter_only_work">Nur Arbeit</string>
+    <string name="timeline_filter_type">Art</string>
+    <string name="timeline_filter_type_all">Alle Arten</string>
+    <string name="timeline_filter_category">Kategorie</string>
+    <string name="timeline_filter_category_all">Alle Kategorien</string>
+    <string name="timeline_filter_count">%1$d von %2$d Tagen</string>
+    <string name="timeline_filter_reset">Zurücksetzen</string>
+    <string name="timeline_filter_empty">Keine Tage für diese Filter.</string>
     <string name="trips_filter_all">Alle</string>
     <string name="trips_filter_private">Privat</string>
     <string name="trips_filter_work">Arbeit</string>

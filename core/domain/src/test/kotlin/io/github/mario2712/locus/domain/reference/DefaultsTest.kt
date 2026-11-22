@@ -14,12 +14,12 @@ class DefaultsTest {
     }
 
     @Test
-    fun `Transit, Anreise und Tankstopp zaehlen nicht fuer Laenderpunkte`() {
+    fun `Transit, Anreise, Tankstopp und Arzt zaehlen nicht fuer Laenderpunkte`() {
         val types = Defaults.stayTypes.associateBy { it.id }
         assertFalse(types.getValue(Defaults.StayTypeIds.TRANSIT).countsForCountryPoints)
         assertFalse(types.getValue(Defaults.StayTypeIds.ON_THE_WAY).countsForCountryPoints)
         val notCounting = Defaults.visitCategories.filterNot { it.countsForCountryPoints }.map { it.id }
-        assertEquals(listOf(Defaults.VisitCategoryIds.REST_STOP), notCounting)
+        assertEquals(listOf(Defaults.VisitCategoryIds.HEALTH, Defaults.VisitCategoryIds.REST_STOP), notCounting)
     }
 
     @Test
