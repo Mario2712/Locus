@@ -112,9 +112,21 @@ object PlaceCandidates {
     fun suggestName(hit: PlaceCandidate?, kind: PlaceKind): String = when {
         hit == null -> ""
         kind == PlaceKind.CITY -> hit.cityName ?: hit.name.takeIf { hit.kind == PlaceKind.CITY }.orEmpty()
-        hit.kind == PlaceKind.CITY -> ""
+        hit.kind == PlaceKind.CITY || !isAtPoint(hit) -> ""
         else -> hit.name
     }
+
+    /** Treffer liegt (fast) am gewählten Punkt – nur dann taugen Name, Adresse und OSM-Verknüpfung. */
+    fun isAtPoint(hit: PlaceCandidate): Boolean = hit.osmId.isNotBlank() && (hit.distanceMeters ?: 0.0) <= AT_POINT_METERS
+
+    /** Abstand, bis zu dem ein Treffer der Rückwärtssuche als „dieser Ort“ gilt. */
+    const val AT_POINT_METERS = 250.0
+
+    /** Platzhalter-Treffer, wenn die Rückwärtssuche nichts liefert: nur das (offline bestimmte) Land. */
+    fun countryOnly(countryIso2: String, latitude: Double, longitude: Double) = PlaceCandidate(
+        osmId = "", name = "", kind = PlaceKind.POI, countryIso2 = countryIso2, countryName = null,
+        stateName = null, cityName = null, latitude = latitude, longitude = longitude, category = null,
+    )
 
     /**
      * Ort aus einem Kartenpunkt: Land, Region und Stadt aus der Rückwärtssuche [hit], Koordinaten vom Punkt.
@@ -129,12 +141,13 @@ object PlaceCandidates {
         id: String = UUID.randomUUID().toString(),
     ): Place {
         val trimmed = name.trim()
-        val sameAsHit = hit.kind == kind && hit.name == trimmed
+        val near = isAtPoint(hit)
+        val sameAsHit = near && hit.kind == kind && hit.name == trimmed
         return toPlace(hit.copy(name = trimmed, kind = kind, latitude = latitude, longitude = longitude), id).copy(
             osmId = hit.osmId.takeIf { sameAsHit },
             poiCategory = hit.category.takeIf { sameAsHit },
             cityName = if (kind == PlaceKind.CITY) trimmed else hit.cityName,
-            address = hit.address.takeIf { kind != PlaceKind.CITY },
+            address = hit.address.takeIf { kind != PlaceKind.CITY && near },
         )
     }
 

@@ -3,6 +3,8 @@ package io.github.mario2712.locus.ui.editor
 import android.content.Context
 import android.graphics.PointF
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -104,8 +106,9 @@ suspend fun mapStartFor(preferred: List<Place>, recent: List<Place>, allPlaces: 
 
 private sealed interface Lookup {
     data object Loading : Lookup
-    data object Offline : Lookup
-    data class Found(val hit: PlaceCandidate?) : Lookup
+
+    /** Ergebnis der Rückwärtssuche ([hit] kann fehlen) plus Land – notfalls offline aus den Umrissen bestimmt. */
+    data class Done(val hit: PlaceCandidate?, val countryIso2: String?, val offline: Boolean) : Lookup
 }
 
 /**
@@ -199,11 +202,10 @@ fun MapPickerDialog(
         val c = center ?: return@LaunchedEffect
         lookup = Lookup.Loading
         delay(400)
-        lookup = when (val result = controller?.describe(c.latitude, c.longitude)) {
-            is SearchResult.Ok -> Lookup.Found(result.value)
-            null -> Lookup.Found(null)
-            else -> Lookup.Offline
-        }
+        val result = controller?.describe(c.latitude, c.longitude)
+        val hit = (result as? SearchResult.Ok)?.value
+        val country = hit?.countryIso2 ?: controller?.countryAt(c.latitude, c.longitude)
+        lookup = Lookup.Done(hit, country, offline = result !is SearchResult.Ok)
     }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -230,14 +232,23 @@ fun MapPickerDialog(
                             CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
                             Text(stringResource(R.string.search_loading))
                         }
-                        Lookup.Offline -> Text(stringResource(R.string.map_pick_offline), color = MaterialTheme.colorScheme.error)
-                        is Lookup.Found -> Text(describeHit(l.hit), style = MaterialTheme.typography.bodyMedium)
+                        is Lookup.Done -> {
+                            if (l.offline) Text(stringResource(R.string.map_pick_lookup_failed), color = MaterialTheme.colorScheme.error)
+                            Text(describeHit(l.hit, l.countryIso2), style = MaterialTheme.typography.bodyMedium)
+                        }
                     }
                     if (styleFailed) Text(stringResource(R.string.map_pick_offline), color = MaterialTheme.colorScheme.error)
                     Text(stringResource(R.string.map_pick_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val done = lookup as? Lookup.Done
                     Button(
-                        enabled = center != null && lookup is Lookup.Found,
-                        onClick = { center?.let { c -> onPick(c.latitude, c.longitude, (lookup as? Lookup.Found)?.hit) } },
+                        enabled = center != null && done?.countryIso2 != null,
+                        onClick = {
+                            val c = center ?: return@Button
+                            val d = done ?: return@Button
+                            // Jeder Punkt geht: ohne Treffer zählen nur Koordinaten und Land.
+                            val hit = d.hit ?: PlaceCandidates.countryOnly(d.countryIso2 ?: return@Button, c.latitude, c.longitude)
+                            onPick(c.latitude, c.longitude, hit)
+                        },
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text(confirmLabel) }
                     Text(stringResource(R.string.search_attribution), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -248,13 +259,22 @@ fun MapPickerDialog(
 }
 
 @Composable
-private fun describeHit(hit: PlaceCandidate?): String {
-    if (hit == null) return stringResource(R.string.map_pick_no_address)
-    val country = ReferenceData.countableCountry(hit.countryIso2)
+private fun describeHit(hit: PlaceCandidate?, countryIso2: String?): String {
+    val country = countryIso2?.let { ReferenceData.countableCountry(it) ?: ReferenceData.country(it) }
+        ?.let { "${it.flag} ${it.nameDe}" }
+    if (countryIso2 == null) return stringResource(R.string.map_pick_no_country)
+    if (hit == null || !PlaceCandidates.isAtPoint(hit)) {
+        // Nichts direkt am Punkt: Koordinaten werden übernommen, Stadt (falls bekannt) und Land dazu.
+        return listOfNotNull(
+            stringResource(R.string.map_pick_coordinates_only),
+            hit?.cityName,
+            country,
+        ).joinToString(" · ")
+    }
     return listOfNotNull(
         hit.name.takeIf { hit.kind != PlaceKind.ADDRESS },
         hit.address ?: hit.subtitle,
-        country?.let { "${it.flag} ${it.nameDe}" },
+        country,
     ).distinct().joinToString(" · ")
 }
 
@@ -286,9 +306,13 @@ fun MapPlaceCreateDialog(
     latitude: Double,
     longitude: Double,
     initialKind: PlaceKind,
+    cities: List<Place>,
     onDismiss: () -> Unit,
     onCreated: (Place) -> Unit,
 ) {
+    var parentId by remember { mutableStateOf<String?>(null) }
+    var chooseCity by remember { mutableStateOf(false) }
+    val sameCountry = cities.filter { it.countryIso2.equals(hit.countryIso2, true) }
     val controller = LocalPlaceSearch.current
     val scope = rememberCoroutineScope()
     var kind by remember { mutableStateOf(if (initialKind == PlaceKind.CITY) PlaceKind.CITY else PlaceKind.POI) }
@@ -329,6 +353,15 @@ fun MapPlaceCreateDialog(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (kind != PlaceKind.CITY && hit.cityName == null) {
+                    androidx.compose.material3.OutlinedButton(onClick = { chooseCity = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            parentId?.let { id -> cities.firstOrNull { it.id == id }?.displayName }
+                                ?.let { stringResource(R.string.place_in_city, it) }
+                                ?: stringResource(R.string.place_parent_optional),
+                        )
+                    }
+                }
                 if (failed) Text(stringResource(R.string.search_import_failed), color = MaterialTheme.colorScheme.error)
             }
         },
@@ -338,7 +371,7 @@ fun MapPlaceCreateDialog(
                 saving = true
                 scope.launch {
                     try {
-                        onCreated(c.createAt(latitude, longitude, name, kind, hit))
+                        onCreated(c.createAt(latitude, longitude, name, kind, hit, parentId.takeIf { kind != PlaceKind.CITY }))
                     } catch (e: Exception) {
                         if (e is kotlinx.coroutines.CancellationException) throw e
                         failed = true
@@ -349,4 +382,22 @@ fun MapPlaceCreateDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
+    if (chooseCity) {
+        AlertDialog(
+            onDismissRequest = { chooseCity = false },
+            title = { Text(stringResource(R.string.place_parent_optional)) },
+            text = {
+                androidx.compose.foundation.lazy.LazyColumn(Modifier.heightIn(max = 360.dp)) {
+                    items(sameCountry.ifEmpty { cities }.size) { index ->
+                        val city = sameCountry.ifEmpty { cities }[index]
+                        Text(
+                            city.displayName,
+                            Modifier.fillMaxWidth().clickable { parentId = city.id; chooseCity = false }.padding(vertical = 10.dp),
+                        )
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { parentId = null; chooseCity = false }) { Text(stringResource(R.string.map_city_none)) } },
+        )
+    }
 }

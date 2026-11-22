@@ -27,6 +27,7 @@ class PlaceSearchController @Inject constructor(
     private val search: PlaceSearch,
     private val places: PlaceRepository,
     private val location: DeviceLocation,
+    private val offlineCountries: OfflineCountries,
 ) {
     fun hasLocationPermission(): Boolean = location.hasPermission()
 
@@ -94,13 +95,21 @@ class PlaceSearchController @Inject constructor(
         return city
     }
 
-    /** Adresse bzw. nächste Örtlichkeit zu einem Kartenpunkt. */
+    /** Adresse bzw. nächste Örtlichkeit zu einem Kartenpunkt (mit Abstand zum Punkt). */
     suspend fun describe(latitude: Double, longitude: Double): SearchResult<PlaceCandidate?> = try {
-        SearchResult.Ok(search.reverse(latitude, longitude))
+        SearchResult.Ok(
+            search.reverse(latitude, longitude)?.let {
+                it.copy(distanceMeters = PlaceCandidates.distanceMeters(latitude, longitude, it.latitude, it.longitude))
+            },
+        )
     } catch (e: Exception) {
         if (e is kotlinx.coroutines.CancellationException) throw e
         SearchResult.Offline
     }
+
+    /** Land zum Punkt ohne Internet (Fallback, wenn die Rückwärtssuche nichts liefert). */
+    suspend fun countryAt(latitude: Double, longitude: Double): String? =
+        runCatching { offlineCountries.locate(latitude, longitude) }.getOrNull()
 
     /** Aktueller Standort, falls erlaubt und verfügbar. */
     suspend fun currentPosition(): Pair<Double, Double>? =
@@ -110,7 +119,14 @@ class PlaceSearchController @Inject constructor(
      * Neuer Ort aus einem Kartenpunkt. Wird der vorgeschlagene OSM-Treffer unverändert übernommen und gibt es ihn
      * schon, wird der bestehende Ort ergänzt. Örtlichkeiten werden mit ihrer Stadt verknüpft.
      */
-    suspend fun createAt(latitude: Double, longitude: Double, name: String, kind: PlaceKind, hit: PlaceCandidate): Place {
+    suspend fun createAt(
+        latitude: Double,
+        longitude: Double,
+        name: String,
+        kind: PlaceKind,
+        hit: PlaceCandidate,
+        parentPlaceId: String? = null,
+    ): Place {
         val all = places.observeAll().first()
         var place = PlaceCandidates.fromPoint(hit, latitude, longitude, name, kind)
         place.osmId?.let { osm -> all.firstOrNull { it.osmId == osm } }?.let { existing ->
@@ -119,7 +135,9 @@ class PlaceSearchController @Inject constructor(
             return enriched
         }
         val cityName = hit.cityName
-        if (kind != PlaceKind.CITY && cityName != null && !cityName.equals(place.name, true)) {
+        if (kind != PlaceKind.CITY && parentPlaceId != null) {
+            place = place.copy(parentPlaceId = parentPlaceId)
+        } else if (kind != PlaceKind.CITY && cityName != null && !cityName.equals(place.name, true)) {
             place = place.copy(parentPlaceId = resolveCity(hit, cityName, all).id)
         }
         places.upsert(place)
@@ -133,7 +151,8 @@ class PlaceSearchController @Inject constructor(
             longitude = longitude,
             regionCode = place.regionCode ?: hit?.let { PlaceCandidates.regionCode(place.countryIso2, it.stateName) },
             cityName = place.cityName ?: hit?.cityName,
-            address = if (place.kind == PlaceKind.CITY) place.address else hit?.address ?: place.address,
+            address = if (place.kind == PlaceKind.CITY) place.address
+            else hit?.takeIf(PlaceCandidates::isAtPoint)?.address ?: place.address,
         )
         places.upsert(updated)
         return updated

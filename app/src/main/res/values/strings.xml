@@ -179,6 +179,10 @@
     <string name="map_pick_hint">Karte unter dem Pin verschieben und zoomen.</string>
     <string name="map_pick_offline">Offline – Kartenauswahl nicht verfügbar.</string>
     <string name="map_pick_no_address">Für diesen Punkt wurde keine Adresse gefunden.</string>
+    <string name="map_pick_no_country">Hier liegt kein Land (Meer?) – bitte einen Punkt an Land wählen.</string>
+    <string name="map_pick_coordinates_only">Keine Adresse hier – Koordinaten werden übernommen</string>
+    <string name="map_pick_lookup_failed">Adresssuche nicht erreichbar – Land offline bestimmt.</string>
+    <string name="map_city_none">Keine Stadt</string>
     <string name="map_pins_hint">Treffer antippen oder einen eigenen Punkt wählen.</string>
     <string name="map_show_results">Auf Karte zeigen</string>
     <string name="map_kind_village">Stadt / Dorf</string>

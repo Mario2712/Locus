@@ -396,14 +396,15 @@ fun PlacePickerDialog(
             },
             onPick = { lat, lon, hit ->
                 mapStart = null
-                if (hit != null) picked = Triple(lat, lon, hit) else online = OnlineState.Error(R.string.map_pick_no_address)
+                if (hit != null) picked = Triple(lat, lon, hit) else online = OnlineState.Error(R.string.map_pick_no_country)
             },
         )
     }
     picked?.let { (lat, lon, hit) ->
         MapPlaceCreateDialog(
             hit = hit, latitude = lat, longitude = lon,
-            initialKind = if (preferLocations) PlaceKind.POI else hit.kind,
+            initialKind = if (preferLocations || !PlaceCandidates.isAtPoint(hit)) PlaceKind.POI else hit.kind,
+            cities = places.filter { it.kind == PlaceKind.CITY },
             onDismiss = { picked = null },
             onCreated = { place -> picked = null; onSelect(place.id) },
         )

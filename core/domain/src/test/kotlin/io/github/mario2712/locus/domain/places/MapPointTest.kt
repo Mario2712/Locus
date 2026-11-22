@@ -23,6 +23,21 @@ class MapPointTest {
     }
 
     @Test
+    fun `entfernter Treffer - nur Stadt und Land, kein Name`() {
+        val far = hit.copy(distanceMeters = 2_000.0)
+        assertEquals("", PlaceCandidates.suggestName(far, PlaceKind.POI))
+        val place = PlaceCandidates.fromPoint(far, 20.2, 105.9, "Chay Mountain Retreat", PlaceKind.POI)
+        assertNull(place.osmId)
+        assertNull(place.address)
+        assertEquals("Hội An", place.cityName)
+        val only = PlaceCandidates.fromPoint(PlaceCandidates.countryOnly("VN", 20.2, 105.9), 20.2, 105.9, "Chay Mountain Retreat", PlaceKind.POI)
+        assertEquals("VN", only.countryIso2)
+        assertNull(only.cityName)
+        assertNull(only.osmId)
+        assertEquals(20.2, only.latitude)
+    }
+
+    @Test
     fun `eigener Name - ohne OSM-ID, Stadt-Dorf nimmt den Ortsnamen`() {
         val own = PlaceCandidates.fromPoint(hit, 15.8, 108.3, "Garküche am Fluss", PlaceKind.POI)
         assertNull(own.osmId)

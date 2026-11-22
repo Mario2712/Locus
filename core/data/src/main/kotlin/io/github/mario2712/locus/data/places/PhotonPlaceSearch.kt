@@ -28,7 +28,8 @@ class PhotonPlaceSearch(
     }
 
     override suspend fun reverse(latitude: Double, longitude: Double): PlaceCandidate? =
-        PhotonParser.parse(get("$baseUrl/reverse?lat=${fmt(latitude)}&lon=${fmt(longitude)}&lang=de&limit=1")).firstOrNull()
+        // Mehrere Treffer im Umkreis: der nächste unbenannte Weg o. Ä. wird verworfen, dann zählt der nächste brauchbare.
+        PhotonParser.parse(get("$baseUrl/reverse?lat=${fmt(latitude)}&lon=${fmt(longitude)}&lang=de&limit=10&radius=5")).firstOrNull()
 
     private fun fmt(value: Double) = String.format(Locale.ROOT, "%.6f", value)
 
