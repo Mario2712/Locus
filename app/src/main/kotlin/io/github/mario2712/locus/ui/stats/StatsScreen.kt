@@ -3,6 +3,7 @@ package io.github.mario2712.locus.ui.stats
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import io.github.mario2712.locus.domain.stats.WorkFilter
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -85,6 +86,7 @@ data class StatsUiState(
     val years: List<Int> = emptyList(),
     val stats: YearStatsData? = null,
     val editor: EditorData = EditorData(),
+    val workFilter: WorkFilter = WorkFilter.ALL,
 )
 
 @HiltViewModel
@@ -96,8 +98,11 @@ class StatsViewModel @Inject constructor(
 ) : ViewModel() {
     val today: LocalDate = LocalDate.now(clock)
     private val period = MutableStateFlow<StatsPeriod>(StatsPeriod.Year(today.year))
+    private val workFilter = MutableStateFlow(WorkFilter.ALL)
 
-    val state: StateFlow<StatsUiState> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data, period) { s, v, editor, p ->
+    val state: StateFlow<StatsUiState> = combine(
+        stays.observeAll(), visits.observeAll(), editorCatalog.data, period, workFilter,
+    ) { s, v, editor, p, wf ->
         val years = ((s.map { it.startDate.year } + v.map { it.date.year }) + today.year).distinct().sortedDescending()
         val (from, to) = when (p) {
             is StatsPeriod.Year -> LocalDate.of(p.year, 1, 1) to LocalDate.of(p.year, 12, 31)
@@ -106,13 +111,17 @@ class StatsViewModel @Inject constructor(
             is StatsPeriod.Custom -> p.from to p.to
         }
         val stats = YearStats.compute(
-            from, to, Defaults.ME, s, v, editor.placesById, editor.typesById, editor.categoriesById, editor.rank, editor.homebases, today,
+            from, to, Defaults.ME, s, v, editor.placesById, editor.typesById, editor.categoriesById, editor.rank, editor.homebases, today, wf,
         )
-        StatsUiState(p, years, stats, editor)
+        StatsUiState(p, years, stats, editor, wf)
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), StatsUiState(StatsPeriod.Year(today.year)))
 
     fun select(value: StatsPeriod) {
         period.value = value
+    }
+
+    fun setWorkFilter(value: WorkFilter) {
+        workFilter.value = value
     }
 }
 
@@ -127,6 +136,7 @@ fun StatsScreen(onBack: () -> Unit, onOpenDay: (LocalDate) -> Unit, viewModel: S
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             PeriodSelector(state, viewModel)
+            WorkFilterRow(state.workFilter, viewModel::setWorkFilter)
             val stats = state.stats ?: return@Column
 
             // Überblick als Kennzahlen (keine Grafik nötig)
@@ -258,6 +268,28 @@ private fun PeriodSelector(state: StatsUiState, viewModel: StatsViewModel) {
     customFrom?.let { from ->
         DatePickerDialogFor(viewModel.today, { customFrom = null }) { to ->
             viewModel.select(StatsPeriod.Custom(minOf(from, to), maxOf(from, to))); customFrom = null
+        }
+    }
+}
+
+/** „Ohne Arbeit“ und – nur dann – „Dienstreisen mitzählen“. */
+@Composable
+private fun WorkFilterRow(
+    filter: WorkFilter,
+    onChange: (WorkFilter) -> Unit,
+) {
+    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FilterChip(
+            filter != WorkFilter.ALL,
+            { onChange(if (filter == WorkFilter.ALL) WorkFilter.NO_WORK else WorkFilter.ALL) },
+            label = { Text(stringResource(R.string.stats_filter_no_work)) },
+        )
+        if (filter != WorkFilter.ALL) {
+            FilterChip(
+                filter == WorkFilter.NO_WORK_EXCEPT_BUSINESS_TRIPS,
+                { onChange(if (filter == WorkFilter.NO_WORK) WorkFilter.NO_WORK_EXCEPT_BUSINESS_TRIPS else WorkFilter.NO_WORK) },
+                label = { Text(stringResource(R.string.stats_filter_business_trips)) },
+            )
         }
     }
 }

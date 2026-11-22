@@ -164,6 +164,8 @@
     <string name="settings_homebase">Homebase</string>
     <string name="settings_homebase_hint">Dein Zuhause. Jeder Tag beginnt und endet hier, solange keine Reise läuft. Bei Umzügen gilt je Zeitraum die damalige Homebase.</string>
     <string name="settings_sort_by_usage">Häufig genutzte Arten und Kategorien zuerst</string>
+    <string name="stats_filter_no_work">Ohne Arbeit</string>
+    <string name="stats_filter_business_trips">Dienstreisen mitzählen</string>
     <string name="map_pick_button">🗺️ Karte</string>
     <string name="map_pick_title">Auf Karte wählen</string>
     <string name="map_pick_here">Hier übernehmen</string>

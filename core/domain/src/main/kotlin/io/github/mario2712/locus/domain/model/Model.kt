@@ -133,6 +133,7 @@ enum class TransportMode(val emoji: String, val nameDe: String) {
     TRAM("🚊", "U-Bahn/Tram"),
     TRAIN("🚆", "Zug"),
     TAXI("🚕", "Taxi"),
+    CABLE_CAR("🚡", "Seilbahn"),
     PLANE("✈️", "Flug"),
     FERRY("⛴️", "Fähre"),
 }

@@ -110,10 +110,12 @@ object YearStats {
         rank: (String) -> Int,
         homebases: io.github.mario2712.locus.domain.timeline.Homebases,
         today: LocalDate,
+        workFilter: WorkFilter = WorkFilter.ALL,
     ): YearStatsData {
         val from = rangeFrom
         val to = minOf(rangeTo, today)
-        val resolved = Timeline.resolve(stays, homebases, today)
+        // Filter nach dem Auflösen, damit laufende Basen nicht über ausgeblendete Stationen hinaus verlängert werden.
+        val resolved = workFilter.apply(Timeline.resolve(stays, homebases, today), stayTypes)
         val own = resolved.filter { person in it.participants }
         val summaries = DayInsights.summaries(from, to, person, resolved, rank)
 
@@ -178,7 +180,7 @@ object YearStats {
             d = d.plusDays(1)
         }
 
-        val trips = Trips.derive(stays, visits, places, person, homebases, today)
+        val trips = Trips.derive(if (workFilter == WorkFilter.ALL) stays else resolved, visits, places, person, homebases, today)
             .count { it.start <= to && it.end >= from }
 
         return YearStatsData(
