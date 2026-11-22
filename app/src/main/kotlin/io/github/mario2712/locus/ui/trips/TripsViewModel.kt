@@ -79,7 +79,13 @@ class TripsViewModel @Inject constructor(
             visibleTrips = TripFilter.apply(trips, wf, pf, Defaults.ME, editor.typesById),
             workFilter = wf,
             personFilter = pf,
-            days = trips.associate { trip -> trip.id to allDays.filter { it.date in trip.start..trip.end }.reversed() },
+            days = trips.associate { trip ->
+                // Nur Besuche, die zur Reise gehören (nicht das Café nach der Heimkehr).
+                val tripVisitIds = trip.visits.mapTo(hashSetOf()) { it.id }
+                trip.id to allDays.filter { it.date in trip.start..trip.end }
+                    .map { day -> day.copy(visits = day.visits.filter { it.id in tripVisitIds }) }
+                    .reversed()
+            },
             editor = editor,
         )
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), TripsUiState())

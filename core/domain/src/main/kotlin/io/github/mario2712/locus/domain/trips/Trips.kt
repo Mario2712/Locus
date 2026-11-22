@@ -100,7 +100,7 @@ object Trips {
                 group, start, end, DatePrecision.DAY,
                 ongoing = currentBase != null && group.any { it.id == currentBase.id },
                 stays = inRange,
-                visits = ownVisits.filter { it.date in start..end },
+                visits = ownVisits.filter { it.date in start..end && belongsToTrip(it, start, end, inRange, places, homebases) },
                 places = places,
             )
         }
@@ -112,6 +112,27 @@ object Trips {
             }
 
         return (exactTrips + fuzzyTrips).sortedByDescending { it.start }
+    }
+
+    /**
+     * An An- und Abreisetag gehört ein Besuch nur zur Reise, wenn er in einer Stadt der Reise liegt oder
+     * außerhalb des Homebase-Landes (z. B. Raststätte unterwegs). So zählt das Café nach der Heimkehr nicht mit.
+     */
+    private fun belongsToTrip(
+        visit: Visit,
+        start: LocalDate,
+        end: LocalDate,
+        tripStays: List<Stay>,
+        places: Map<String, Place>,
+        homebases: Homebases,
+    ): Boolean {
+        if (visit.date != start && visit.date != end) return true
+        fun cityOf(id: String): String? = places[id]?.let { if (it.kind == io.github.mario2712.locus.domain.model.PlaceKind.CITY) it.id else it.parentPlaceId }
+        fun countryOf(id: String): String? = places[id]?.let { ReferenceData.countableCountry(it.countryIso2)?.iso2 }
+        val visitCity = cityOf(visit.placeId)
+        if (visitCity != null && tripStays.any { cityOf(it.placeId) == visitCity }) return true
+        val homeCountry = homebases.at(visit.date)?.let(::countryOf) ?: return true
+        return countryOf(visit.placeId) != homeCountry
     }
 
     private fun build(
