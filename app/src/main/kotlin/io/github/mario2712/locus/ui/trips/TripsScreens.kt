@@ -1,5 +1,8 @@
 package io.github.mario2712.locus.ui.trips
 
+import io.github.mario2712.locus.domain.trips.TripWorkFilter
+import io.github.mario2712.locus.domain.trips.TripPersonFilter
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -74,8 +77,10 @@ fun TripsScreen(onBack: () -> Unit, onOpenTrip: (String) -> Unit, viewModel: Tri
                     Text(stringResource(R.string.trips_add_past))
                 }
             }
+            item { TripFilters(state, viewModel) }
             if (state.trips.isEmpty()) item { Text(stringResource(R.string.trips_empty)) }
-            state.trips.groupBy { it.start.year }.forEach { (year, trips) ->
+            if (state.trips.isNotEmpty() && state.visibleTrips.isEmpty()) item { Text(stringResource(R.string.trips_filter_empty)) }
+            state.visibleTrips.groupBy { it.start.year }.forEach { (year, trips) ->
                 item {
                     Text(
                         stringResource(R.string.trips_year, year, trips.size),
@@ -107,6 +112,36 @@ fun TripsScreen(onBack: () -> Unit, onOpenTrip: (String) -> Unit, viewModel: Tri
     }
     if (addPast) {
         PastTripDialog(state.editor, viewModel, onDismiss = { addPast = false })
+    }
+}
+
+/** Filter: Arbeit/Privat und Mitreisende. */
+@Composable
+private fun TripFilters(state: TripsUiState, viewModel: TripsViewModel) {
+    val others = state.editor.persons.filterNot { it.isMe }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(
+                TripWorkFilter.ALL to R.string.trips_filter_all,
+                TripWorkFilter.PRIVATE to R.string.trips_filter_private,
+                TripWorkFilter.WORK to R.string.trips_filter_work,
+            ).forEach { (value, label) ->
+                FilterChip(state.workFilter == value, { viewModel.setWorkFilter(value) }, label = { Text(stringResource(label)) })
+            }
+        }
+        if (others.isNotEmpty()) {
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(state.personFilter == TripPersonFilter.All, { viewModel.setPersonFilter(TripPersonFilter.All) },
+                    label = { Text(stringResource(R.string.trips_filter_everyone)) })
+                others.forEach { person ->
+                    val value = TripPersonFilter.With(person.id)
+                    FilterChip(state.personFilter == value, { viewModel.setPersonFilter(value) },
+                        label = { Text(stringResource(R.string.trips_filter_with, person.name)) })
+                }
+                FilterChip(state.personFilter == TripPersonFilter.Alone, { viewModel.setPersonFilter(TripPersonFilter.Alone) },
+                    label = { Text(stringResource(R.string.trips_filter_alone)) })
+            }
+        }
     }
 }
 

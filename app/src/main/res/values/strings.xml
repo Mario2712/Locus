@@ -164,6 +164,13 @@
     <string name="settings_homebase">Homebase</string>
     <string name="settings_homebase_hint">Dein Zuhause. Jeder Tag beginnt und endet hier, solange keine Reise läuft. Bei Umzügen gilt je Zeitraum die damalige Homebase.</string>
     <string name="settings_sort_by_usage">Häufig genutzte Arten und Kategorien zuerst</string>
+    <string name="trips_filter_all">Alle</string>
+    <string name="trips_filter_private">Privat</string>
+    <string name="trips_filter_work">Arbeit</string>
+    <string name="trips_filter_everyone">Alle Personen</string>
+    <string name="trips_filter_with">Mit %1$s</string>
+    <string name="trips_filter_alone">Allein</string>
+    <string name="trips_filter_empty">Keine Reisen für diese Filter.</string>
     <string name="stats_filter_no_work">Ohne Arbeit</string>
     <string name="stats_filter_business_trips">Dienstreisen mitzählen</string>
     <string name="map_pick_button">🗺️ Karte</string>

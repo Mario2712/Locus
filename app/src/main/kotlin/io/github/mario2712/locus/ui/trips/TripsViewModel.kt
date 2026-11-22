@@ -12,7 +12,11 @@ import io.github.mario2712.locus.domain.repository.VisitRepository
 import io.github.mario2712.locus.domain.timeline.Timeline
 import io.github.mario2712.locus.domain.timeline.TimelineDay
 import io.github.mario2712.locus.domain.timeline.TimelineDays
+import io.github.mario2712.locus.domain.trips.TripFilter
+import io.github.mario2712.locus.domain.trips.TripPersonFilter
 import io.github.mario2712.locus.domain.trips.TripSummary
+import io.github.mario2712.locus.domain.trips.TripWorkFilter
+import kotlinx.coroutines.flow.MutableStateFlow
 import io.github.mario2712.locus.domain.trips.Trips
 import io.github.mario2712.locus.domain.usecase.StayCommands
 import io.github.mario2712.locus.ui.common.EditorCatalog
@@ -30,7 +34,12 @@ import java.time.LocalDate
 import javax.inject.Inject
 
 data class TripsUiState(
+    /** Alle Reisen (für die Detailansicht). */
     val trips: List<TripSummary> = emptyList(),
+    /** Reisen nach den gewählten Filtern (für die Liste). */
+    val visibleTrips: List<TripSummary> = emptyList(),
+    val workFilter: TripWorkFilter = TripWorkFilter.ALL,
+    val personFilter: TripPersonFilter = TripPersonFilter.All,
     val days: Map<String, List<TimelineDay>> = emptyMap(),
     val editor: EditorData = EditorData(),
 )
@@ -56,17 +65,32 @@ class TripsViewModel @Inject constructor(
 ) : ViewModel() {
     val today: LocalDate = LocalDate.now(clock)
 
-    val state: StateFlow<TripsUiState> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data) { s, v, editor ->
+    private val workFilter = MutableStateFlow(TripWorkFilter.ALL)
+    private val personFilter = MutableStateFlow<TripPersonFilter>(TripPersonFilter.All)
+    private val filters = combine(workFilter, personFilter) { w, p -> w to p }
+
+    val state: StateFlow<TripsUiState> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data, filters) { s, v, editor, (wf, pf) ->
         val home = editor.homebases
         val trips = Trips.derive(s, v, editor.placesById, Defaults.ME, home, today)
         val resolved = Timeline.resolve(s, home, today)
         val allDays = TimelineDays.build(resolved, v, Defaults.ME, today)
         TripsUiState(
             trips = trips,
+            visibleTrips = TripFilter.apply(trips, wf, pf, Defaults.ME, editor.typesById),
+            workFilter = wf,
+            personFilter = pf,
             days = trips.associate { trip -> trip.id to allDays.filter { it.date in trip.start..trip.end }.reversed() },
             editor = editor,
         )
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), TripsUiState())
+
+    fun setWorkFilter(value: TripWorkFilter) {
+        workFilter.value = value
+    }
+
+    fun setPersonFilter(value: TripPersonFilter) {
+        personFilter.value = value
+    }
 
     fun addPastTrip(draft: PastTripDraft) = viewModelScope.launch {
         commands.addPastTrip(draft.placeIds, draft.start, draft.end, draft.precision, draft.participants, draft.typeId)

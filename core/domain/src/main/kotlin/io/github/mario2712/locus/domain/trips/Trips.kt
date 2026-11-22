@@ -28,6 +28,8 @@ data class TripSummary(
     val countryIso2s: List<String>,
     val participants: Set<PersonId>,
     val typeId: String,
+    /** Arten aller Basen (z. B. Dienstreise + Urlaub bei verlängerter Dienstreise). */
+    val baseTypeIds: Set<String> = setOf(typeId),
 ) {
     val days: Int get() = ChronoUnit.DAYS.between(start, end).toInt() + 1
 }
@@ -137,6 +139,7 @@ object Trips {
             countryIso2s = countries,
             participants = bases.flatMap { it.participants }.toSet(),
             typeId = bases.first().typeId,
+            baseTypeIds = bases.mapTo(linkedSetOf()) { it.typeId },
         )
     }
 }
