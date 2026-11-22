@@ -104,4 +104,8 @@ interface SettingsRepository {
     suspend fun setEntryDefaults(defaults: EntryDefaults)
     fun observeBackup(): Flow<BackupSettings>
     suspend fun setBackup(settings: BackupSettings)
+
+    /** Einmalige Datenumstellungen (z. B. „Gipfel“ → „Natur / Wandern“). */
+    suspend fun isMigrationDone(key: String): Boolean
+    suspend fun setMigrationDone(key: String)
 }

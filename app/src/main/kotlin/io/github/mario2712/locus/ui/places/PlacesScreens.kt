@@ -204,6 +204,9 @@ fun PlaceDetailScreen(
     var edit by remember { mutableStateOf(false) }
     var link by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var positionStart by remember { mutableStateOf<io.github.mario2712.locus.ui.editor.MapStart?>(null) }
+    val positionScope = androidx.compose.runtime.rememberCoroutineScope()
+    val controller = io.github.mario2712.locus.places.LocalPlaceSearch.current
 
     BackScaffold(place?.displayName ?: "", onBack) { modifier ->
         if (place == null) return@BackScaffold
@@ -238,6 +241,15 @@ fun PlaceDetailScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = { edit = true }) { Text(stringResource(R.string.place_edit)) }
                     OutlinedButton(onClick = { link = true }) { Text(stringResource(R.string.place_link_osm)) }
+                }
+                if (controller != null) {
+                    TextButton(onClick = {
+                        positionScope.launch {
+                            positionStart = io.github.mario2712.locus.ui.editor.mapStartFor(
+                                listOf(place), emptyList(), state.editor.places,
+                            ) { controller.currentPosition() }
+                        }
+                    }) { Text(stringResource(R.string.place_set_position)) }
                 }
                 if (!place.isHomebase) {
                     TextButton(onClick = viewModel::setHomebase) { Text(stringResource(R.string.place_make_homebase)) }
@@ -288,6 +300,17 @@ fun PlaceDetailScreen(
     }
     if (place != null && link) {
         LinkDialog(place, viewModel, onDismiss = { link = false })
+    }
+    if (place != null) {
+        positionStart?.let { start ->
+            io.github.mario2712.locus.ui.editor.MapPickerDialog(
+                title = stringResource(R.string.place_set_position_title, place.displayName),
+                start = start,
+                confirmLabel = stringResource(R.string.place_set_position_confirm),
+                onDismiss = { positionStart = null },
+                onPick = { lat, lon, hit -> viewModel.setPosition(lat, lon, hit); positionStart = null },
+            )
+        }
     }
     if (confirmDelete) {
         AlertDialog(

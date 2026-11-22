@@ -70,7 +70,8 @@ object Defaults {
         VisitCategory(VisitCategoryIds.RESTAURANT, "Restaurant / Café", true, "restaurant", 1),
         VisitCategory(VisitCategoryIds.BAR, "Bar", true, "local_bar", 2),
         VisitCategory(VisitCategoryIds.NATURE, "Natur / Wandern", true, "hiking", 3),
-        VisitCategory(VisitCategoryIds.SUMMIT, "Gipfel", true, "landscape", 4),
+        // Archiviert: überschneidet sich mit „Natur / Wandern“; bestehende Besuche werden umgestellt.
+        VisitCategory(VisitCategoryIds.SUMMIT, "Gipfel", true, "landscape", 4, isArchived = true),
         // Gleiche Sortierung wie in der Datenbank (sortOrder, dann Name).
         VisitCategory(VisitCategoryIds.ACTIVITY, "Aktivität / Erlebnis", true, "local_activity", 5),
         VisitCategory(VisitCategoryIds.EVENT, "Konzert / Event", true, "music_note", 5),

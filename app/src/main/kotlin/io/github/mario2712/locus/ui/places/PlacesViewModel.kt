@@ -100,6 +100,10 @@ class PlaceDetailViewModel @Inject constructor(
     }
     fun delete() = viewModelScope.launch { places.delete(placeId) }
 
+    /** Position auf der Karte gesetzt bzw. korrigiert. */
+    fun setPosition(latitude: Double, longitude: Double, hit: io.github.mario2712.locus.domain.places.PlaceCandidate?) =
+        viewModelScope.launch { state.value.place?.let { search.setPosition(it, latitude, longitude, hit) } }
+
     suspend fun searchOnline(query: String): SearchResult<List<PlaceCandidate>> = search.search(query)
     fun link(candidate: PlaceCandidate) = viewModelScope.launch {
         state.value.place?.let { search.link(it, candidate) }

@@ -91,6 +91,15 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun saveStayType(type: io.github.mario2712.locus.domain.model.StayType) = viewModelScope.launch { catalog.upsertStayType(type) }
+
+    /** Neue feste Reihenfolge speichern (nur geänderte Einträge). */
+    fun reorderStayTypes(types: List<io.github.mario2712.locus.domain.model.StayType>) = viewModelScope.launch {
+        types.forEachIndexed { index, type -> if (type.sortOrder != index) catalog.upsertStayType(type.copy(sortOrder = index)) }
+    }
+
+    fun reorderVisitCategories(categories: List<io.github.mario2712.locus.domain.model.VisitCategory>) = viewModelScope.launch {
+        categories.forEachIndexed { index, c -> if (c.sortOrder != index) catalog.upsertVisitCategory(c.copy(sortOrder = index)) }
+    }
     fun saveVisitCategory(category: io.github.mario2712.locus.domain.model.VisitCategory) =
         viewModelScope.launch { catalog.upsertVisitCategory(category) }
     fun newCustomId(prefix: String): String = "$prefix-custom-" + UUID.randomUUID().toString()

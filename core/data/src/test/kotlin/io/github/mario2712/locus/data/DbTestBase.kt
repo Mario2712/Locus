@@ -22,4 +22,28 @@ abstract class DbTestBase {
 
     @After
     fun closeDb() = db.close()
+
+    protected val settings = InMemorySettings()
+
+    protected fun seeder() = io.github.mario2712.locus.data.seed.DatabaseSeeder(
+        db, meta, settings,
+        io.github.mario2712.locus.data.repository.RoomCatalogRepository(db.catalogDao(), meta),
+        io.github.mario2712.locus.data.repository.RoomVisitRepository(db.visitDao(), meta),
+    )
+}
+
+/** Einstellungen im Speicher (nur was der Seeder braucht, Rest mit Standardwerten). */
+class InMemorySettings : io.github.mario2712.locus.domain.repository.SettingsRepository {
+    private val reminder = kotlinx.coroutines.flow.MutableStateFlow(io.github.mario2712.locus.domain.model.ReminderSettings())
+    private val defaults = kotlinx.coroutines.flow.MutableStateFlow(io.github.mario2712.locus.domain.model.EntryDefaults())
+    private val backup = kotlinx.coroutines.flow.MutableStateFlow(io.github.mario2712.locus.domain.model.BackupSettings())
+    private val done = mutableSetOf<String>()
+    override fun observeReminder() = reminder
+    override suspend fun setReminder(settings: io.github.mario2712.locus.domain.model.ReminderSettings) { reminder.value = settings }
+    override fun observeEntryDefaults() = defaults
+    override suspend fun setEntryDefaults(defaults: io.github.mario2712.locus.domain.model.EntryDefaults) { this.defaults.value = defaults }
+    override fun observeBackup() = backup
+    override suspend fun setBackup(settings: io.github.mario2712.locus.domain.model.BackupSettings) { backup.value = settings }
+    override suspend fun isMigrationDone(key: String) = key in done
+    override suspend fun setMigrationDone(key: String) { done += key }
 }

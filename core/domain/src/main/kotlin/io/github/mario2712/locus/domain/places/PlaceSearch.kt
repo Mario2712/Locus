@@ -105,6 +105,39 @@ object PlaceCandidates {
         address = existing.address ?: candidate.address,
     )
 
+    /**
+     * Namensvorschlag für einen auf der Karte gewählten Punkt: bei „Stadt/Dorf“ der Ort,
+     * sonst die Örtlichkeit bzw. Adresse, die die Rückwärtssuche liefert.
+     */
+    fun suggestName(hit: PlaceCandidate?, kind: PlaceKind): String = when {
+        hit == null -> ""
+        kind == PlaceKind.CITY -> hit.cityName ?: hit.name.takeIf { hit.kind == PlaceKind.CITY }.orEmpty()
+        hit.kind == PlaceKind.CITY -> ""
+        else -> hit.name
+    }
+
+    /**
+     * Ort aus einem Kartenpunkt: Land, Region und Stadt aus der Rückwärtssuche [hit], Koordinaten vom Punkt.
+     * Die OSM-Verknüpfung bleibt nur, wenn der vorgeschlagene Treffer unverändert übernommen wird.
+     */
+    fun fromPoint(
+        hit: PlaceCandidate,
+        latitude: Double,
+        longitude: Double,
+        name: String,
+        kind: PlaceKind,
+        id: String = UUID.randomUUID().toString(),
+    ): Place {
+        val trimmed = name.trim()
+        val sameAsHit = hit.kind == kind && hit.name == trimmed
+        return toPlace(hit.copy(name = trimmed, kind = kind, latitude = latitude, longitude = longitude), id).copy(
+            osmId = hit.osmId.takeIf { sameAsHit },
+            poiCategory = hit.category.takeIf { sameAsHit },
+            cityName = if (kind == PlaceKind.CITY) trimmed else hit.cityName,
+            address = hit.address.takeIf { kind != PlaceKind.CITY },
+        )
+    }
+
     /** Gespeicherte Stadt mit [cityName] im selben Land (für die Zuordnung von Lokalen, Museen …). */
     fun findCity(cityName: String, countryIso2: String, places: List<Place>): Place? =
         places.firstOrNull {

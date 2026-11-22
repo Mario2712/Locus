@@ -19,7 +19,10 @@ import io.github.mario2712.locus.domain.repository.PersonRepository
 import io.github.mario2712.locus.domain.repository.PlaceRepository
 import io.github.mario2712.locus.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
+import io.github.mario2712.locus.domain.usecase.CatalogOrder
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import java.util.UUID
 import javax.inject.Inject
 
@@ -33,6 +36,9 @@ data class EditorData(
     val defaults: EntryDefaults = EntryDefaults(),
     /** Eigene Reisenamen je Reise-ID (ID der ersten Basis-Station). */
     val tripNames: Map<String, String> = emptyMap(),
+    /** Nutzung je Art bzw. Kategorie (letzte 12 Monate), für „häufig genutzte zuerst“. */
+    val typeUsage: Map<String, Int> = emptyMap(),
+    val categoryUsage: Map<String, Int> = emptyMap(),
 ) {
     val placesById: Map<String, Place> by lazy { places.associateBy { it.id } }
     val typesById: Map<String, StayType> by lazy { stayTypes.associateBy { it.id } }
@@ -47,8 +53,16 @@ data class EditorData(
     val rank: (String) -> Int by lazy { StayPriority.ranker(typesById) }
 
     /** Aktive Arten für Auswahllisten. */
-    val activeStayTypes: List<StayType> get() = stayTypes.filterNot { it.isArchived }
-    val activeCategories: List<VisitCategory> get() = visitCategories.filterNot { it.isArchived }
+    val activeStayTypes: List<StayType> by lazy {
+        stayTypes.filterNot { it.isArchived }.let { list ->
+            if (defaults.sortByUsage) CatalogOrder.byUsage(list, typeUsage) { it.id } else list
+        }
+    }
+    val activeCategories: List<VisitCategory> by lazy {
+        visitCategories.filterNot { it.isArchived }.let { list ->
+            if (defaults.sortByUsage) CatalogOrder.byUsage(list, categoryUsage) { it.id } else list
+        }
+    }
 
     /** Arten, die eine Reise beginnen können (Urlaub, Dienstreise …). */
     val tripTypes: List<StayType>
@@ -132,7 +146,15 @@ class EditorCatalog @Inject constructor(
     templateRepository: DayTemplateRepository,
     settingsRepository: SettingsRepository,
     tripRepository: io.github.mario2712.locus.domain.repository.TripRepository,
+    stayRepository: io.github.mario2712.locus.domain.repository.StayRepository,
+    visitRepository: io.github.mario2712.locus.domain.repository.VisitRepository,
 ) {
+    private val since get() = java.time.LocalDate.now().minusYears(1)
+    private val usage = combine(
+        stayRepository.observeAll().map { CatalogOrder.stayTypeUsage(it, since) }.distinctUntilChanged(),
+        visitRepository.observeAll().map { CatalogOrder.categoryUsage(it, since) }.distinctUntilChanged(),
+    ) { types, categories -> types to categories }
+
     private val base = combine(
         placeRepository.observeAll(),
         catalogRepository.observeStayTypes(),
@@ -145,8 +167,12 @@ class EditorCatalog @Inject constructor(
         templateRepository.observeAll(),
         settingsRepository.observeEntryDefaults(),
         tripRepository.observeAll(),
-    ) { data, templates, defaults, trips ->
-        data.copy(templates = templates, defaults = defaults, tripNames = trips.associate { it.id to it.title })
+        usage,
+    ) { data, templates, defaults, trips, (typeUsage, categoryUsage) ->
+        data.copy(
+            templates = templates, defaults = defaults, tripNames = trips.associate { it.id to it.title },
+            typeUsage = typeUsage, categoryUsage = categoryUsage,
+        )
     }
 
     suspend fun createPlace(draft: PlaceDraft): Place {

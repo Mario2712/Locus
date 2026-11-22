@@ -14,6 +14,7 @@ import io.github.mario2712.locus.domain.model.ReminderSettings
 import io.github.mario2712.locus.domain.repository.SettingsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.time.LocalTime
 import javax.inject.Inject
@@ -50,6 +51,7 @@ class DataStoreSettingsRepository @Inject constructor(
                 tripParticipants = prefs[TRIP_PARTICIPANTS]?.mapTo(linkedSetOf(), ::PersonId)
                     ?.takeIf { it.isNotEmpty() } ?: defaults.tripParticipants,
                 documentedSinceYear = prefs[DOCUMENTED_SINCE] ?: defaults.documentedSinceYear,
+                sortByUsage = prefs[SORT_BY_USAGE] ?: defaults.sortByUsage,
             )
         }
         .distinctUntilChanged()
@@ -60,7 +62,15 @@ class DataStoreSettingsRepository @Inject constructor(
             prefs[DAILY_PARTICIPANTS] = defaults.dailyParticipants.mapTo(linkedSetOf()) { it.value }
             prefs[TRIP_PARTICIPANTS] = defaults.tripParticipants.mapTo(linkedSetOf()) { it.value }
             prefs[DOCUMENTED_SINCE] = defaults.documentedSinceYear
+            prefs[SORT_BY_USAGE] = defaults.sortByUsage
         }
+    }
+
+    override suspend fun isMigrationDone(key: String): Boolean =
+        store.data.first()[MIGRATIONS_DONE]?.contains(key) == true
+
+    override suspend fun setMigrationDone(key: String) {
+        store.edit { prefs -> prefs[MIGRATIONS_DONE] = prefs[MIGRATIONS_DONE].orEmpty() + key }
     }
 
     override fun observeBackup(): Flow<BackupSettings> = store.data
@@ -81,6 +91,8 @@ class DataStoreSettingsRepository @Inject constructor(
         val DAILY_PARTICIPANTS = stringSetPreferencesKey("daily_participants")
         val TRIP_PARTICIPANTS = stringSetPreferencesKey("trip_participants")
         val DOCUMENTED_SINCE = intPreferencesKey("documented_since_year")
+        val SORT_BY_USAGE = booleanPreferencesKey("sort_by_usage")
+        val MIGRATIONS_DONE = stringSetPreferencesKey("migrations_done")
         val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
         val REMINDER_MINUTES = intPreferencesKey("reminder_minutes")
     }

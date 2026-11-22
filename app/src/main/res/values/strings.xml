@@ -85,9 +85,9 @@
     <!-- Einstellungen -->
     <string name="settings_title">Einstellungen</string>
     <string name="catalog_stay_types">Aufenthaltsarten</string>
-    <string name="catalog_types_hint">Name, Farbe und Gruppe anpassen oder eigene Arten anlegen. Die Gruppe bestimmt die Statistik (Arbeit, Frei, Urlaub).</string>
+    <string name="catalog_types_hint">Name, Farbe und Gruppe anpassen oder eigene Arten anlegen. Die Gruppe bestimmt die Statistik (Arbeit, Frei, Urlaub). Am ☰ ziehen, um die Reihenfolge zu ändern.</string>
     <string name="catalog_visit_categories">Besuchskategorien</string>
-    <string name="catalog_visit_hint">z. B. „Aktivität / Erlebnis“ für Escape-Room, Kino oder Therme. Eigene Kategorien sind möglich.</string>
+    <string name="catalog_visit_hint">z. B. „Aktivität / Erlebnis“ für Escape-Room, Kino oder Therme. Eigene Kategorien sind möglich. Am ☰ ziehen, um die Reihenfolge zu ändern.</string>
     <string name="catalog_new_category">+ Neue Kategorie</string>
     <string name="catalog_new_type">+ Neue Art</string>
     <string name="catalog_category">Kategorie</string>
@@ -163,6 +163,19 @@
     <!-- Einstellungen (Stationen) -->
     <string name="settings_homebase">Homebase</string>
     <string name="settings_homebase_hint">Dein Zuhause. Jeder Tag beginnt und endet hier, solange keine Reise läuft. Bei Umzügen gilt je Zeitraum die damalige Homebase.</string>
+    <string name="settings_sort_by_usage">Häufig genutzte Arten und Kategorien zuerst</string>
+    <string name="map_pick_button">🗺️ Karte</string>
+    <string name="map_pick_title">Auf Karte wählen</string>
+    <string name="map_pick_here">Hier übernehmen</string>
+    <string name="map_pick_hint">Karte unter dem Pin verschieben und zoomen.</string>
+    <string name="map_pick_offline">Offline – Kartenauswahl nicht verfügbar.</string>
+    <string name="map_pick_no_address">Für diesen Punkt wurde keine Adresse gefunden.</string>
+    <string name="map_pins_hint">Treffer antippen oder einen eigenen Punkt wählen.</string>
+    <string name="map_show_results">Auf Karte zeigen</string>
+    <string name="map_kind_village">Stadt / Dorf</string>
+    <string name="place_set_position">📍 Position auf Karte setzen</string>
+    <string name="place_set_position_title">Position: %1$s</string>
+    <string name="place_set_position_confirm">Position übernehmen</string>
     <string name="homebase_add_move">+ Umzug / frühere Homebase</string>
     <string name="homebase_always">immer (aktuell)</string>
     <string name="homebase_since_current">seit %1$s (aktuell)</string>

@@ -117,13 +117,18 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                 }
             }
 
-            StayTypesCard(editor.stayTypes, viewModel::saveStayType) { viewModel.newCustomId("stay") }
-            VisitCategoriesCard(editor.visitCategories, viewModel::saveVisitCategory) { viewModel.newCustomId("visit") }
+            StayTypesCard(editor.stayTypes, viewModel::saveStayType, viewModel::reorderStayTypes) { viewModel.newCustomId("stay") }
+            VisitCategoriesCard(editor.visitCategories, viewModel::saveVisitCategory, viewModel::reorderVisitCategories) {
+                viewModel.newCustomId("visit")
+            }
 
             SectionCard(stringResource(R.string.settings_defaults)) {
                 val defaults = editor.defaults
                 SwitchRow(stringResource(R.string.settings_prefill_transport), defaults.prefillTransport) {
                     viewModel.setEntryDefaults(defaults.copy(prefillTransport = it))
+                }
+                SwitchRow(stringResource(R.string.settings_sort_by_usage), defaults.sortByUsage) {
+                    viewModel.setEntryDefaults(defaults.copy(sortByUsage = it))
                 }
                 Text(stringResource(R.string.settings_daily_participants), style = MaterialTheme.typography.labelLarge)
                 ParticipantChips(editor.persons, defaults.dailyParticipants) {

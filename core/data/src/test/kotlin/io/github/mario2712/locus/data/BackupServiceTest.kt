@@ -45,7 +45,7 @@ class BackupServiceTest : DbTestBase() {
     private fun d(s: String) = LocalDate.parse(s)
 
     private suspend fun fill() {
-        DatabaseSeeder(db, meta).seed()
+        seeder().seed()
         RoomPersonRepository(db.personDao(), meta).upsert(Defaults.persons.first().copy(birthDate = d("1996-05-10")))
         RoomPlaceRepository(db.placeDao(), meta).apply {
             upsert(Place("hallein", "Hallein", PlaceKind.CITY, "AT", latitude = 47.68, longitude = 13.09, alias = "Zuhause"))

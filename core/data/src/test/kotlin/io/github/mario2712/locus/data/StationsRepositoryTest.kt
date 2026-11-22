@@ -78,7 +78,7 @@ class StationsRepositoryTest : DbTestBase() {
         places.upsert(Place("p1", "Hallein", PlaceKind.CITY, "AT", alias = "Zuhause"))
         places.upsert(Place("p2", "Salzburg", PlaceKind.CITY, "AT"))
 
-        DatabaseSeeder(db, meta).seed()
+        seeder().seed()
         assertEquals(listOf("p1"), places.observeAll().first().filter { it.isHomebase }.map { it.id })
 
         places.setHomebase("p2")

@@ -14,7 +14,7 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class DatabaseSeederTest : DbTestBase() {
 
-    private val seeder by lazy { DatabaseSeeder(db, meta) }
+    private val seeder by lazy { seeder() }
     private val catalog by lazy { RoomCatalogRepository(db.catalogDao(), meta) }
     private val persons by lazy { RoomPersonRepository(db.personDao(), meta) }
 
@@ -49,6 +49,21 @@ class DatabaseSeederTest : DbTestBase() {
         seeder.seed()
 
         assertEquals(Defaults.visitCategories, catalog.observeVisitCategories().first())
+    }
+
+    @Test
+    fun `Gipfel wird archiviert und Besuche auf Natur umgestellt - nur einmal`() = runTest {
+        seeder.seed()
+        val visits = io.github.mario2712.locus.data.repository.RoomVisitRepository(db.visitDao(), meta)
+        val places = io.github.mario2712.locus.data.repository.RoomPlaceRepository(db.placeDao(), meta)
+        places.upsert(io.github.mario2712.locus.domain.model.Place("p", "Untersberg", io.github.mario2712.locus.domain.model.PlaceKind.POI, "AT"))
+        val summit = Defaults.visitCategories.first { it.id == Defaults.VisitCategoryIds.SUMMIT }
+        catalog.upsertVisitCategory(summit.copy(isArchived = false))
+        visits.upsert(io.github.mario2712.locus.domain.model.Visit("v", "p", summit.id, java.time.LocalDate.parse("2024-06-01"), participants = setOf(Defaults.ME)))
+        // Bestehende Installation vor dem Update: Umstellung noch nicht gelaufen.
+        DatabaseSeeder(db, meta, InMemorySettings(), catalog, visits).seed()
+        assertEquals(Defaults.VisitCategoryIds.NATURE, visits.get("v")!!.categoryId)
+        assertEquals(true, catalog.observeVisitCategories().first().first { it.id == summit.id }.isArchived)
     }
 
     @Test

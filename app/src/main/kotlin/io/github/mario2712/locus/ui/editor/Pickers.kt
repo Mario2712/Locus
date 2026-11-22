@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -153,7 +154,7 @@ private sealed interface OnlineState {
  * Ortsauswahl: gespeicherte Orte, Online-Suche (OpenStreetMap) und „Hier“ (aktueller Standort).
  * Ein Online-Treffer wird erst bei Auswahl gespeichert; bestehende Orte werden dabei ergänzt.
  */
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun PlacePickerDialog(
     places: List<Place>,
@@ -170,6 +171,9 @@ fun PlacePickerDialog(
     var showCreate by remember { mutableStateOf(false) }
     var editPlace by remember { mutableStateOf<Place?>(null) }
     var online by remember { mutableStateOf<OnlineState>(OnlineState.Idle) }
+    var mapStart by remember { mutableStateOf<MapStart?>(null) }
+    var mapPins by remember { mutableStateOf<List<PlaceCandidate>>(emptyList()) }
+    var picked by remember { mutableStateOf<Triple<Double, Double, PlaceCandidate>?>(null) }
     val filtered = places.filter {
         query.isBlank() || it.displayName.contains(query, ignoreCase = true) || it.name.contains(query, ignoreCase = true)
     }
@@ -200,7 +204,7 @@ fun PlacePickerDialog(
                     label = { Text(stringResource(R.string.editor_search)) }, modifier = Modifier.fillMaxWidth(),
                 )
                 if (controller != null) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(
                             enabled = query.trim().length >= 2 && online != OnlineState.Loading,
                             onClick = {
@@ -222,6 +226,13 @@ fun PlacePickerDialog(
                                 }
                             },
                         ) { Text(stringResource(R.string.search_here)) }
+                        OutlinedButton(onClick = {
+                            scope.launch {
+                                val byId = places.associateBy { it.id }
+                                mapPins = emptyList()
+                                mapStart = mapStartFor(suggestedIds.mapNotNull(byId::get), emptyList(), places) { controller.currentPosition() }
+                            }
+                        }) { Text(stringResource(R.string.map_pick_button)) }
                     }
                 }
                 LazyColumn(Modifier.heightIn(max = 360.dp)) {
@@ -237,7 +248,15 @@ fun PlacePickerDialog(
                             Text(stringResource(state.message), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(vertical = 8.dp))
                         }
                         is OnlineState.Results -> {
-                            item { SectionLabel(stringResource(R.string.search_online_results)) }
+                            item {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(Modifier.weight(1f)) { SectionLabel(stringResource(R.string.search_online_results)) }
+                                    TextButton(onClick = {
+                                        mapPins = state.items
+                                        state.items.first().let { mapStart = MapStart(it.latitude, it.longitude, 14.0) }
+                                    }) { Text(stringResource(R.string.map_show_results)) }
+                                }
+                            }
                             itemsIndexed(state.items, key = { index, it -> "osm-$index-${it.osmId}" }) { _, candidate ->
                                 val country = ReferenceData.countableCountry(candidate.countryIso2)
                                 Column(
@@ -352,6 +371,41 @@ fun PlacePickerDialog(
             cities = places.filter { it.kind == PlaceKind.CITY && it.id != place.id },
             onDismiss = { editPlace = null },
             onSave = { updated -> scope.launch { controller?.save(updated) }; editPlace = null },
+        )
+    }
+    mapStart?.let { start ->
+        MapPickerDialog(
+            title = stringResource(R.string.map_pick_title),
+            start = start,
+            pins = mapPins.mapIndexed { index, c -> MapPin(index.toString(), c.latitude, c.longitude, c.name) },
+            onDismiss = { mapStart = null },
+            onPin = { pin ->
+                val candidate = mapPins.getOrNull(pin.id.toInt()) ?: return@MapPickerDialog
+                val c = controller ?: return@MapPickerDialog
+                scope.launch {
+                    try {
+                        val place = c.import(candidate)
+                        mapStart = null
+                        onSelect(place.id)
+                    } catch (e: Exception) {
+                        if (e is kotlinx.coroutines.CancellationException) throw e
+                        online = OnlineState.Error(R.string.search_import_failed)
+                        mapStart = null
+                    }
+                }
+            },
+            onPick = { lat, lon, hit ->
+                mapStart = null
+                if (hit != null) picked = Triple(lat, lon, hit) else online = OnlineState.Error(R.string.map_pick_no_address)
+            },
+        )
+    }
+    picked?.let { (lat, lon, hit) ->
+        MapPlaceCreateDialog(
+            hit = hit, latitude = lat, longitude = lon,
+            initialKind = if (preferLocations) PlaceKind.POI else hit.kind,
+            onDismiss = { picked = null },
+            onCreated = { place -> picked = null; onSelect(place.id) },
         )
     }
     if (showCreate) {

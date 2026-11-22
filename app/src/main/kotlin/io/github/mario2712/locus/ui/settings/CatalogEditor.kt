@@ -36,6 +36,7 @@ import io.github.mario2712.locus.domain.model.StayGroup
 import io.github.mario2712.locus.domain.model.StayType
 import io.github.mario2712.locus.domain.model.VisitCategory
 import io.github.mario2712.locus.domain.reference.Defaults
+import io.github.mario2712.locus.ui.common.ReorderableColumn
 import io.github.mario2712.locus.ui.common.SectionCard
 import io.github.mario2712.locus.ui.common.TypeDot
 import io.github.mario2712.locus.ui.common.themedColor
@@ -43,12 +44,18 @@ import io.github.mario2712.locus.ui.editor.SwitchRow
 
 /** Liste der Besuchskategorien mit Bearbeiten/Ausblenden und „Neue Kategorie“. */
 @Composable
-fun VisitCategoriesCard(categories: List<VisitCategory>, onSave: (VisitCategory) -> Unit, newId: () -> String) {
+fun VisitCategoriesCard(
+    categories: List<VisitCategory>,
+    onSave: (VisitCategory) -> Unit,
+    onReorder: (List<VisitCategory>) -> Unit,
+    newId: () -> String,
+) {
     var edit by remember { mutableStateOf<VisitCategory?>(null) }
     SectionCard(stringResource(R.string.catalog_visit_categories)) {
         Text(stringResource(R.string.catalog_visit_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        categories.forEach { category ->
-            Row(Modifier.fillMaxWidth().clickable { edit = category }.padding(vertical = 8.dp)) {
+        ReorderableColumn(categories, { it.id }, onReorder) { category, handle ->
+            Row(Modifier.fillMaxWidth().clickable { edit = category }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                DragHandle(handle)
                 Text(category.name, Modifier.weight(1f), color = if (category.isArchived) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface)
                 Text(
                     listOfNotNull(
@@ -92,16 +99,22 @@ fun VisitCategoriesCard(categories: List<VisitCategory>, onSave: (VisitCategory)
 /** Liste der Aufenthaltsarten mit Name, Farbe, Gruppe, Länderpunkt-Regel und Ausblenden. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun StayTypesCard(types: List<StayType>, onSave: (StayType) -> Unit, newId: () -> String) {
+fun StayTypesCard(
+    types: List<StayType>,
+    onSave: (StayType) -> Unit,
+    onReorder: (List<StayType>) -> Unit,
+    newId: () -> String,
+) {
     var edit by remember { mutableStateOf<StayType?>(null) }
     SectionCard(stringResource(R.string.catalog_stay_types)) {
         Text(stringResource(R.string.catalog_types_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        types.forEach { type ->
+        ReorderableColumn(types, { it.id }, onReorder) { type, handle ->
             Row(
                 Modifier.fillMaxWidth().clickable { edit = type }.padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                DragHandle(handle)
                 TypeDot(type.colorArgb)
                 Text(type.name, Modifier.weight(1f), color = if (type.isArchived) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface)
                 Text(
@@ -164,6 +177,17 @@ fun StayTypesCard(types: List<StayType>, onSave: (StayType) -> Unit, newId: () -
             dismissButton = { TextButton(onClick = { edit = null }) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
+}
+
+/** Griff zum Umsortieren (gedrückt halten und ziehen). */
+@Composable
+private fun DragHandle(handle: Modifier) {
+    Text(
+        "☰",
+        modifier = handle.padding(end = 12.dp, top = 4.dp, bottom = 4.dp),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.titleMedium,
+    )
 }
 
 @Composable

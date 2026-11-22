@@ -310,6 +310,8 @@ data class EntryDefaults(
     val tripParticipants: Set<PersonId> = setOf(Defaults.ME, Defaults.JOHANNA),
     /** Ab diesem Jahr ist alles lückenlos erfasst; Länder ohne Datum gelten als davor besucht. */
     val documentedSinceYear: Int = 2014,
+    /** Arten und Kategorien in Auswahllisten nach Häufigkeit (letzte 12 Monate) statt fester Reihenfolge. */
+    val sortByUsage: Boolean = false,
 )
 
 /** Einstellungen der Abend-Erinnerung (gerätelokal, nicht synchronisiert). */

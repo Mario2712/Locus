@@ -5,6 +5,11 @@ import io.github.mario2712.locus.data.db.LocusDatabase
 import io.github.mario2712.locus.data.repository.toEntity
 import io.github.mario2712.locus.data.sync.SyncMetaFactory
 import io.github.mario2712.locus.domain.reference.Defaults
+import io.github.mario2712.locus.domain.repository.CatalogRepository
+import io.github.mario2712.locus.domain.repository.SettingsRepository
+import io.github.mario2712.locus.domain.repository.VisitRepository
+import io.github.mario2712.locus.domain.usecase.CatalogOrder
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
 /**
@@ -16,6 +21,9 @@ import javax.inject.Inject
 class DatabaseSeeder @Inject constructor(
     private val db: LocusDatabase,
     private val meta: SyncMetaFactory,
+    private val settings: SettingsRepository,
+    private val catalog: CatalogRepository,
+    private val visits: VisitRepository,
 ) {
     suspend fun seed() {
         val m = meta.forSave(existingCreatedAt = null)
@@ -37,5 +45,23 @@ class DatabaseSeeder @Inject constructor(
                 }
             }
         }
+        migrateSummitToNature()
+    }
+
+    /** Einmalig: „Gipfel“ archivieren, Besuche auf „Natur / Wandern“ umstellen. */
+    private suspend fun migrateSummitToNature() {
+        if (settings.isMigrationDone(MIGRATION_SUMMIT)) return
+        val from = Defaults.VisitCategoryIds.SUMMIT
+        val to = Defaults.VisitCategoryIds.NATURE
+        visits.observeAll().first().forEach { visit ->
+            CatalogOrder.replaceCategory(visit, from, to)?.let { visits.upsert(it) }
+        }
+        catalog.observeVisitCategories().first().firstOrNull { it.id == from && !it.isArchived }
+            ?.let { catalog.upsertVisitCategory(it.copy(isArchived = true)) }
+        settings.setMigrationDone(MIGRATION_SUMMIT)
+    }
+
+    private companion object {
+        const val MIGRATION_SUMMIT = "summit-to-nature"
     }
 }
