@@ -15,13 +15,30 @@ enum class TimelineWork { ALL, NO_WORK, ONLY_WORK }
  */
 data class TimelineFilter(
     val work: TimelineWork = TimelineWork.ALL,
-    val stayTypeId: String? = null,
-    val categoryId: String? = null,
+    /** Mehrfachauswahl: Tag passt, wenn eine der Arten vorkommt. */
+    val stayTypeIds: Set<String> = emptySet(),
+    /** Mehrfachauswahl: Tag passt, wenn eine der Kategorien vorkommt. */
+    val categoryIds: Set<String> = emptySet(),
     val query: String = "",
     val person: PersonId? = null,
 ) {
     val isActive: Boolean
         get() = this != TimelineFilter()
+
+    /** Anzahl gesetzter Filter ohne Ortssuche (für „Filter (n)“). */
+    val count: Int
+        get() = (if (work != TimelineWork.ALL) 1 else 0) + stayTypeIds.size + categoryIds.size + (if (person != null) 1 else 0)
+
+    companion object {
+        /** Wie oft (Tage) jede Art bzw. Kategorie vorkommt – nur Verwendetes, häufigstes zuerst. */
+        fun usage(days: List<TimelineDay>): Pair<List<Pair<String, Int>>, List<Pair<String, Int>>> {
+            val types = days.flatMap { d -> (d.stations + listOfNotNull(d.baseAtStart)).map { it.typeId }.distinct() }
+                .groupingBy { it }.eachCount().toList().sortedByDescending { it.second }
+            val categories = days.flatMap { d -> d.visits.flatMap { it.categoryIds }.distinct() }
+                .groupingBy { it }.eachCount().toList().sortedByDescending { it.second }
+            return types to categories
+        }
+    }
 
     fun apply(days: List<TimelineDay>, stayTypes: Map<String, StayType>, places: Map<String, Place>): List<TimelineDay> {
         if (!isActive) return days
@@ -44,8 +61,8 @@ data class TimelineFilter(
             val filtered = day.copy(baseAtStart = base, stations = stations, visits = visits)
             val stays = stations + listOfNotNull(base)
             val matches = (stays.isNotEmpty() || visits.isNotEmpty()) &&
-                (stayTypeId == null || stays.any { it.typeId == stayTypeId }) &&
-                (categoryId == null || visits.any { categoryId in it.categoryIds }) &&
+                (stayTypeIds.isEmpty() || stays.any { it.typeId in stayTypeIds }) &&
+                (categoryIds.isEmpty() || visits.any { v -> v.categoryIds.any { it in categoryIds } }) &&
                 (q.isEmpty() || stays.any { placeMatches(it.placeId) } || visits.any { placeMatches(it.placeId) }) &&
                 (person == null || stays.any { person in it.participants } || visits.any { person in it.participants })
             filtered.takeIf { matches }

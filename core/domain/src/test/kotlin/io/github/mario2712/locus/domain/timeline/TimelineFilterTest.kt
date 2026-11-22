@@ -40,8 +40,12 @@ class TimelineFilterTest {
 
     @Test
     fun `Art, Kategorie, Ort und Person`() {
-        assertEquals(listOf(3), dates(TimelineFilter(stayTypeId = StayTypeIds.HOMEOFFICE)))
-        assertEquals(listOf(2), dates(TimelineFilter(categoryId = VisitCategoryIds.HEALTH)))
+        assertEquals(listOf(3), dates(TimelineFilter(stayTypeIds = setOf(StayTypeIds.HOMEOFFICE))))
+        assertEquals(listOf(3, 7), dates(TimelineFilter(stayTypeIds = setOf(StayTypeIds.HOMEOFFICE, StayTypeIds.EXCURSION))))
+        assertEquals(listOf(2), dates(TimelineFilter(categoryIds = setOf(VisitCategoryIds.HEALTH))))
+        val (types, cats) = TimelineFilter.usage(days)
+        assertEquals(3, types.size)
+        assertEquals(listOf(VisitCategoryIds.HEALTH to 1), cats)
         assertEquals(listOf(2, 3), dates(TimelineFilter(query = "hallein"))) // Arzt liegt in Hallein
         assertEquals(listOf(7), dates(TimelineFilter(person = jo)))
     }

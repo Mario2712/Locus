@@ -57,6 +57,7 @@ data class YearStatsData(
     val topCities: List<Pair<String, Int>>,
     /** Hauptart je Tag – für die Kalender-Heatmap. */
     val mainTypeByDate: Map<LocalDate, String>,
+    val details: DetailStats = DetailStats(),
 ) {
     /** Monate des Zeitraums (für Tabelle und Heatmap). */
     val months: List<YearMonth>
@@ -148,7 +149,10 @@ object YearStats {
         // Länder
         val points = CountryPointsCalculator().calculate(resolved, visits, places, stayTypes, visitCategories)
         val stats = points.byPerson[person].orEmpty().values
-        val newCountries = stats.filter { it.firstDate in from..to }.sortedBy { it.firstDate }.map { it.countryIso2 }
+        // Das Land einer (früheren) Homebase gilt als schon immer bekannt: zählt, ist aber nie „neu“.
+        val homeCountries = homebases.placeIds.mapNotNull { id -> places[id]?.let { ReferenceData.countableCountry(it.countryIso2)?.iso2 } }.toSet()
+        val newCountries = stats.filter { it.firstDate in from..to && it.countryIso2 !in homeCountries }
+            .sortedBy { it.firstDate }.map { it.countryIso2 }
         val yearStays = resolved.filter { it.startDate <= to && it.endDate >= from }
         val yearVisits = visits.filter { it.date in from..to }
         val yearPoints = CountryPointsCalculator().calculate(yearStays, yearVisits, places, stayTypes, visitCategories)
@@ -180,8 +184,8 @@ object YearStats {
             d = d.plusDays(1)
         }
 
-        val trips = Trips.derive(if (workFilter == WorkFilter.ALL) stays else resolved, visits, places, person, homebases, today)
-            .count { it.start <= to && it.end >= from }
+        val tripList = Trips.derive(if (workFilter == WorkFilter.ALL) stays else resolved, visits, places, person, homebases, today)
+        val trips = tripList.count { it.start <= to && it.end >= from }
 
         return YearStatsData(
             from = rangeFrom,
@@ -199,6 +203,9 @@ object YearStats {
             trips = trips,
             topCities = topCities,
             mainTypeByDate = summaries.mapValues { it.value.mainTypeId },
+            details = DetailStatsCalculator.compute(
+                from, to, person, resolved, visits, places, stayTypes, homebases, summaries, tripList, today,
+            ),
         )
     }
 }

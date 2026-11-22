@@ -1,6 +1,12 @@
 package io.github.mario2712.locus.ui.timeline
 
 import androidx.compose.foundation.clickable
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.InputChip
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import io.github.mario2712.locus.domain.timeline.TimelineWork
 import io.github.mario2712.locus.domain.timeline.TimelineFilter
@@ -10,11 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -66,6 +68,9 @@ data class TimelineUiState(
     val filter: TimelineFilter = TimelineFilter(),
     /** Tage ohne Filter (für „x von y“). */
     val totalDays: Int = 0,
+    /** Verwendete Arten bzw. Kategorien mit Anzahl Tage, häufigste zuerst. */
+    val typeUsage: List<Pair<String, Int>> = emptyList(),
+    val categoryUsage: List<Pair<String, Int>> = emptyList(),
 )
 
 @HiltViewModel
@@ -80,11 +85,12 @@ class TimelineViewModel @Inject constructor(
 
     // Tage nur bei Datenänderungen neu aufbauen, nicht bei jeder Filtereingabe.
     private val allDays = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data) { s, v, editor ->
-        TimelineDays.build(Timeline.resolve(s, editor.homebases, today), v, Defaults.ME, today) to editor
+        val days = TimelineDays.build(Timeline.resolve(s, editor.homebases, today), v, Defaults.ME, today)
+        Triple(days, editor, TimelineFilter.usage(days))
     }.flowOn(Dispatchers.Default)
 
-    val state: StateFlow<TimelineUiState> = combine(allDays, filter) { (days, editor), f ->
-        TimelineUiState(f.apply(days, editor.typesById, editor.placesById), editor, f, days.size)
+    val state: StateFlow<TimelineUiState> = combine(allDays, filter) { (days, editor, usage), f ->
+        TimelineUiState(f.apply(days, editor.typesById, editor.placesById), editor, f, days.size, usage.first, usage.second)
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), TimelineUiState())
 
     fun setFilter(value: TimelineFilter) {
@@ -123,55 +129,36 @@ fun TimelineScreen(onBack: () -> Unit, onOpenDay: (LocalDate) -> Unit, viewModel
     }
 }
 
-/** Ortssuche, Arbeit, Art, Kategorie und Person. */
+/** Ortssuche plus „Filter (n)“; aktive Filter als Chips mit ✕. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TimelineFilters(state: TimelineUiState, onChange: (TimelineFilter) -> Unit) {
     val f = state.filter
     val editor = state.editor
-    var typeMenu by remember { mutableStateOf(false) }
-    var categoryMenu by remember { mutableStateOf(false) }
+    var sheet by remember { mutableStateOf(false) }
     Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        OutlinedTextField(
-            value = f.query, onValueChange = { onChange(f.copy(query = it)) }, singleLine = true,
-            label = { Text(stringResource(R.string.timeline_filter_place)) }, modifier = Modifier.fillMaxWidth(),
-        )
-        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(
-                TimelineWork.ALL to R.string.trips_filter_all,
-                TimelineWork.NO_WORK to R.string.stats_filter_no_work,
-                TimelineWork.ONLY_WORK to R.string.timeline_filter_only_work,
-            ).forEach { (value, label) ->
-                FilterChip(f.work == value, { onChange(f.copy(work = value)) }, label = { Text(stringResource(label)) })
-            }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(
+                value = f.query, onValueChange = { onChange(f.copy(query = it)) }, singleLine = true,
+                label = { Text(stringResource(R.string.timeline_filter_place)) }, modifier = Modifier.weight(1f),
+            )
+            FilterChip(f.count > 0, { sheet = true }, label = {
+                Text(if (f.count > 0) stringResource(R.string.timeline_filter_button_n, f.count) else stringResource(R.string.timeline_filter_button))
+            })
         }
-        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box {
-                FilterChip(f.stayTypeId != null, { typeMenu = true }, label = {
-                    Text(f.stayTypeId?.let(editor::typeName) ?: stringResource(R.string.timeline_filter_type))
-                })
-                DropdownMenu(typeMenu, { typeMenu = false }) {
-                    DropdownMenuItem(text = { Text(stringResource(R.string.timeline_filter_type_all)) },
-                        onClick = { onChange(f.copy(stayTypeId = null)); typeMenu = false })
-                    editor.stayTypes.forEach { type ->
-                        DropdownMenuItem(text = { Text(type.name) }, onClick = { onChange(f.copy(stayTypeId = type.id)); typeMenu = false })
+        if (f.count > 0) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (f.work != TimelineWork.ALL) {
+                    ActiveChip(stringResource(if (f.work == TimelineWork.NO_WORK) R.string.stats_filter_no_work else R.string.timeline_filter_only_work)) {
+                        onChange(f.copy(work = TimelineWork.ALL))
                     }
                 }
-            }
-            Box {
-                FilterChip(f.categoryId != null, { categoryMenu = true }, label = {
-                    Text(f.categoryId?.let(editor::categoryName) ?: stringResource(R.string.timeline_filter_category))
-                })
-                DropdownMenu(categoryMenu, { categoryMenu = false }) {
-                    DropdownMenuItem(text = { Text(stringResource(R.string.timeline_filter_category_all)) },
-                        onClick = { onChange(f.copy(categoryId = null)); categoryMenu = false })
-                    editor.visitCategories.forEach { category ->
-                        DropdownMenuItem(text = { Text(category.name) }, onClick = { onChange(f.copy(categoryId = category.id)); categoryMenu = false })
-                    }
+                f.stayTypeIds.forEach { id -> ActiveChip(editor.typeName(id)) { onChange(f.copy(stayTypeIds = f.stayTypeIds - id)) } }
+                f.categoryIds.forEach { id -> ActiveChip(editor.categoryName(id)) { onChange(f.copy(categoryIds = f.categoryIds - id)) } }
+                f.person?.let { id ->
+                    val name = editor.persons.firstOrNull { it.id == id }?.name ?: "?"
+                    ActiveChip(stringResource(R.string.trips_filter_with, name)) { onChange(f.copy(person = null)) }
                 }
-            }
-            editor.persons.filterNot { it.isMe }.forEach { person ->
-                FilterChip(f.person == person.id, { onChange(f.copy(person = if (f.person == person.id) null else person.id)) },
-                    label = { Text(stringResource(R.string.trips_filter_with, person.name)) })
             }
         }
         if (f.isActive) {
@@ -186,6 +173,85 @@ private fun TimelineFilters(state: TimelineUiState, onChange: (TimelineFilter) -
             }
         }
     }
+    if (sheet) FilterSheet(state, onChange) { sheet = false }
+}
+
+@Composable
+private fun ActiveChip(label: String, onRemove: () -> Unit) {
+    InputChip(selected = true, onClick = onRemove, label = { Text(label) }, trailingIcon = { Text("✕") })
+}
+
+/** Filter von unten: Arbeit, Arten, Kategorien (nur verwendete, mit Anzahl), Personen. */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun FilterSheet(state: TimelineUiState, onChange: (TimelineFilter) -> Unit, onDismiss: () -> Unit) {
+    val f = state.filter
+    val editor = state.editor
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            SheetLabel(stringResource(R.string.timeline_filter_work))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    TimelineWork.ALL to R.string.trips_filter_all,
+                    TimelineWork.NO_WORK to R.string.stats_filter_no_work,
+                    TimelineWork.ONLY_WORK to R.string.timeline_filter_only_work,
+                ).forEach { (value, label) ->
+                    FilterChip(f.work == value, { onChange(f.copy(work = value)) }, label = { Text(stringResource(label)) })
+                }
+            }
+            if (state.typeUsage.isNotEmpty()) {
+                SheetLabel(stringResource(R.string.timeline_filter_types))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    state.typeUsage.forEach { (id, count) ->
+                        val selected = id in f.stayTypeIds
+                        FilterChip(selected, {
+                            onChange(f.copy(stayTypeIds = if (selected) f.stayTypeIds - id else f.stayTypeIds + id))
+                        }, label = { Text("${editor.typeName(id)} ($count)") }, leadingIcon = { TypeDot(editor.typeColor(id), 8.dp) })
+                    }
+                }
+            }
+            if (state.categoryUsage.isNotEmpty()) {
+                SheetLabel(stringResource(R.string.timeline_filter_categories))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    state.categoryUsage.forEach { (id, count) ->
+                        val selected = id in f.categoryIds
+                        FilterChip(selected, {
+                            onChange(f.copy(categoryIds = if (selected) f.categoryIds - id else f.categoryIds + id))
+                        }, label = { Text("${editor.categoryName(id)} ($count)") })
+                    }
+                }
+            }
+            val others = editor.persons.filterNot { it.isMe }
+            if (others.isNotEmpty()) {
+                SheetLabel(stringResource(R.string.timeline_filter_persons))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    others.forEach { person ->
+                        FilterChip(f.person == person.id, { onChange(f.copy(person = if (f.person == person.id) null else person.id)) },
+                            label = { Text(stringResource(R.string.trips_filter_with, person.name)) })
+                    }
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(R.string.timeline_filter_count, state.days.size, state.totalDays),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row {
+                    TextButton(onClick = { onChange(TimelineFilter(query = f.query)) }) { Text(stringResource(R.string.timeline_filter_reset)) }
+                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SheetLabel(text: String) {
+    Text(text, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
 }
 
 /** Eine Zeile pro Tag: Datum, Kette (Basis ▸ Stationen) und Besuche. */

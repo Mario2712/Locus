@@ -131,7 +131,12 @@ fun LocusApp() {
             }
             composable<DayRoute> { DayScreen(onBack = { navController.popBackStack() }) }
             composable<SettingsRoute> { SettingsScreen(onBack = { navController.popBackStack() }) }
-            composable<StatsRoute> { StatsScreen(onBack = { navController.popBackStack() }, onOpenDay = openDay) }
+            composable<StatsRoute> {
+                StatsScreen(
+                    onBack = { navController.popBackStack() }, onOpenDay = openDay,
+                    onOpenPlace = { navController.navigate(PlaceRoute(it)) },
+                )
+            }
             composable<DataRoute> { DataScreen(onBack = { navController.popBackStack() }) }
             composable<ProfileRoute> { ProfileScreen(onBack = { navController.popBackStack() }) }
             composable<TimelineRoute> { TimelineScreen(onBack = { navController.popBackStack() }, onOpenDay = openDay) }

@@ -1,6 +1,10 @@
 package io.github.mario2712.locus.ui.stats
 
 import androidx.compose.foundation.background
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.Tab
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import io.github.mario2712.locus.domain.stats.WorkFilter
@@ -81,8 +85,14 @@ sealed interface StatsPeriod {
     data class Custom(val from: LocalDate, val to: LocalDate) : StatsPeriod
 }
 
+/** Wessen Statistik: ich, die zweite Person oder nur gemeinsame Einträge. */
+enum class StatsPerson { ME, PARTNER, TOGETHER }
+
 data class StatsUiState(
     val period: StatsPeriod,
+    val person: StatsPerson = StatsPerson.ME,
+    /** Gleich langer Zeitraum davor (Vorjahr bis zum selben Tag, Vormonat …) für ▲/▼. */
+    val previous: YearStatsData? = null,
     val years: List<Int> = emptyList(),
     val stats: YearStatsData? = null,
     val editor: EditorData = EditorData(),
@@ -99,10 +109,24 @@ class StatsViewModel @Inject constructor(
     val today: LocalDate = LocalDate.now(clock)
     private val period = MutableStateFlow<StatsPeriod>(StatsPeriod.Year(today.year))
     private val workFilter = MutableStateFlow(WorkFilter.ALL)
+    private val person = MutableStateFlow(StatsPerson.ME)
+    private val options = combine(workFilter, person) { w, who -> w to who }
 
     val state: StateFlow<StatsUiState> = combine(
-        stays.observeAll(), visits.observeAll(), editorCatalog.data, period, workFilter,
-    ) { s, v, editor, p, wf ->
+        stays.observeAll(), visits.observeAll(), editorCatalog.data, period, options,
+    ) { allStays, allVisits, editor, p, (wf, who) ->
+        val me = Defaults.ME
+        val partner = editor.persons.firstOrNull { !it.isMe }?.id
+        // Gemeinsam: nur Einträge, bei denen beide dabei waren (aus meiner Sicht gerechnet).
+        val (s, v, subject) = when {
+            who == StatsPerson.PARTNER && partner != null -> Triple(allStays, allVisits, partner)
+            who == StatsPerson.TOGETHER && partner != null -> Triple(
+                allStays.filter { me in it.participants && partner in it.participants },
+                allVisits.filter { me in it.participants && partner in it.participants },
+                me,
+            )
+            else -> Triple(allStays, allVisits, me)
+        }
         val years = ((s.map { it.startDate.year } + v.map { it.date.year }) + today.year).distinct().sortedDescending()
         val (from, to) = when (p) {
             is StatsPeriod.Year -> LocalDate.of(p.year, 1, 1) to LocalDate.of(p.year, 12, 31)
@@ -110,14 +134,31 @@ class StatsViewModel @Inject constructor(
             StatsPeriod.Last30 -> today.minusDays(29) to today
             is StatsPeriod.Custom -> p.from to p.to
         }
-        val stats = YearStats.compute(
-            from, to, Defaults.ME, s, v, editor.placesById, editor.typesById, editor.categoriesById, editor.rank, editor.homebases, today, wf,
+        fun compute(a: LocalDate, b: LocalDate) = YearStats.compute(
+            a, b, subject, s, v, editor.placesById, editor.typesById, editor.categoriesById, editor.rank, editor.homebases, today, wf,
         )
-        StatsUiState(p, years, stats, editor, wf)
+        val stats = compute(from, to)
+        // Vorzeitraum gleicher Länge; läuft der Zeitraum noch, nur bis zum selben Tag.
+        val effectiveTo = minOf(to, today)
+        val (prevFrom, prevTo) = when (p) {
+            is StatsPeriod.Year -> from.minusYears(1) to effectiveTo.minusYears(1)
+            is StatsPeriod.Month -> from.minusMonths(1) to effectiveTo.minusMonths(1)
+            else -> {
+                val length = java.time.temporal.ChronoUnit.DAYS.between(from, effectiveTo) + 1
+                from.minusDays(length) to from.minusDays(1)
+            }
+        }
+        val firstEntry = (allStays.map { it.startDate } + allVisits.map { it.date }).minOrNull()
+        val previous = if (firstEntry != null && !prevTo.isBefore(firstEntry)) compute(prevFrom, prevTo) else null
+        StatsUiState(p, who, previous, years, stats, editor, wf)
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), StatsUiState(StatsPeriod.Year(today.year)))
 
     fun select(value: StatsPeriod) {
         period.value = value
+    }
+
+    fun setPerson(value: StatsPerson) {
+        person.value = value
     }
 
     fun setWorkFilter(value: WorkFilter) {
@@ -125,89 +166,273 @@ class StatsViewModel @Inject constructor(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-fun StatsScreen(onBack: () -> Unit, onOpenDay: (LocalDate) -> Unit, viewModel: StatsViewModel = hiltViewModel()) {
+fun StatsScreen(
+    onBack: () -> Unit,
+    onOpenDay: (LocalDate) -> Unit,
+    onOpenPlace: (String) -> Unit = {},
+    viewModel: StatsViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val editor = state.editor
+    var tab by rememberSaveable { mutableIntStateOf(0) }
+    val tabs = listOf(R.string.stats_tab_overview, R.string.stats_tab_visits, R.string.stats_tab_travel, R.string.stats_tab_work, R.string.stats_tab_records)
     BackScaffold(stringResource(R.string.stats_title), onBack) { modifier ->
         Column(
             modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             PeriodSelector(state, viewModel)
+            PersonRow(state, viewModel::setPerson)
             WorkFilterRow(state.workFilter, viewModel::setWorkFilter)
+            PrimaryScrollableTabRow(selectedTabIndex = tab, edgePadding = 0.dp) {
+                tabs.forEachIndexed { index, label ->
+                    Tab(selected = tab == index, onClick = { tab = index }, text = { Text(stringResource(label)) })
+                }
+            }
             val stats = state.stats ?: return@Column
-
-            // Überblick als Kennzahlen (keine Grafik nötig)
-            SectionCard(periodLabel(state.period)) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StatTile(stats.recordedDays.toString(), stringResource(R.string.stats_recorded_days))
-                    StatTile(stats.countries.size.toString(), stringResource(R.string.stats_countries))
-                    StatTile(stats.newCountries.size.toString(), stringResource(R.string.stats_new_countries))
-                    StatTile(stats.newCities.size.toString(), stringResource(R.string.stats_new_cities))
-                    StatTile(stats.trips.toString(), stringResource(R.string.stats_trips))
-                    StatTile(stats.nightsAway.toString(), stringResource(R.string.stats_nights_away))
-                }
-                if (stats.countries.isNotEmpty()) {
-                    Text(stats.countries.mapNotNull { ReferenceData.country(it)?.flag }.joinToString(" "), style = MaterialTheme.typography.titleLarge)
-                }
-                if (stats.newCountries.isNotEmpty()) {
-                    Text(
-                        stringResource(R.string.stats_new_countries_list, stats.newCountries.mapNotNull { ReferenceData.country(it) }.joinToString(", ") { "${it.flag} ${it.nameDe}" }),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-            }
-
-            // Tage nach Hauptart: ein Balken je Art, Wert als Text daneben
-            if (stats.daysByMainType.isNotEmpty()) {
-                SectionCard(stringResource(R.string.stats_days_by_type)) {
-                    val max = stats.daysByMainType.values.max().toFloat()
-                    stats.daysByMainType.entries.sortedByDescending { it.value }.forEach { (typeId, days) ->
-                        BarRow(editor.typeName(typeId), days, max, editor.typeColor(typeId))
-                    }
-                    Text(stringResource(R.string.stats_days_by_type_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-
-            // Arbeitsorte je Monat als Tabelle
-            val workMonths = stats.work.filter { it.homeofficeOnly + it.officeDays + it.businessTripDays > 0 }
-            if (workMonths.isNotEmpty()) {
-                SectionCard(stringResource(R.string.stats_work)) {
-                    WorkRow(stringResource(R.string.stats_month), stringResource(R.string.stats_ho_only), stringResource(R.string.stats_office),
-                        stringResource(R.string.stats_hybrid), stringResource(R.string.stats_business), header = true)
-                    workMonths.forEach { m ->
-                        WorkRow(
-                            m.month.month.getDisplayName(TextStyle.SHORT, Locale.GERMAN),
-                            m.homeofficeOnly.toString(), m.officeDays.toString(), m.hybridDays.toString(), m.businessTripDays.toString(),
-                        )
-                    }
-                    WorkRow(
-                        stringResource(R.string.stats_total),
-                        stats.work.sumOf { it.homeofficeOnly }.toString(), stats.work.sumOf { it.officeDays }.toString(),
-                        stats.work.sumOf { it.hybridDays }.toString(), stats.work.sumOf { it.businessTripDays }.toString(), header = true,
-                    )
-                    Text(stringResource(R.string.stats_work_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-
-            SectionCard(stringResource(R.string.stats_vacation)) {
-                Text(stringResource(R.string.stats_vacation_split, stats.vacationDaysDomestic + stats.vacationDaysAbroad, stats.vacationDaysDomestic, stats.vacationDaysAbroad))
-            }
-
-            if (stats.topCities.isNotEmpty()) {
-                SectionCard(stringResource(R.string.stats_top_cities)) {
-                    stats.topCities.forEachIndexed { index, (placeId, days) ->
-                        Text("${index + 1}. ${editor.placeName(placeId)} – ${stringResource(R.string.places_days, days)}")
-                    }
-                }
-            }
-
-            SectionCard(stringResource(R.string.stats_heatmap)) {
-                Heatmap(stats, editor, onOpenDay)
+            when (tab) {
+                0 -> OverviewTab(state, stats, onOpenDay)
+                1 -> VisitsTab(stats, state.editor, onOpenPlace)
+                2 -> TravelTab(stats, state.editor)
+                3 -> WorkTab(stats, state.editor)
+                else -> RecordsTab(stats, state.editor, onOpenPlace)
             }
         }
+    }
+}
+
+@Composable
+private fun PersonRow(state: StatsUiState, onChange: (StatsPerson) -> Unit) {
+    val partner = state.editor.persons.firstOrNull { !it.isMe } ?: return
+    val me = state.editor.persons.firstOrNull { it.isMe }?.name ?: stringResource(R.string.stats_person_me)
+    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FilterChip(state.person == StatsPerson.ME, { onChange(StatsPerson.ME) }, label = { Text(me) })
+        FilterChip(state.person == StatsPerson.PARTNER, { onChange(StatsPerson.PARTNER) }, label = { Text(partner.name) })
+        FilterChip(state.person == StatsPerson.TOGETHER, { onChange(StatsPerson.TOGETHER) }, label = { Text(stringResource(R.string.stats_person_together)) })
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun OverviewTab(state: StatsUiState, stats: YearStatsData, onOpenDay: (LocalDate) -> Unit) {
+    val editor = state.editor
+    val prev = state.previous
+    SectionCard(periodLabel(state.period)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            StatTile(stats.recordedDays.toString(), stringResource(R.string.stats_recorded_days), prev?.let { stats.recordedDays - it.recordedDays })
+            StatTile(stats.countries.size.toString(), stringResource(R.string.stats_countries), prev?.let { stats.countries.size - it.countries.size })
+            StatTile(stats.newCountries.size.toString(), stringResource(R.string.stats_new_countries), prev?.let { stats.newCountries.size - it.newCountries.size })
+            StatTile(stats.newCities.size.toString(), stringResource(R.string.stats_new_cities), prev?.let { stats.newCities.size - it.newCities.size })
+            StatTile(stats.trips.toString(), stringResource(R.string.stats_trips), prev?.let { stats.trips - it.trips })
+            StatTile(stats.nightsAway.toString(), stringResource(R.string.stats_nights_away), prev?.let { stats.nightsAway - it.nightsAway })
+        }
+        if (prev != null) {
+            Text(stringResource(R.string.stats_compare_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (stats.countries.isNotEmpty()) {
+            Text(stats.countries.mapNotNull { ReferenceData.country(it)?.flag }.joinToString(" "), style = MaterialTheme.typography.titleLarge)
+        }
+        if (stats.newCountries.isNotEmpty()) {
+            Text(
+                stringResource(R.string.stats_new_countries_list, stats.newCountries.mapNotNull { ReferenceData.country(it) }.joinToString(", ") { "${it.flag} ${it.nameDe}" }),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
+
+    // Tage nach Art: Hauptart (jeder Tag einmal) oder alle Arten (geteilte Tage mehrfach)
+    var allTypes by rememberSaveable { mutableStateOf(false) }
+    val byType = if (allTypes) stats.daysWithType else stats.daysByMainType
+    if (byType.isNotEmpty()) {
+        SectionCard(stringResource(R.string.stats_days_by_type)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(!allTypes, { allTypes = false }, label = { Text(stringResource(R.string.stats_main_type)) })
+                FilterChip(allTypes, { allTypes = true }, label = { Text(stringResource(R.string.stats_all_types)) })
+            }
+            val max = byType.values.max().toFloat()
+            byType.entries.sortedByDescending { it.value }.forEach { (typeId, days) ->
+                BarRow(editor.typeName(typeId), days, max, editor.typeColor(typeId))
+            }
+            Text(
+                stringResource(if (allTypes) R.string.stats_all_types_hint else R.string.stats_days_by_type_hint),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+
+    SectionCard(stringResource(R.string.stats_vacation)) {
+        Text(stringResource(R.string.stats_vacation_split, stats.vacationDaysDomestic + stats.vacationDaysAbroad, stats.vacationDaysDomestic, stats.vacationDaysAbroad))
+    }
+
+    if (stats.topCities.isNotEmpty()) {
+        SectionCard(stringResource(R.string.stats_top_cities)) {
+            stats.topCities.forEachIndexed { index, (placeId, days) ->
+                Text("${index + 1}. ${editor.placeName(placeId)} – ${stringResource(R.string.places_days, days)}")
+            }
+        }
+    }
+
+    SectionCard(stringResource(R.string.stats_heatmap)) {
+        Heatmap(stats, editor, onOpenDay)
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun VisitsTab(stats: YearStatsData, editor: EditorData, onOpenPlace: (String) -> Unit) {
+    val d = stats.details
+    if (d.visitsByCategory.isEmpty()) {
+        SectionCard(stringResource(R.string.stats_tab_visits)) { Text(stringResource(R.string.stats_no_visits)) }
+        return
+    }
+    SectionCard(stringResource(R.string.stats_visits_by_category)) {
+        val max = d.visitsByCategory.values.max().toFloat()
+        d.visitsByCategory.entries.sortedByDescending { it.value }.forEach { (id, count) ->
+            BarRow(editor.categoryName(id), count, max, 0xFF2A78D6)
+        }
+        Text(stringResource(R.string.stats_visits_by_category_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+    SectionCard(stringResource(R.string.stats_top_places)) {
+        RankList(d.topPlaces, editor, onOpenPlace)
+    }
+    val categories = d.visitsByCategory.entries.sortedByDescending { it.value }.map { it.key }
+    var selected by rememberSaveable { mutableStateOf<String?>(null) }
+    val category = selected?.takeIf { it in categories } ?: categories.first()
+    SectionCard(stringResource(R.string.stats_top_by_category)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            categories.forEach { id ->
+                FilterChip(id == category, { selected = id }, label = { Text(editor.categoryName(id)) })
+            }
+        }
+        RankList(d.topPlacesByCategory[category].orEmpty(), editor, onOpenPlace)
+    }
+    if (d.newCityIds.isNotEmpty() || d.newLocationIds.isNotEmpty()) {
+        SectionCard(stringResource(R.string.stats_new_discovered)) {
+            if (d.newCityIds.isNotEmpty()) {
+                Text(stringResource(R.string.stats_new_cities_n, d.newCityIds.size), style = MaterialTheme.typography.labelLarge)
+                Text(namesList(d.newCityIds, editor), style = MaterialTheme.typography.bodySmall)
+            }
+            if (d.newLocationIds.isNotEmpty()) {
+                Text(stringResource(R.string.stats_new_locations_n, d.newLocationIds.size), style = MaterialTheme.typography.labelLarge)
+                Text(namesList(d.newLocationIds, editor), style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
+
+@Composable
+private fun namesList(ids: List<String>, editor: EditorData): String {
+    val shown = ids.take(25).joinToString(", ") { editor.placeName(it) }
+    return if (ids.size > 25) shown + " " + stringResource(R.string.stats_more_n, ids.size - 25) else shown
+}
+
+@Composable
+private fun RankList(items: List<Pair<String, Int>>, editor: EditorData, onOpenPlace: (String) -> Unit) {
+    items.forEachIndexed { index, (placeId, count) ->
+        Text(
+            "${index + 1}. ${editor.placeName(placeId)} – ${stringResource(R.string.stats_times, count)}",
+            Modifier.fillMaxWidth().clickable { onOpenPlace(placeId) }.padding(vertical = 4.dp),
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TravelTab(stats: YearStatsData, editor: EditorData) {
+    val d = stats.details
+    SectionCard(stringResource(R.string.stats_tab_travel)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            StatTile(formatKm(d.totalKm), stringResource(R.string.stats_km_total))
+            StatTile(d.flights.toString(), stringResource(R.string.stats_flights))
+            StatTile(stats.trips.toString(), stringResource(R.string.stats_trips))
+        }
+    }
+    if (d.transportLegs.isNotEmpty()) {
+        SectionCard(stringResource(R.string.stats_transport)) {
+            d.transportLegs.entries.sortedByDescending { d.kmByTransport[it.key] ?: 0.0 }.forEach { (mode, legs) ->
+                Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+                    Text("${mode.emoji} ${mode.nameDe}", Modifier.weight(1f))
+                    Text(stringResource(R.string.stats_legs, legs), Modifier.width(90.dp), style = MaterialTheme.typography.bodySmall)
+                    Text(formatKm(d.kmByTransport[mode] ?: 0.0), Modifier.width(90.dp), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            Text(stringResource(R.string.stats_km_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    } else {
+        SectionCard(stringResource(R.string.stats_transport)) { Text(stringResource(R.string.stats_no_transport)) }
+    }
+}
+
+private fun formatKm(km: Double): String = String.format(Locale.GERMAN, "%,.0f km", km)
+
+@Composable
+private fun WorkTab(stats: YearStatsData, editor: EditorData) {
+    val workMonths = stats.work.filter { it.homeofficeOnly + it.officeDays + it.businessTripDays > 0 }
+    if (workMonths.isEmpty()) {
+        SectionCard(stringResource(R.string.stats_work)) { Text(stringResource(R.string.stats_no_work)) }
+        return
+    }
+    SectionCard(stringResource(R.string.stats_work)) {
+        WorkRow(stringResource(R.string.stats_month), stringResource(R.string.stats_ho_only), stringResource(R.string.stats_office),
+            stringResource(R.string.stats_hybrid), stringResource(R.string.stats_business), header = true)
+        workMonths.forEach { m ->
+            WorkRow(
+                m.month.month.getDisplayName(TextStyle.SHORT, Locale.GERMAN),
+                m.homeofficeOnly.toString(), m.officeDays.toString(), m.hybridDays.toString(), m.businessTripDays.toString(),
+            )
+        }
+        WorkRow(
+            stringResource(R.string.stats_total),
+            stats.work.sumOf { it.homeofficeOnly }.toString(), stats.work.sumOf { it.officeDays }.toString(),
+            stats.work.sumOf { it.hybridDays }.toString(), stats.work.sumOf { it.businessTripDays }.toString(), header = true,
+        )
+        Text(stringResource(R.string.stats_work_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+    val weekday = stats.details.workByWeekday
+    if (weekday.isNotEmpty()) {
+        val types = weekday.values.flatMap { it.keys }.distinct().mapNotNull { editor.typesById[it] }.sortedBy { it.sortOrder }
+        SectionCard(stringResource(R.string.stats_weekdays)) {
+            Row(Modifier.fillMaxWidth()) {
+                Text("", Modifier.weight(0.8f))
+                types.forEach { Text(it.name, Modifier.weight(1f), style = MaterialTheme.typography.labelMedium) }
+            }
+            java.time.DayOfWeek.entries.filter { it in weekday }.forEach { day ->
+                Row(Modifier.fillMaxWidth()) {
+                    Text(day.getDisplayName(TextStyle.SHORT, Locale.GERMAN), Modifier.weight(0.8f), style = MaterialTheme.typography.bodySmall)
+                    types.forEach { t -> Text((weekday[day]?.get(t.id) ?: 0).toString(), Modifier.weight(1f), style = MaterialTheme.typography.bodySmall) }
+                }
+            }
+            Text(stringResource(R.string.stats_weekdays_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun RecordsTab(stats: YearStatsData, editor: EditorData, onOpenPlace: (String) -> Unit) {
+    val r = stats.details.records
+    SectionCard(stringResource(R.string.stats_tab_records)) {
+        RecordRow("🧳", stringResource(R.string.stats_record_longest_trip),
+            r.longestTrip?.let { "${io.github.mario2712.locus.ui.trips.tripTitle(it, editor)} · ${stringResource(R.string.trips_days, it.days)}" })
+        RecordRow("🌍", stringResource(R.string.stats_record_most_countries),
+            r.mostCountriesTrip?.let { t ->
+                "${io.github.mario2712.locus.ui.trips.tripTitle(t, editor)} · " + t.countryIso2s.mapNotNull { ReferenceData.country(it)?.flag }.joinToString("")
+            })
+        RecordRow("📍", stringResource(R.string.stats_record_farthest),
+            r.farthestPlaceId?.let { "${editor.placeName(it)} · ${formatKm(r.farthestMeters / 1000)}" },
+            onClick = r.farthestPlaceId?.let { id -> { onOpenPlace(id) } })
+        RecordRow("🏠", stringResource(R.string.stats_record_ho_streak),
+            r.homeofficeStreak.takeIf { it > 0 }?.let { stringResource(R.string.stats_workdays, it) })
+    }
+}
+
+@Composable
+private fun RecordRow(emoji: String, label: String, value: String?, onClick: (() -> Unit)? = null) {
+    Column(
+        Modifier.fillMaxWidth().then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier).padding(vertical = 6.dp),
+    ) {
+        Text("$emoji $label", style = MaterialTheme.typography.labelLarge)
+        Text(value ?: "–", style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -295,9 +520,23 @@ private fun WorkFilterRow(
 }
 
 @Composable
-private fun StatTile(value: String, label: String) {
+private fun StatTile(value: String, label: String, delta: Int? = null) {
     Column {
-        Text(value, style = MaterialTheme.typography.headlineMedium)
+        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(value, style = MaterialTheme.typography.headlineMedium)
+            if (delta != null) {
+                Text(
+                    when {
+                        delta > 0 -> "▲ $delta"
+                        delta < 0 -> "▼ ${-delta}"
+                        else -> "±0"
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 6.dp),
+                )
+            }
+        }
         Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
