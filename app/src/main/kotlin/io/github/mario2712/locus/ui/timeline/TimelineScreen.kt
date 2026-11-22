@@ -196,11 +196,15 @@ fun TimelineDayRow(day: TimelineDay, editor: EditorData, label: String, onClick:
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Text(label, style = MaterialTheme.typography.labelLarge)
+        // Ausgangspunkt des Tages (Unterkunft der laufenden Reise), auch wenn danach Stationen folgen.
         val base = day.baseAtStart
-        if (base != null && day.stations.isEmpty()) {
+        if (base != null) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 TypeDot(editor.typeColor(base.typeId), 10.dp)
-                Text("🧳 ${editor.typeName(base.typeId)} · ${editor.placeName(base.placeId)}")
+                Text(
+                    "🧳 ${editor.typeName(base.typeId)} · ${editor.placeName(base.placeId)}",
+                    color = if (day.stations.isEmpty()) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
         day.stations.forEach { stay ->
