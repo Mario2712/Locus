@@ -14,6 +14,7 @@ object StayPriority {
         StayTypeIds.VACATION to 0,
         StayTypeIds.BUSINESS_TRIP to 10,
         StayTypeIds.OFFICE to 20,
+        StayTypeIds.EDUCATION to 25,
         StayTypeIds.HOMEOFFICE to 30,
         StayTypeIds.EXCURSION to 40,
         StayTypeIds.FREE to 50,
@@ -28,6 +29,7 @@ object StayPriority {
         return when (type.group) {
             StayGroup.VACATION -> 5
             StayGroup.WORK -> 25
+            StayGroup.EDUCATION -> 28
             StayGroup.FREE -> 45
             StayGroup.OTHER -> 65
         }

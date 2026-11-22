@@ -42,6 +42,10 @@ interface PlaceRepository {
     suspend fun findByOsmId(osmId: String): Place?
     suspend fun upsert(place: Place)
     suspend fun delete(id: String)
+
+    /** Anlegezeitpunkt (Epoch-Millis), z. B. damit frisch angelegte Orte nicht gleich aufgeräumt werden. */
+    suspend fun createdAt(id: String): Long?
+
     /** Setzt [id] als einzige Homebase für alle Zeit (ohne Umzüge). */
     suspend fun setHomebase(id: String)
 

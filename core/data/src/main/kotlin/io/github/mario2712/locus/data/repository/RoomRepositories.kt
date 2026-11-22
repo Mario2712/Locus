@@ -77,6 +77,8 @@ class RoomPlaceRepository @Inject constructor(
     override suspend fun findByOsmId(osmId: String) = dao.findByOsmId(osmId)?.toDomain()
     override suspend fun upsert(place: Place) = dao.upsert(place.toEntity(meta.forSave(dao.createdAt(place.id))))
     override suspend fun delete(id: String) = dao.softDelete(id, meta.now(), meta.deviceId())
+    override suspend fun createdAt(id: String): Long? = dao.createdAt(id)
+
     override suspend fun setHomebase(id: String) {
         dao.setHomebase(id, meta.now(), meta.deviceId())
         updateHomebases { places -> places.map { it.copy(homebaseSince = if (it.id == id) io.github.mario2712.locus.domain.model.UNKNOWN_DATE else null) } }

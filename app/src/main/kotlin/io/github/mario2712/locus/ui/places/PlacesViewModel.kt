@@ -48,8 +48,15 @@ class PlacesViewModel @Inject constructor(
     stays: StayRepository,
     visits: VisitRepository,
     editorCatalog: EditorCatalog,
+    private val cleanup: io.github.mario2712.locus.places.PlaceCleanup,
 ) : ViewModel() {
     private val today = LocalDate.now(clock)
+
+    /** Orte, die nirgends vorkommen. */
+    val unused: StateFlow<Set<String>> = cleanup.observeUnused()
+        .flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), emptySet())
+
+    fun deleteUnused() = viewModelScope.launch { cleanup.deleteUnused() }
 
     val items: StateFlow<List<PlaceListItem>> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data) { s, v, editor ->
         // Homebase zählt an Tagen mit Start/Ende zuhause mit.

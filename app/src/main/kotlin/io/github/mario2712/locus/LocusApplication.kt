@@ -18,6 +18,7 @@ import javax.inject.Inject
 class LocusApplication : Application(), Configuration.Provider {
 
     @Inject lateinit var seeder: DatabaseSeeder
+    @Inject lateinit var placeCleanup: io.github.mario2712.locus.places.PlaceCleanup
     @Inject lateinit var settings: SettingsRepository
     @Inject lateinit var reminderScheduler: ReminderScheduler
     @Inject lateinit var reminderNotifier: ReminderNotifier
@@ -33,7 +34,11 @@ class LocusApplication : Application(), Configuration.Provider {
         super.onCreate()
         reminderNotifier.createChannel()
         // Standarddaten anlegen; die UI beobachtet Flows und aktualisiert sich danach automatisch.
-        appScope.launch { seeder.seed() }
+        appScope.launch {
+            seeder.seed()
+            // Orte, die mindestens 7 Tage alt sind und nirgends vorkommen, still entfernen (weich gelöscht, sync-fähig).
+            runCatching { placeCleanup.deleteUnused(minAgeMillis = io.github.mario2712.locus.places.PlaceCleanup.AUTO_MIN_AGE_MILLIS) }
+        }
         // Erinnerung bei jeder Änderung der Einstellungen (und beim Start) neu planen.
         appScope.launch { settings.observeReminder().collect(reminderScheduler::apply) }
         // Wöchentliche Sicherung nach Download/Locus, solange aktiviert.

@@ -196,6 +196,7 @@ private fun groupLabel(group: StayGroup): String = stringResource(
         StayGroup.WORK -> R.string.catalog_group_work
         StayGroup.FREE -> R.string.catalog_group_free
         StayGroup.VACATION -> R.string.catalog_group_vacation
+        StayGroup.EDUCATION -> R.string.catalog_group_education
         StayGroup.OTHER -> R.string.catalog_group_other
     },
 )

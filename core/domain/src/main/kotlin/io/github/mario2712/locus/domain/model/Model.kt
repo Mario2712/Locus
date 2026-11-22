@@ -63,7 +63,7 @@ enum class DatePrecision { DAY, MONTH, YEAR, UNKNOWN }
 val UNKNOWN_DATE: LocalDate = LocalDate.of(1, 1, 1)
 
 /** Fachliche Gruppe einer Aufenthaltsart – Basis für Statistiken. */
-enum class StayGroup { WORK, FREE, VACATION, OTHER }
+enum class StayGroup { WORK, FREE, VACATION, EDUCATION, OTHER }
 
 /** Woher ein Eintrag stammt. */
 enum class EntrySource { MANUAL, PATTERN, LINK, PHOTO, GPS, IMPORT }

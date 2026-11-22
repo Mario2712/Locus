@@ -166,6 +166,12 @@
     <string name="settings_sort_by_usage">Häufig genutzte Arten und Kategorien zuerst</string>
     <string name="timeline_filter_button">Filter</string>
     <string name="timeline_filter_button_n">Filter (%1$d)</string>
+    <string name="catalog_group_education">Ausbildung</string>
+    <string name="places_unused_n">Unbenutzt (%1$d)</string>
+    <string name="places_unused_hint">Orte, die nirgends vorkommen: keine Station, kein Besuch, keine Vorlage, kein Muster, kein Wunsch, keine Homebase, kein Favorit und keine verwendete Örtlichkeit darin. Nach 7 Tagen räumt die App sie automatisch auf.</string>
+    <string name="places_unused_delete_all">Alle %1$d löschen</string>
+    <string name="places_unused_none">Keine unbenutzten Orte.</string>
+    <string name="places_unused_confirm">%1$d unbenutzte Orte löschen?</string>
     <string name="timeline_filter_period">Zeitraum</string>
     <string name="timeline_filter_period_all">Alles</string>
     <string name="timeline_filter_work">Arbeit</string>

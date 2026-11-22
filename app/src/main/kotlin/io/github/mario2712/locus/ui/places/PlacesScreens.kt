@@ -78,6 +78,9 @@ private enum class PlacesTab { CITIES, LOCATIONS }
 @Composable
 fun PlacesScreen(onBack: () -> Unit, onOpenPlace: (String) -> Unit, viewModel: PlacesViewModel = hiltViewModel()) {
     val items by viewModel.items.collectAsStateWithLifecycle()
+    val unused by viewModel.unused.collectAsStateWithLifecycle()
+    var unusedOnly by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    var confirmCleanup by remember { mutableStateOf(false) }
     // rememberSaveable: Reiter und Filter bleiben beim Zurückkommen aus der Detailansicht erhalten.
     var query by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
     var tab by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(PlacesTab.CITIES) }
@@ -123,7 +126,11 @@ fun PlacesScreen(onBack: () -> Unit, onOpenPlace: (String) -> Unit, viewModel: P
                                 }
                             }
                         }
-                        if (tab == PlacesTab.LOCATIONS) {
+                        if (unused.isNotEmpty() || unusedOnly) {
+                            FilterChip(unusedOnly, { unusedOnly = !unusedOnly },
+                                label = { Text(stringResource(R.string.places_unused_n, unused.size)) })
+                        }
+                        if (tab == PlacesTab.LOCATIONS && !unusedOnly) {
                             LocationGroup.entries.forEach { g ->
                                 FilterChip(group == g, { group = if (group == g) null else g }, label = { Text(g.nameDe) })
                             }
@@ -131,7 +138,22 @@ fun PlacesScreen(onBack: () -> Unit, onOpenPlace: (String) -> Unit, viewModel: P
                     }
                 }
             }
-            when (tab) {
+            if (unusedOnly) {
+                val list = items.filter { it.place.id in unused }
+                item {
+                    Column(Modifier.padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(stringResource(R.string.places_unused_hint), style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+                        if (list.isNotEmpty()) {
+                            androidx.compose.material3.OutlinedButton(onClick = { confirmCleanup = true }) {
+                                Text(stringResource(R.string.places_unused_delete_all, list.size))
+                            }
+                        } else {
+                            Text(stringResource(R.string.places_unused_none))
+                        }
+                    }
+                }
+                items(list, key = { "u-" + it.place.id }) { item -> PlaceRow(item, extra = null) { onOpenPlace(item.place.id) } }
+            } else when (tab) {
                 PlacesTab.CITIES -> {
                     if (cities.isEmpty()) item { Text(stringResource(R.string.places_empty), Modifier.padding(vertical = 12.dp)) }
                     items(cities, key = { it.place.id }) { item ->
@@ -192,6 +214,18 @@ private fun PlaceRow(item: PlaceListItem, extra: String?, indent: Boolean = fals
         )
     }
     HorizontalDivider()
+    if (confirmCleanup) {
+        AlertDialog(
+            onDismissRequest = { confirmCleanup = false },
+            text = { Text(stringResource(R.string.places_unused_confirm, unused.size)) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.deleteUnused(); confirmCleanup = false }) {
+                    Text(stringResource(R.string.action_delete), color = androidx.compose.material3.MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmCleanup = false }) { Text(stringResource(R.string.action_cancel)) } },
+        )
+    }
 }
 
 @Composable

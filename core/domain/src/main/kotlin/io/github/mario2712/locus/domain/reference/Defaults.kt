@@ -31,6 +31,7 @@ object Defaults {
         const val ON_THE_WAY = "stay-on-the-way"
         const val TRANSIT = "stay-transit"
         const val SICK = "stay-sick"
+        const val EDUCATION = "stay-education"
     }
 
     /**
@@ -47,6 +48,8 @@ object Defaults {
         StayType(StayTypeIds.ON_THE_WAY, "Anreise / Unterwegs", StayGroup.OTHER, false, "commute", 0xFF6250D6, 6),
         StayType(StayTypeIds.TRANSIT, "Transit", StayGroup.OTHER, false, "connecting_airports", 0xFF8A8A85, 7),
         StayType(StayTypeIds.SICK, "Krank", StayGroup.OTHER, true, "sick", 0xFFE34948, 8),
+        // Studium, Kurse, Schule – an der Uni oder zuhause (z. B. Distanzlehre)
+        StayType(StayTypeIds.EDUCATION, "Ausbildung / Studium", StayGroup.EDUCATION, true, "school", 0xFF9C6B30, 9),
     )
 
     object VisitCategoryIds {
@@ -88,7 +91,7 @@ object Defaults {
 
     /** Farben für neue, eigene Aufenthaltsarten (geprüfte Palette, plus Neutralgrau). */
     val stayTypePalette: List<Long> = listOf(
-        0xFF2A78D6, 0xFFEB6834, 0xFF1BAF7A, 0xFFEDA100, 0xFFE87BA4, 0xFF008300, 0xFF6250D6, 0xFFE34948, 0xFF8A8A85,
+        0xFF2A78D6, 0xFFEB6834, 0xFF1BAF7A, 0xFFEDA100, 0xFFE87BA4, 0xFF008300, 0xFF6250D6, 0xFFE34948, 0xFF9C6B30, 0xFF8A8A85,
     )
 
     /** Frühere Standardfarben (bis M4) → neue, für die einmalige Umstellung bestehender Installationen. */
