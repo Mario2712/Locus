@@ -194,6 +194,18 @@ fun PlacesScreen(onBack: () -> Unit, onOpenPlace: (String) -> Unit, viewModel: P
             }
         }
     }
+    if (confirmCleanup) {
+        AlertDialog(
+            onDismissRequest = { confirmCleanup = false },
+            text = { Text(stringResource(R.string.places_unused_confirm, unused.size)) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.deleteUnused(); confirmCleanup = false }) {
+                    Text(stringResource(R.string.action_delete), color = androidx.compose.material3.MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { confirmCleanup = false }) { Text(stringResource(R.string.action_cancel)) } },
+        )
+    }
 }
 
 @Composable
@@ -214,18 +226,6 @@ private fun PlaceRow(item: PlaceListItem, extra: String?, indent: Boolean = fals
         )
     }
     HorizontalDivider()
-    if (confirmCleanup) {
-        AlertDialog(
-            onDismissRequest = { confirmCleanup = false },
-            text = { Text(stringResource(R.string.places_unused_confirm, unused.size)) },
-            confirmButton = {
-                TextButton(onClick = { viewModel.deleteUnused(); confirmCleanup = false }) {
-                    Text(stringResource(R.string.action_delete), color = androidx.compose.material3.MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = { TextButton(onClick = { confirmCleanup = false }) { Text(stringResource(R.string.action_cancel)) } },
-        )
-    }
 }
 
 @Composable
