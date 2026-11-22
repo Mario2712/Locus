@@ -39,7 +39,7 @@ fun VisitDialog(
     val byCategory = editor.categoriesCount(draft.categoryIds)
     val counts = draft.countsOverride ?: byCategory
 
-    AlertDialog(
+    io.github.mario2712.locus.ui.common.FormDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(if (draft.isNew) R.string.visit_new else R.string.visit_edit)) },
         text = {

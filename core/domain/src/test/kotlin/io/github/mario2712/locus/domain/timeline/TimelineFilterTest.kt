@@ -48,5 +48,6 @@ class TimelineFilterTest {
         assertEquals(listOf(VisitCategoryIds.HEALTH to 1), cats)
         assertEquals(listOf(2, 3), dates(TimelineFilter(query = "hallein"))) // Arzt liegt in Hallein
         assertEquals(listOf(7), dates(TimelineFilter(person = jo)))
+        assertEquals(listOf(3, 7), dates(TimelineFilter(from = d("2026-03-03"), to = d("2026-03-31"))))
     }
 }

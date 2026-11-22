@@ -68,6 +68,8 @@ data class TimelineUiState(
     val filter: TimelineFilter = TimelineFilter(),
     /** Tage ohne Filter (für „x von y“). */
     val totalDays: Int = 0,
+    /** Jahre mit Einträgen, neueste zuerst. */
+    val years: List<Int> = emptyList(),
     /** Verwendete Arten bzw. Kategorien mit Anzahl Tage, häufigste zuerst. */
     val typeUsage: List<Pair<String, Int>> = emptyList(),
     val categoryUsage: List<Pair<String, Int>> = emptyList(),
@@ -90,7 +92,10 @@ class TimelineViewModel @Inject constructor(
     }.flowOn(Dispatchers.Default)
 
     val state: StateFlow<TimelineUiState> = combine(allDays, filter) { (days, editor, usage), f ->
-        TimelineUiState(f.apply(days, editor.typesById, editor.placesById), editor, f, days.size, usage.first, usage.second)
+        TimelineUiState(
+            f.apply(days, editor.typesById, editor.placesById), editor, f, days.size,
+            days.map { it.date.year }.distinct().sortedDescending(), usage.first, usage.second,
+        )
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), TimelineUiState())
 
     fun setFilter(value: TimelineFilter) {
@@ -159,6 +164,7 @@ private fun TimelineFilters(state: TimelineUiState, onChange: (TimelineFilter) -
                     val name = editor.persons.firstOrNull { it.id == id }?.name ?: "?"
                     ActiveChip(stringResource(R.string.trips_filter_with, name)) { onChange(f.copy(person = null)) }
                 }
+                if (f.hasPeriod) ActiveChip(periodText(f)) { onChange(f.copy(from = null, to = null)) }
             }
         }
         if (f.isActive) {
@@ -192,6 +198,7 @@ private fun FilterSheet(state: TimelineUiState, onChange: (TimelineFilter) -> Un
             Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            PeriodSection(state, onChange)
             SheetLabel(stringResource(R.string.timeline_filter_work))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(
@@ -245,6 +252,62 @@ private fun FilterSheet(state: TimelineUiState, onChange: (TimelineFilter) -> Un
                     TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) }
                 }
             }
+        }
+    }
+}
+
+/** „03/2026“, „2026“ oder „01.03.2026 – 15.03.2026“. */
+private fun periodText(f: TimelineFilter): String {
+    val from = f.from
+    val to = f.to
+    if (from != null && to != null) {
+        if (from.dayOfYear == 1 && to == from.withDayOfYear(from.lengthOfYear())) return from.year.toString()
+        if (from.dayOfMonth == 1 && to == YearMonth.from(from).atEndOfMonth()) return Format.month(from)
+    }
+    return "${from?.let(Format::mediumDate) ?: "…"} – ${to?.let(Format::mediumDate) ?: "…"}"
+}
+
+/** Zeitraum: alle, ein Jahr, ein Monat oder von–bis. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun PeriodSection(state: TimelineUiState, onChange: (TimelineFilter) -> Unit) {
+    val f = state.filter
+    var monthPicker by remember { mutableStateOf(false) }
+    var pickFrom by remember { mutableStateOf(false) }
+    var customFrom by remember { mutableStateOf<LocalDate?>(null) }
+    val today = LocalDate.now()
+    SheetLabel(stringResource(R.string.timeline_filter_period))
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FilterChip(!f.hasPeriod, { onChange(f.copy(from = null, to = null)) }, label = { Text(stringResource(R.string.timeline_filter_period_all)) })
+        state.years.forEach { year ->
+            val from = LocalDate.of(year, 1, 1)
+            val to = LocalDate.of(year, 12, 31)
+            FilterChip(f.from == from && f.to == to, { onChange(f.copy(from = from, to = to)) }, label = { Text(year.toString()) })
+        }
+        val from = f.from
+        val to = f.to
+        val month = if (from != null && to != null && from.dayOfMonth == 1 && to == YearMonth.from(from).atEndOfMonth()) from else null
+        FilterChip(month != null, { monthPicker = true }, label = {
+            Text(month?.let(Format::month) ?: stringResource(R.string.stats_choose_month))
+        })
+        FilterChip(false, { pickFrom = true }, label = { Text(stringResource(R.string.stats_period_custom)) })
+    }
+    if (monthPicker) {
+        io.github.mario2712.locus.ui.common.MonthPickerDialog(
+            initial = f.from?.let(YearMonth::from) ?: YearMonth.from(today),
+            latest = YearMonth.from(today),
+            onDismiss = { monthPicker = false },
+            onSelect = { m -> onChange(f.copy(from = m.atDay(1), to = m.atEndOfMonth())); monthPicker = false },
+        )
+    }
+    if (pickFrom) {
+        io.github.mario2712.locus.ui.editor.DatePickerDialogFor(f.from ?: today.minusMonths(1), { pickFrom = false }) { from ->
+            customFrom = from; pickFrom = false
+        }
+    }
+    customFrom?.let { from ->
+        io.github.mario2712.locus.ui.editor.DatePickerDialogFor(f.to ?: today, { customFrom = null }) { to ->
+            onChange(f.copy(from = minOf(from, to), to = maxOf(from, to))); customFrom = null
         }
     }
 }

@@ -78,12 +78,14 @@ private enum class PlacesTab { CITIES, LOCATIONS }
 @Composable
 fun PlacesScreen(onBack: () -> Unit, onOpenPlace: (String) -> Unit, viewModel: PlacesViewModel = hiltViewModel()) {
     val items by viewModel.items.collectAsStateWithLifecycle()
-    var query by remember { mutableStateOf("") }
-    var tab by remember { mutableStateOf(PlacesTab.CITIES) }
-    var group by remember { mutableStateOf<LocationGroup?>(null) }
-    var countryFilter by remember { mutableStateOf<String?>(null) }
+    // rememberSaveable: Reiter und Filter bleiben beim Zurückkommen aus der Detailansicht erhalten.
+    var query by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
+    var tab by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(PlacesTab.CITIES) }
+    var group by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<LocationGroup?>(null) }
+    var countryFilter by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<String?>(null) }
     var countryMenu by remember { mutableStateOf(false) }
-    val expanded = remember { mutableStateMapOf<String, Boolean>() }
+    // Auf-/zugeklappte Gruppen (Schlüssel → offen), ebenfalls über die Detailansicht hinweg gemerkt.
+    var expanded by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(mapOf<String, Boolean>()) }
 
     val byId = items.associateBy { it.place.id }
     val matching = items.filter { item ->
@@ -150,7 +152,7 @@ fun PlacesScreen(onBack: () -> Unit, onOpenPlace: (String) -> Unit, viewModel: P
                         val open = expanded[key] ?: (grouped.size <= 3 || query.isNotBlank())
                         item(key = "g-$key") {
                             Row(
-                                Modifier.fillMaxWidth().clickable { expanded[key] = !open }.padding(vertical = 10.dp),
+                                Modifier.fillMaxWidth().clickable { expanded = expanded + (key to !open) }.padding(vertical = 10.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
                                 Text(

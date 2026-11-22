@@ -40,6 +40,7 @@ data class TripsUiState(
     val visibleTrips: List<TripSummary> = emptyList(),
     val workFilter: TripWorkFilter = TripWorkFilter.ALL,
     val personFilter: TripPersonFilter = TripPersonFilter.All,
+    val yearFilter: Int? = null,
     val days: Map<String, List<TimelineDay>> = emptyMap(),
     val editor: EditorData = EditorData(),
 )
@@ -67,16 +68,19 @@ class TripsViewModel @Inject constructor(
 
     private val workFilter = MutableStateFlow(TripWorkFilter.ALL)
     private val personFilter = MutableStateFlow<TripPersonFilter>(TripPersonFilter.All)
-    private val filters = combine(workFilter, personFilter) { w, p -> w to p }
+    private val yearFilter = MutableStateFlow<Int?>(null)
+    private val filters = combine(workFilter, personFilter, yearFilter) { w, p, y -> Triple(w, p, y) }
 
-    val state: StateFlow<TripsUiState> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data, filters) { s, v, editor, (wf, pf) ->
+    val state: StateFlow<TripsUiState> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data, filters) { s, v, editor, (wf, pf, year) ->
         val home = editor.homebases
         val trips = Trips.derive(s, v, editor.placesById, Defaults.ME, home, today)
         val resolved = Timeline.resolve(s, home, today)
         val allDays = TimelineDays.build(resolved, v, Defaults.ME, today)
         TripsUiState(
             trips = trips,
-            visibleTrips = TripFilter.apply(trips, wf, pf, Defaults.ME, editor.typesById),
+            visibleTrips = TripFilter.apply(trips, wf, pf, Defaults.ME, editor.typesById)
+                .filter { year == null || it.start.year == year || it.end.year == year },
+            yearFilter = year,
             workFilter = wf,
             personFilter = pf,
             days = trips.associate { trip ->
@@ -92,6 +96,10 @@ class TripsViewModel @Inject constructor(
 
     fun setWorkFilter(value: TripWorkFilter) {
         workFilter.value = value
+    }
+
+    fun setYearFilter(value: Int?) {
+        yearFilter.value = value
     }
 
     fun setPersonFilter(value: TripPersonFilter) {

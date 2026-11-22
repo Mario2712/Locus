@@ -21,13 +21,19 @@ data class TimelineFilter(
     val categoryIds: Set<String> = emptySet(),
     val query: String = "",
     val person: PersonId? = null,
+    /** Zeitraum (beide Grenzen inklusive); `null` = offen. */
+    val from: java.time.LocalDate? = null,
+    val to: java.time.LocalDate? = null,
 ) {
+    val hasPeriod: Boolean get() = from != null || to != null
+
     val isActive: Boolean
         get() = this != TimelineFilter()
 
     /** Anzahl gesetzter Filter ohne Ortssuche (für „Filter (n)“). */
     val count: Int
-        get() = (if (work != TimelineWork.ALL) 1 else 0) + stayTypeIds.size + categoryIds.size + (if (person != null) 1 else 0)
+        get() = (if (work != TimelineWork.ALL) 1 else 0) + stayTypeIds.size + categoryIds.size + (if (person != null) 1 else 0) +
+            (if (hasPeriod) 1 else 0)
 
     companion object {
         /** Wie oft (Tage) jede Art bzw. Kategorie vorkommt – nur Verwendetes, häufigstes zuerst. */
@@ -55,6 +61,8 @@ data class TimelineFilter(
             return listOfNotNull(place.name, place.alias, place.cityName, parent?.name, parent?.alias).any { it.lowercase().contains(q) }
         }
         return days.mapNotNull { day ->
+            if (from != null && day.date < from) return@mapNotNull null
+            if (to != null && day.date > to) return@mapNotNull null
             val stations = day.stations.filter(::keep)
             val base = day.baseAtStart?.takeIf(::keep)
             val visits = if (work == TimelineWork.ONLY_WORK) emptyList() else day.visits

@@ -119,8 +119,23 @@ fun TripsScreen(onBack: () -> Unit, onOpenTrip: (String) -> Unit, viewModel: Tri
 @Composable
 private fun TripFilters(state: TripsUiState, viewModel: TripsViewModel) {
     val others = state.editor.persons.filterNot { it.isMe }
+    var yearMenu by remember { mutableStateOf(false) }
+    val years = state.trips.flatMap { listOf(it.start.year, it.end.year) }.distinct().sortedDescending()
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            androidx.compose.foundation.layout.Box {
+                FilterChip(state.yearFilter != null, { yearMenu = true }, label = {
+                    Text(state.yearFilter?.toString() ?: stringResource(R.string.map_all_years))
+                })
+                androidx.compose.material3.DropdownMenu(yearMenu, { yearMenu = false }) {
+                    androidx.compose.material3.DropdownMenuItem(text = { Text(stringResource(R.string.map_all_years)) },
+                        onClick = { viewModel.setYearFilter(null); yearMenu = false })
+                    years.forEach { y ->
+                        androidx.compose.material3.DropdownMenuItem(text = { Text(y.toString()) },
+                            onClick = { viewModel.setYearFilter(y); yearMenu = false })
+                    }
+                }
+            }
             listOf(
                 TripWorkFilter.ALL to R.string.trips_filter_all,
                 TripWorkFilter.PRIVATE to R.string.trips_filter_private,

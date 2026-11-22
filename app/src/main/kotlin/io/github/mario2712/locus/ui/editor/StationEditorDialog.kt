@@ -60,7 +60,7 @@ fun StationEditorDialog(
     var picker by remember { mutableStateOf<PickerTarget?>(null) }
     val noTime = stringResource(R.string.editor_no_time)
 
-    AlertDialog(
+    io.github.mario2712.locus.ui.common.FormDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(if (draft.isNew) R.string.editor_new_stay else R.string.editor_edit_stay)) },
         text = {

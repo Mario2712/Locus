@@ -166,6 +166,8 @@
     <string name="settings_sort_by_usage">Häufig genutzte Arten und Kategorien zuerst</string>
     <string name="timeline_filter_button">Filter</string>
     <string name="timeline_filter_button_n">Filter (%1$d)</string>
+    <string name="timeline_filter_period">Zeitraum</string>
+    <string name="timeline_filter_period_all">Alles</string>
     <string name="timeline_filter_work">Arbeit</string>
     <string name="timeline_filter_types">Arten</string>
     <string name="timeline_filter_categories">Kategorien</string>
