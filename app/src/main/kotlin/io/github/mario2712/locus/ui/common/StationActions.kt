@@ -37,14 +37,38 @@ class StationActions @Inject constructor(
     private val trips: io.github.mario2712.locus.domain.repository.TripRepository,
 ) {
     suspend fun saveStation(draft: StayDraft): UiMessage {
-        val prepared = if (draft.isNew) {
-            draft.copy(sortIndex = commands.nextSortIndex(draft.startDate, draft.participants.first()))
-        } else {
-            draft
+        val person = draft.participants.first()
+        val anchor = draft.insertAnchor
+        val prepared = when {
+            // Einfügen davor/danach: am Anker-Tag an der gewählten Stelle, am Vortag hinten, am Folgetag vorne.
+            draft.isNew && anchor != null -> {
+                val index = when {
+                    draft.startDate == anchor -> draft.insertIndex ?: commands.nextSortIndex(draft.startDate, person)
+                    draft.startDate < anchor -> commands.nextSortIndex(draft.startDate, person)
+                    else -> 0
+                }
+                commands.makeRoomAt(draft.startDate, person, index)
+                draft.copy(sortIndex = index)
+            }
+            draft.isNew -> draft.copy(sortIndex = commands.nextSortIndex(draft.startDate, person))
+            else -> {
+                // Auf einen anderen Tag verschoben: dort hinten anhängen.
+                val old = draft.id?.let { stays.get(it) }
+                if (old != null && old.startDate != draft.startDate) {
+                    draft.copy(sortIndex = commands.nextSortIndex(draft.startDate, person))
+                } else {
+                    draft
+                }
+            }
         }
         val stay = prepared.toStay()
         stays.upsert(stay)
         return conflictOrSaved(stay)
+    }
+
+    suspend fun reorderStations(orderedIds: List<String>): UiMessage {
+        commands.reorder(orderedIds)
+        return UiMessage.Saved
     }
 
     suspend fun deleteStation(id: String): UiMessage {

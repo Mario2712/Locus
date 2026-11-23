@@ -8,6 +8,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Modifier
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +43,7 @@ fun DayPanel(state: DayState, viewModel: BaseDayViewModel) {
     var visitDraft by remember { mutableStateOf<VisitDraft?>(null) }
     var journeyMode by remember { mutableStateOf<JourneyMode?>(null) }
     var showReturnHome by remember { mutableStateOf(false) }
+    var reorder by remember { mutableStateOf(false) }
     val editor = state.editor
     val homeName = (editor.homebaseAt(state.date) ?: editor.homebase)?.displayName ?: stringResource(R.string.chain_home)
 
@@ -78,7 +83,30 @@ fun DayPanel(state: DayState, viewModel: BaseDayViewModel) {
 
     SectionCard(stringResource(R.string.day_chain_title)) {
         val start = state.baseAtStart?.let { "🧳 ${editor.placeName(it.placeId)}" } ?: "🏠 $homeName"
-        DayChain(start, state.stations) { item -> stationDraft = StayDraft.from(item.stay) }
+        val ownToday = state.stations.filter { it.stay.startDate == state.date }
+        if (reorder && ownToday.size > 1) {
+            Text(stringResource(R.string.day_reorder_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            ReorderableColumn(ownToday, { it.stay.id }, { list -> viewModel.reorderStations(list.map { it.stay.id }) }) { item, handle ->
+                androidx.compose.foundation.layout.Row(
+                    Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                ) {
+                    Text("☰", modifier = handle.padding(end = 12.dp), style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    TypeDot(item.typeColor)
+                    Text(
+                        " " + item.stay.transport.joinToString("") { it.emoji } + " ${item.typeName} · ${item.placeName}",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+            TextButton(onClick = { reorder = false }) { Text(stringResource(R.string.day_reorder_done)) }
+        } else {
+            DayChain(start, state.stations) { item -> stationDraft = StayDraft.from(item.stay) }
+            if (ownToday.size > 1) {
+                TextButton(onClick = { reorder = true }) { Text(stringResource(R.string.day_reorder)) }
+            }
+        }
 
         val suggestion = state.suggestion
         if (suggestion != null) {
@@ -157,6 +185,12 @@ fun DayPanel(state: DayState, viewModel: BaseDayViewModel) {
             onDelete = draft.id?.let { id -> { viewModel.deleteStation(id); stationDraft = null } },
             onCreatePlace = viewModel::createPlace,
             suggestedPlaceIds = state.combos.map { it.placeId },
+            onInsert = draft.id?.let { id ->
+                { before: Boolean ->
+                    val anchor = (state.stations + state.otherStations).firstOrNull { it.stay.id == id }?.stay
+                    stationDraft = anchor?.let { viewModel.insertDraft(state, it, before) }
+                }
+            },
         )
     }
     visitDraft?.let { draft ->

@@ -42,6 +42,21 @@ class TripsTest {
     private fun d(s: String) = LocalDate.parse(s)
 
     @Test
+    fun `Zwischenstopp nachtraeglich einfuegen und umsortieren`() = runTest {
+        commands.journey(
+            d("2026-04-30"), setOf(ME),
+            listOf(JourneyLeg("muc", setOf(TransportMode.CAR)), JourneyLeg("taschkent", setOf(TransportMode.PLANE))),
+            StayTypeIds.VACATION,
+        )
+        val taschkent = repo.all.first { it.placeId == "taschkent" }
+        commands.makeRoomAt(d("2026-04-30"), ME, taschkent.sortIndex)
+        repo.upsert(io.github.mario2712.locus.domain.model.Stay("ist", "ist", StayTypeIds.TRANSIT, d("2026-04-30"), participants = setOf(ME), sortIndex = taschkent.sortIndex))
+        assertEquals(listOf("muc", "ist", "taschkent"), repo.all.map { it.placeId })
+        commands.reorder(listOf(repo.all[0].id, repo.all[2].id, repo.all[1].id))
+        assertEquals(listOf("muc", "taschkent", "ist"), repo.all.map { it.placeId })
+    }
+
+    @Test
     fun `Heimreise mit Landung am Folgetag beendet die Reise erst dann`() = runTest {
         commands.journey(d("2026-06-19"), setOf(ME), listOf(JourneyLeg("taschkent", setOf(TransportMode.PLANE))), StayTypeIds.VACATION)
         commands.returnJourney(

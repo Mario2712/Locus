@@ -54,6 +54,8 @@ fun StationEditorDialog(
     onDelete: (() -> Unit)?,
     onCreatePlace: suspend (PlaceDraft) -> Place,
     suggestedPlaceIds: List<String> = emptyList(),
+    /** Bei bestehenden Stationen: neue Station davor (`true`) bzw. danach einfügen. */
+    onInsert: ((before: Boolean) -> Unit)? = null,
 ) {
     var draft by remember { mutableStateOf(initial) }
     var showDetails by remember { mutableStateOf(initial.startTime != null || initial.endTime != null || initial.note.isNotEmpty()) }
@@ -65,6 +67,24 @@ fun StationEditorDialog(
         title = { Text(stringResource(if (draft.isNew) R.string.editor_new_stay else R.string.editor_edit_stay)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (draft.dateOptions.isNotEmpty()) {
+                    Text(stringResource(R.string.editor_insert_day), style = MaterialTheme.typography.labelLarge)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        draft.dateOptions.forEach { day ->
+                            val anchor = draft.insertAnchor
+                            val suffix = when {
+                                anchor == null || day == anchor -> ""
+                                day < anchor -> " " + stringResource(R.string.editor_previous_day)
+                                else -> " " + stringResource(R.string.editor_following_day)
+                            }
+                            androidx.compose.material3.FilterChip(
+                                draft.startDate == day,
+                                { draft = draft.copy(startDate = day, endDate = day) },
+                                label = { Text(Format.mediumDate(day) + suffix) },
+                            )
+                        }
+                    }
+                }
                 Text(stringResource(R.string.editor_type), style = MaterialTheme.typography.labelLarge)
                 TypeChips(editor.activeStayTypes, draft.typeId) { typeId ->
                     draft = draft.copy(
@@ -109,6 +129,12 @@ fun StationEditorDialog(
                         label = { Text(stringResource(R.string.editor_note)) }, modifier = Modifier.fillMaxWidth(),
                     )
                 }
+                if (onInsert != null && !draft.isNew) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        androidx.compose.material3.OutlinedButton(onClick = { onInsert(true) }) { Text(stringResource(R.string.editor_insert_before)) }
+                        androidx.compose.material3.OutlinedButton(onClick = { onInsert(false) }) { Text(stringResource(R.string.editor_insert_after)) }
+                    }
+                }
                 if (onDelete != null) {
                     TextButton(onClick = onDelete) {
                         Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
@@ -124,7 +150,9 @@ fun StationEditorDialog(
 
     when (picker) {
         PickerTarget.START_DATE -> DatePickerDialogFor(draft.startDate, { picker = null }) { date ->
-            draft = draft.copy(startDate = date, endDate = maxOf(date, draft.endDate)); picker = null
+            // Eintägige Station wandert als Ganzes auf den neuen Tag (statt mehrtägig zu werden).
+            val end = if (draft.endDate == draft.startDate) date else maxOf(date, draft.endDate)
+            draft = draft.copy(startDate = date, endDate = end); picker = null
         }
         PickerTarget.END_DATE -> DatePickerDialogFor(draft.endDate, { picker = null }) { date ->
             draft = draft.copy(endDate = maxOf(date, draft.startDate)); picker = null

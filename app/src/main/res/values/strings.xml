@@ -174,6 +174,14 @@
     <string name="places_unused_confirm">%1$d unbenutzte Orte löschen?</string>
     <string name="return_home_arrival">Ankunft %1$s</string>
     <string name="return_home_hint">Zwischenstopps (Umstieg, Landeflughafen) werden als Transit erfasst. „Folgetag“ wirkt kumulativ: Ist die Landung am Folgetag markiert, liegt auch die Ankunft zuhause dort.</string>
+    <string name="editor_insert_before">↑ Station davor</string>
+    <string name="editor_insert_after">↓ Station danach</string>
+    <string name="editor_insert_day">Tag</string>
+    <string name="editor_previous_day">(Vortag)</string>
+    <string name="editor_following_day">(Folgetag)</string>
+    <string name="day_reorder">⇅ Reihenfolge ändern</string>
+    <string name="day_reorder_done">Fertig</string>
+    <string name="day_reorder_hint">Am ☰ ziehen, um die Reihenfolge der Stationen dieses Tages zu ändern.</string>
     <string name="timeline_filter_period">Zeitraum</string>
     <string name="timeline_filter_period_all">Alles</string>
     <string name="timeline_filter_work">Arbeit</string>

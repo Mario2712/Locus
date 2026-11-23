@@ -173,6 +173,26 @@ abstract class BaseDayViewModel(
     )
 
     fun saveStation(draft: StayDraft) = viewModelScope.launch { send(actions.saveStation(draft)) }
+
+    /**
+     * Neue Station vor bzw. nach [anchor] einfügen. Vorschlag: selber Tag wie [anchor], wählbar auch Vortag
+     * (davor) bzw. Folgetag (danach); Art Transit bei Umstiegen, sonst wie [anchor].
+     */
+    fun insertDraft(state: DayState, anchor: io.github.mario2712.locus.domain.model.Stay, before: Boolean): StayDraft {
+        val day = anchor.startDate
+        val transit = anchor.typeId == Defaults.StayTypeIds.TRANSIT || (before && TransportMode.PLANE in anchor.transport)
+        val typeId = if (transit) Defaults.StayTypeIds.TRANSIT else anchor.typeId
+        return newStationDraft(state, typeId).copy(
+            startDate = day, endDate = day, startTime = null, overnight = false,
+            participants = anchor.participants,
+            transport = if (before) anchor.transport else emptySet(),
+            insertAnchor = day,
+            insertIndex = if (before) anchor.sortIndex else anchor.sortIndex + 1,
+            dateOptions = if (before) listOf(day.minusDays(1), day) else listOf(day, day.plusDays(1)),
+        )
+    }
+
+    fun reorderStations(orderedIds: List<String>) = viewModelScope.launch { send(actions.reorderStations(orderedIds)) }
     fun deleteStation(id: String) = viewModelScope.launch { send(actions.deleteStation(id)) }
 
     fun journey(draft: JourneyDraft) = viewModelScope.launch {

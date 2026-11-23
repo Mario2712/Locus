@@ -27,6 +27,11 @@ data class StayDraft(
     val source: EntrySource = EntrySource.MANUAL,
     val overnight: Boolean = false,
     val transport: Set<TransportMode> = emptySet(),
+    /** Einfügen an einer bestimmten Stelle der Kette: Tag und Position (sonst hinten angehängt). */
+    val insertAnchor: LocalDate? = null,
+    val insertIndex: Int? = null,
+    /** Wählbare Tage beim Einfügen (z. B. selber Tag oder Vortag). */
+    val dateOptions: List<LocalDate> = emptyList(),
 ) {
     val isNew: Boolean get() = id == null
 

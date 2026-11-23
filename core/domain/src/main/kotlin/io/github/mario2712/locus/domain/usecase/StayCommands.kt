@@ -247,6 +247,21 @@ class StayCommands(
     suspend fun nextSortIndex(date: LocalDate, person: PersonId): Int =
         (dayStays(date, person).maxOfOrNull { it.sortIndex } ?: -1) + 1
 
+    /** Platz für eine eingefügte Station: Stationen ab [index] am [date] rücken eins nach hinten. */
+    suspend fun makeRoomAt(date: LocalDate, person: PersonId, index: Int) {
+        dayStays(date, person).filter { it.startDate == date && it.sortIndex >= index }
+            .sortedByDescending { it.sortIndex }
+            .forEach { stays.upsert(it.copy(sortIndex = it.sortIndex + 1)) }
+    }
+
+    /** Neue Reihenfolge der Stationen eines Tages (z. B. nach Ziehen). */
+    suspend fun reorder(orderedIds: List<String>) {
+        orderedIds.forEachIndexed { index, id ->
+            val stay = stays.get(id) ?: return@forEachIndexed
+            if (stay.sortIndex != index) stays.upsert(stay.copy(sortIndex = index))
+        }
+    }
+
     /**
      * Mehrere Tage auf einmal setzen (z. B. „Mo–Fr Büro“). Bereits belegte Tage bleiben unverändert.
      * @return Anzahl neu angelegter Tage.
