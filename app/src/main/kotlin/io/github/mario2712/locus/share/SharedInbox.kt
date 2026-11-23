@@ -3,6 +3,7 @@ package io.github.mario2712.locus.share
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import androidx.lifecycle.viewModelScope
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -29,7 +30,7 @@ class ShareViewModel @Inject constructor(
 ) : androidx.lifecycle.ViewModel() {
     val text: StateFlow<String?> = inbox.text
     val cities: StateFlow<List<io.github.mario2712.locus.domain.model.Place>> = kotlinx.coroutines.flow.combine(editorCatalog.data, inbox.text) { e, _ -> e.cities }
-        .stateIn(androidx.lifecycle.viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000), emptyList())
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun done() = inbox.consume()
 }
