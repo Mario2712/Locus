@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -130,6 +131,7 @@ fun MapPickerDialog(
     val mapView = remember { createPickerMapView(context) }
     var center by remember { mutableStateOf<LatLng?>(null) }
     var lookup by remember { mutableStateOf<Lookup>(Lookup.Loading) }
+    var lastDone by remember { mutableStateOf<Lookup.Done?>(null) }
     var styleFailed by remember { mutableStateOf(false) }
     val currentOnPin by rememberUpdatedState(onPin)
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -205,7 +207,9 @@ fun MapPickerDialog(
         val result = controller?.describe(c.latitude, c.longitude)
         val hit = (result as? SearchResult.Ok)?.value
         val country = hit?.countryIso2 ?: controller?.countryAt(c.latitude, c.longitude)
-        lookup = Lookup.Done(hit, country, offline = result !is SearchResult.Ok)
+        val done = Lookup.Done(hit, country, offline = result !is SearchResult.Ok)
+        lastDone = done
+        lookup = done
     }
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -227,17 +231,33 @@ fun MapPickerDialog(
                     }
                 }
                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    when (val l = lookup) {
-                        Lookup.Loading -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                            Text(stringResource(R.string.search_loading))
+                    // Feste Höhe: Beim Verschieben ändert sich nur der Text, nicht das Layout (kein Auf-und-ab-Wackeln).
+                    // Während der Suche bleibt die letzte Adresse abgeschwächt stehen.
+                    val l = lookup
+                    val shown = (l as? Lookup.Done) ?: lastDone
+                    Row(Modifier.fillMaxWidth().height(72.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            val warning = when {
+                                styleFailed -> stringResource(R.string.map_pick_offline)
+                                shown?.offline == true -> stringResource(R.string.map_pick_lookup_failed)
+                                else -> null
+                            }
+                            if (warning != null) {
+                                Text(warning, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                            }
+                            Text(
+                                shown?.let { describeHit(it.hit, it.countryIso2) } ?: stringResource(R.string.search_loading),
+                                style = MaterialTheme.typography.bodyMedium,
+                                maxLines = if (warning != null) 2 else 3,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                color = if (l is Lookup.Loading) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                            )
                         }
-                        is Lookup.Done -> {
-                            if (l.offline) Text(stringResource(R.string.map_pick_lookup_failed), color = MaterialTheme.colorScheme.error)
-                            Text(describeHit(l.hit, l.countryIso2), style = MaterialTheme.typography.bodyMedium)
+                        Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+                            if (l is Lookup.Loading) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
                         }
                     }
-                    if (styleFailed) Text(stringResource(R.string.map_pick_offline), color = MaterialTheme.colorScheme.error)
                     Text(stringResource(R.string.map_pick_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     val done = lookup as? Lookup.Done
                     Button(
