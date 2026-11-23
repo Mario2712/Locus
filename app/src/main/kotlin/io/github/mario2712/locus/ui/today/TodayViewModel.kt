@@ -37,6 +37,8 @@ data class TodayUiState(
     val missingDays: Int = 0,
     val countries: List<Country> = emptyList(),
     val reminderEnabled: Boolean = false,
+    /** „Heute vor X Jahren“ – nur besondere Tage. */
+    val memories: List<io.github.mario2712.locus.domain.timeline.Memory> = emptyList(),
 )
 
 @HiltViewModel
@@ -92,6 +94,9 @@ class TodayViewModel @Inject constructor(
             missingDays = missing,
             countries = countries,
             reminderEnabled = reminder.enabled,
+            memories = io.github.mario2712.locus.domain.timeline.OnThisDay.find(
+                today, me, resolved, input.visits, editor.placesById, editor.typesById, editor.categoriesById, editor.homebases,
+            ),
         )
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), TodayUiState(DayState(today)))
 }

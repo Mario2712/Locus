@@ -28,7 +28,46 @@ class PlaceSearchController @Inject constructor(
     private val places: PlaceRepository,
     private val location: DeviceLocation,
     private val offlineCountries: OfflineCountries,
+    private val mapsLinks: MapsLinkResolver,
 ) {
+    /** Ergebnis eines aus Google Maps geteilten Orts. */
+    data class SharedResolution(
+        val name: String?,
+        val latitude: Double?,
+        val longitude: Double?,
+        /** Passende OSM-Treffer (nächste zuerst), höchstens 5. */
+        val candidates: List<PlaceCandidate>,
+        val offline: Boolean,
+    )
+
+    /** Geteilten Maps-Text auswerten: Kurzlink auflösen, Koordinaten lesen, passende OSM-Treffer suchen. */
+    suspend fun resolveShared(text: String): SharedResolution? {
+        var shared = io.github.mario2712.locus.domain.share.GoogleMapsLink.parseShared(text) ?: return null
+        var offline = false
+        val url = shared.url
+        if (!shared.hasCoordinates && url != null && io.github.mario2712.locus.domain.share.GoogleMapsLink.isShortLink(url)) {
+            val long = runCatching { mapsLinks.expand(url) }.onFailure { offline = true }.getOrNull()
+            if (long != null) {
+                val parsed = io.github.mario2712.locus.domain.share.GoogleMapsLink.fromUrl(long)
+                shared = shared.copy(
+                    latitude = parsed.latitude, longitude = parsed.longitude,
+                    name = shared.name ?: parsed.name, query = parsed.query,
+                )
+            }
+        }
+        val query = shared.name ?: shared.query
+        val lat = shared.latitude
+        val lon = shared.longitude
+        val candidates = query?.let { q ->
+            runCatching { search.search(q, lat, lon) }.onFailure { offline = true }.getOrNull().orEmpty()
+                .map { c -> if (lat != null && lon != null) c.copy(distanceMeters = PlaceCandidates.distanceMeters(lat, lon, c.latitude, c.longitude)) else c }
+                .filter { c -> c.distanceMeters == null || c.distanceMeters!! < 2_000 }
+                .sortedBy { it.distanceMeters ?: 0.0 }
+                .take(5)
+        }.orEmpty()
+        return SharedResolution(shared.name ?: shared.query, lat, lon, candidates, offline)
+    }
+
     fun hasLocationPermission(): Boolean = location.hasPermission()
 
     suspend fun search(query: String): SearchResult<List<PlaceCandidate>> = try {

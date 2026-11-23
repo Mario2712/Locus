@@ -327,6 +327,7 @@ fun MapPlaceCreateDialog(
     longitude: Double,
     initialKind: PlaceKind,
     cities: List<Place>,
+    initialName: String? = null,
     onDismiss: () -> Unit,
     onCreated: (Place) -> Unit,
 ) {
@@ -336,8 +337,8 @@ fun MapPlaceCreateDialog(
     val controller = LocalPlaceSearch.current
     val scope = rememberCoroutineScope()
     var kind by remember { mutableStateOf(if (initialKind == PlaceKind.CITY) PlaceKind.CITY else PlaceKind.POI) }
-    var name by remember { mutableStateOf(PlaceCandidates.suggestName(hit, kind)) }
-    var nameEdited by remember { mutableStateOf(false) }
+    var name by remember { mutableStateOf(initialName ?: PlaceCandidates.suggestName(hit, kind)) }
+    var nameEdited by remember { mutableStateOf(initialName != null) }
     var saving by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
     val country = ReferenceData.countableCountry(hit.countryIso2)

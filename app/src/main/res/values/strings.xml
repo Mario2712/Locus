@@ -24,6 +24,10 @@
     <string name="today_holiday">Feiertag: %1$s</string>
     <string name="today_confirm">Passt</string>
     <string name="today_week">Diese Woche</string>
+    <plurals name="today_years_ago">
+        <item quantity="one">Vor %1$d Jahr</item>
+        <item quantity="other">Vor %1$d Jahren</item>
+    </plurals>
     <plurals name="today_missing">
         <item quantity="one">%1$d Tag ohne Eintrag – nachtragen</item>
         <item quantity="other">%1$d Tage ohne Eintrag – nachtragen</item>
@@ -188,6 +192,13 @@
     <string name="crashlog_hint">Wird nur auf diesem Gerät gespeichert. Enthält App-/Android-Version, Gerätemodell und den technischen Fehler – keine Einträge oder Orte. „Teilen“ öffnet z. B. eine Mail, die du selbst abschickst.</string>
     <string name="crashlog_share">Teilen</string>
     <string name="crashlog_clear">Löschen</string>
+    <string name="today_memories">Heute vor …</string>
+    <string name="share_title">Ort aus Google Maps</string>
+    <string name="share_no_maps_link">Im geteilten Text ist kein Google-Maps-Link.</string>
+    <string name="share_matches">Passende Orte (OpenStreetMap)</string>
+    <string name="share_nothing_found">Kein passender Ort gefunden. Suche ihn über die Ortsauswahl oder wähle ihn auf der Karte.</string>
+    <string name="share_take_point">📍 Diesen Punkt übernehmen</string>
+    <string name="share_hint">Einen Treffer antippen oder den Punkt aus Google Maps mit dem Namen übernehmen. Kurzlinks löst Locus einmal bei Google auf.</string>
     <string name="timeline_filter_period">Zeitraum</string>
     <string name="timeline_filter_period_all">Alles</string>
     <string name="timeline_filter_work">Arbeit</string>

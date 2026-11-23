@@ -40,6 +40,9 @@ import io.github.mario2712.locus.R
 import io.github.mario2712.locus.ui.common.DayPanel
 import io.github.mario2712.locus.ui.common.Format
 import io.github.mario2712.locus.ui.common.SectionCard
+import io.github.mario2712.locus.domain.reference.ReferenceData
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.foundation.clickable
 import io.github.mario2712.locus.ui.common.TypeDot
 import io.github.mario2712.locus.ui.common.text
 import java.time.format.TextStyle
@@ -48,6 +51,7 @@ import java.util.Locale
 @Composable
 fun TodayScreen(
     onOpenCalendar: () -> Unit,
+    onOpenDay: (java.time.LocalDate) -> Unit = {},
     viewModel: TodayViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -89,6 +93,24 @@ fun TodayScreen(
             }
 
             DayPanel(state.day, viewModel)
+
+            if (state.memories.isNotEmpty()) {
+                SectionCard(stringResource(R.string.today_memories)) {
+                    state.memories.forEach { m ->
+                        val flags = m.countries.mapNotNull { ReferenceData.country(it)?.flag }.joinToString("")
+                        val where = (m.placeIds + m.visitPlaceIds).distinct().take(4).joinToString(" · ") { state.day.editor.placeName(it) }
+                        androidx.compose.foundation.layout.Column(
+                            androidx.compose.ui.Modifier.fillMaxWidth().clickable { onOpenDay(m.date) }.padding(vertical = 6.dp),
+                        ) {
+                            Text(
+                                pluralStringResource(R.plurals.today_years_ago, m.yearsAgo, m.yearsAgo) + " · " + m.date.year,
+                                style = MaterialTheme.typography.labelLarge,
+                            )
+                            Text(listOf(flags, where).filter { it.isNotBlank() }.joinToString(" "), style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            }
 
             SectionCard(stringResource(R.string.today_week)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

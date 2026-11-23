@@ -16,10 +16,12 @@ import io.github.mario2712.locus.ui.theme.LocusTheme
 class MainActivity : ComponentActivity() {
 
     @Inject lateinit var placeSearch: PlaceSearchController
+    @Inject lateinit var sharedInbox: io.github.mario2712.locus.share.SharedInbox
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        handleShare(intent)
         setContent {
             LocusTheme {
                 CompositionLocalProvider(LocalPlaceSearch provides placeSearch) {
@@ -27,5 +29,16 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        handleShare(intent)
+    }
+
+    /** Geteilter Text (z. B. aus Google Maps) wird an die Oberfläche weitergereicht. */
+    private fun handleShare(intent: android.content.Intent?) {
+        if (intent?.action != android.content.Intent.ACTION_SEND) return
+        intent.getStringExtra(android.content.Intent.EXTRA_TEXT)?.let(sharedInbox::offer)
     }
 }

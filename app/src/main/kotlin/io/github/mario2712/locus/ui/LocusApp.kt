@@ -8,6 +8,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -68,6 +69,21 @@ fun LocusApp() {
     LaunchedEffect(currentTab) {
         if (currentTab != null) activeTab = currentTab
     }
+    // Aus Google Maps geteilter Ort
+    val share: io.github.mario2712.locus.share.ShareViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
+    val sharedText by share.text.collectAsStateWithLifecycle()
+    val shareCities by share.cities.collectAsStateWithLifecycle()
+    sharedText?.let { text ->
+        io.github.mario2712.locus.share.SharedPlaceDialog(
+            text = text,
+            cities = shareCities,
+            onDismiss = share::done,
+            onSaved = { place ->
+                share.done()
+                navController.navigate(PlaceRoute(place.id))
+            },
+        )
+    }
 
     Scaffold(
         bottomBar = {
@@ -102,10 +118,13 @@ fun LocusApp() {
             modifier = Modifier.padding(innerPadding),
         ) {
             composable<TodayRoute> {
-                TodayScreen(onOpenCalendar = {
-                    activeTab = TopLevelDestination.CALENDAR
-                    navController.navigateTopLevel(CalendarRoute)
-                })
+                TodayScreen(
+                    onOpenCalendar = {
+                        activeTab = TopLevelDestination.CALENDAR
+                        navController.navigateTopLevel(CalendarRoute)
+                    },
+                    onOpenDay = openDay,
+                )
             }
             composable<CalendarRoute> { CalendarScreen(onOpenDay = openDay) }
             composable<MapRoute> { MapScreen() }
