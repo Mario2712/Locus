@@ -88,6 +88,15 @@ sealed interface StatsPeriod {
     data class Custom(val from: LocalDate, val to: LocalDate) : StatsPeriod
 }
 
+/** Jahrestage für den Reiter „Besonderes“. */
+data class SpecialStats(
+    val birthdays: List<Pair<String, List<io.github.mario2712.locus.domain.stats.DayWhere>>> = emptyList(),
+    val newYearsEve: List<io.github.mario2712.locus.domain.stats.DayWhere> = emptyList(),
+    val christmas: List<io.github.mario2712.locus.domain.stats.DayWhere> = emptyList(),
+    val firstVisitAges: List<io.github.mario2712.locus.domain.stats.FirstVisitAge> = emptyList(),
+    val hasBirthDate: Boolean = false,
+)
+
 /** Wessen Statistik: ich, die zweite Person oder nur gemeinsame Einträge. */
 enum class StatsPerson { ME, PARTNER, TOGETHER }
 
@@ -96,6 +105,7 @@ data class StatsUiState(
     val person: StatsPerson = StatsPerson.ME,
     /** Gleich langer Zeitraum davor (Vorjahr bis zum selben Tag, Vormonat …) für ▲/▼. */
     val previous: YearStatsData? = null,
+    val special: SpecialStats = SpecialStats(),
     /** Nur bei „Gesamt“: Kennzahlen je Jahr, neuestes zuerst. */
     val perYear: List<Pair<Int, YearStatsData>> = emptyList(),
     val years: List<Int> = emptyList(),
@@ -165,7 +175,24 @@ class StatsViewModel @Inject constructor(
         }
         val firstEntry = (allStays.map { it.startDate } + allVisits.map { it.date }).minOrNull()
         val previous = if (p != StatsPeriod.All && firstEntry != null && !prevTo.isBefore(firstEntry)) compute(prevFrom, prevTo) else null
-        StatsUiState(p, who, previous, perYear, years, stats, editor, wf)
+        // Jahrestage (unabhängig vom Zeitraum, über alle Jahre)
+        val resolvedAll = io.github.mario2712.locus.domain.timeline.Timeline.resolve(allStays, editor.homebases, today)
+        val subjectPerson = editor.persons.firstOrNull { it.id == subject }
+        fun annual(day: java.time.MonthDay, personId: io.github.mario2712.locus.domain.model.PersonId) =
+            io.github.mario2712.locus.domain.stats.SpecialDays.annual(day, personId, resolvedAll, allVisits, editor.placesById, editor.homebases, editor.rank, today)
+        val homeCountries = editor.homebases.placeIds.mapNotNull { id -> editor.placesById[id]?.let { ReferenceData.countableCountry(it.countryIso2)?.iso2 } }.toSet()
+        val countryStats = io.github.mario2712.locus.domain.countrypoints.CountryPointsCalculator()
+            .calculate(resolvedAll, allVisits, editor.placesById, editor.typesById, editor.categoriesById).byPerson[subject].orEmpty().values
+        val special = SpecialStats(
+            birthdays = editor.persons.mapNotNull { person ->
+                person.birthDate?.let { b -> person.name to annual(java.time.MonthDay.from(b), person.id).filter { !it.date.isBefore(b) } }
+            },
+            newYearsEve = annual(java.time.MonthDay.of(12, 31), subject),
+            christmas = annual(java.time.MonthDay.of(12, 24), subject),
+            firstVisitAges = subjectPerson?.birthDate?.let { io.github.mario2712.locus.domain.stats.SpecialDays.firstVisitAges(it, countryStats, homeCountries) }.orEmpty(),
+            hasBirthDate = subjectPerson?.birthDate != null,
+        )
+        StatsUiState(p, who, previous, special, perYear, years, stats, editor, wf)
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), StatsUiState(StatsPeriod.Year(today.year)))
 
     fun select(value: StatsPeriod) {
@@ -187,11 +214,15 @@ fun StatsScreen(
     onBack: () -> Unit,
     onOpenDay: (LocalDate) -> Unit,
     onOpenPlace: (String) -> Unit = {},
+    onOpenReview: (Int) -> Unit = {},
     viewModel: StatsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableIntStateOf(0) }
-    val tabs = listOf(R.string.stats_tab_overview, R.string.stats_tab_visits, R.string.stats_tab_travel, R.string.stats_tab_work, R.string.stats_tab_records)
+    val tabs = listOf(
+        R.string.stats_tab_overview, R.string.stats_tab_visits, R.string.stats_tab_travel, R.string.stats_tab_work,
+        R.string.stats_tab_records, R.string.stats_tab_special,
+    )
     BackScaffold(stringResource(R.string.stats_title), onBack) { modifier ->
         Column(
             modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -207,11 +238,18 @@ fun StatsScreen(
             }
             val stats = state.stats ?: return@Column
             when (tab) {
-                0 -> OverviewTab(state, stats, onOpenDay)
+                0 -> {
+                    val reviewYear = (state.period as? StatsPeriod.Year)?.year ?: viewModel.today.year
+                    androidx.compose.material3.OutlinedButton(onClick = { onOpenReview(reviewYear) }, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.review_open, reviewYear))
+                    }
+                    OverviewTab(state, stats, onOpenDay)
+                }
                 1 -> VisitsTab(stats, state.editor, onOpenPlace)
                 2 -> TravelTab(stats, state.editor)
                 3 -> WorkTab(stats, state.editor)
-                else -> RecordsTab(stats, state.editor, onOpenPlace)
+                4 -> RecordsTab(stats, state.editor, onOpenPlace)
+                else -> SpecialTab(state.special, state.editor, onOpenDay)
             }
         }
     }
@@ -460,6 +498,48 @@ private fun RecordsTab(stats: YearStatsData, editor: EditorData, onOpenPlace: (S
             onClick = r.farthestPlaceId?.let { id -> { onOpenPlace(id) } })
         RecordRow("🏠", stringResource(R.string.stats_record_ho_streak),
             r.homeofficeStreak.takeIf { it > 0 }?.let { stringResource(R.string.stats_workdays, it) })
+    }
+}
+
+@Composable
+private fun SpecialTab(special: SpecialStats, editor: EditorData, onOpenDay: (LocalDate) -> Unit) {
+    @Composable
+    fun WhereList(list: List<io.github.mario2712.locus.domain.stats.DayWhere>) {
+        val abroad = list.count { it.abroad }
+        if (abroad > 0) Text(stringResource(R.string.special_abroad_n, abroad), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        list.forEach { w ->
+            val flag = w.countryIso2?.let { ReferenceData.country(it)?.flag }.orEmpty()
+            Row(Modifier.fillMaxWidth().clickable { onOpenDay(w.date) }.padding(vertical = 3.dp)) {
+                Text(w.date.year.toString(), Modifier.width(56.dp), style = MaterialTheme.typography.bodySmall)
+                Text("$flag ${editor.placeName(w.placeId)}", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+    if (!special.hasBirthDate) {
+        SectionCard(stringResource(R.string.stats_tab_special)) { Text(stringResource(R.string.special_no_birthdate), style = MaterialTheme.typography.bodySmall) }
+    }
+    special.birthdays.forEach { (name, list) ->
+        if (list.isNotEmpty()) SectionCard(stringResource(R.string.special_birthdays, name)) { WhereList(list) }
+    }
+    if (special.newYearsEve.isNotEmpty()) SectionCard(stringResource(R.string.special_nye)) { WhereList(special.newYearsEve) }
+    if (special.christmas.isNotEmpty()) SectionCard(stringResource(R.string.special_christmas)) { WhereList(special.christmas) }
+    val ages = special.firstVisitAges
+    if (ages.isNotEmpty()) {
+        SectionCard(stringResource(R.string.special_first_visit)) {
+            val youngest = ages.first()
+            val oldest = ages.maxBy { it.age }
+            fun name(iso: String) = ReferenceData.country(iso)?.let { "${it.flag} ${it.nameDe}" } ?: iso
+            Text(
+                stringResource(R.string.special_first_visit_range, name(youngest.countryIso2), youngest.age, name(oldest.countryIso2), oldest.age),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            ages.forEach { a ->
+                Row(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
+                    Text(name(a.countryIso2), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.special_age, a.age) + " · " + a.firstDate.year, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
     }
 }
 

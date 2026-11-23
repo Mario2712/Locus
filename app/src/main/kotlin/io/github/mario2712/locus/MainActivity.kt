@@ -38,6 +38,7 @@ class MainActivity : ComponentActivity() {
 
     /** Geteilter Text (z. B. aus Google Maps) wird an die Oberfläche weitergereicht. */
     private fun handleShare(intent: android.content.Intent?) {
+        intent?.getIntExtra(io.github.mario2712.locus.reminder.ReminderNotifier.EXTRA_REVIEW_YEAR, 0)?.takeIf { it > 0 }?.let(sharedInbox::openReview)
         if (intent?.action != android.content.Intent.ACTION_SEND) return
         intent.getStringExtra(android.content.Intent.EXTRA_TEXT)?.let(sharedInbox::offer)
     }

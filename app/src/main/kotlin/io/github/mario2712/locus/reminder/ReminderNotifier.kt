@@ -75,7 +75,29 @@ class ReminderNotifier @Inject constructor(
         NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, builder.build())
     }
 
+    /** Hinweis Anfang Jänner: Jahresrückblick des Vorjahres ist fertig (Tippen öffnet ihn). */
+    fun showYearReview(year: Int) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
+        val open = PendingIntent.getActivity(
+            context, 2,
+            Intent(context, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                .putExtra(EXTRA_REVIEW_YEAR, year),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(context.getString(R.string.review_notification_title, year))
+            .setContentText(context.getString(R.string.review_notification_text))
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .build()
+        NotificationManagerCompat.from(context).notify(REVIEW_NOTIFICATION_ID, notification)
+    }
+
     companion object {
+        const val EXTRA_REVIEW_YEAR = "review_year"
+        const val REVIEW_NOTIFICATION_ID = 4711
         const val CHANNEL_ID = "daily_reminder"
         const val NOTIFICATION_ID = 1001
     }

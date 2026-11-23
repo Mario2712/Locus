@@ -20,6 +20,18 @@ class SharedInbox @Inject constructor() {
     fun consume() {
         pending.value = null
     }
+
+    /** Aus einer Benachrichtigung angeforderter Jahresrückblick. */
+    private val review = MutableStateFlow<Int?>(null)
+    val reviewYear: StateFlow<Int?> = review
+
+    fun openReview(year: Int) {
+        review.value = year
+    }
+
+    fun reviewOpened() {
+        review.value = null
+    }
 }
 
 /** Stellt der Oberfläche den geteilten Text und die Städte (für die Zuordnung) bereit. */
@@ -33,4 +45,6 @@ class ShareViewModel @Inject constructor(
         .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun done() = inbox.consume()
+    val reviewYear: StateFlow<Int?> = inbox.reviewYear
+    fun reviewOpened() = inbox.reviewOpened()
 }

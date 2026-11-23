@@ -73,6 +73,13 @@ fun LocusApp() {
     val share: io.github.mario2712.locus.share.ShareViewModel = androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel()
     val sharedText by share.text.collectAsStateWithLifecycle()
     val shareCities by share.cities.collectAsStateWithLifecycle()
+    val reviewYear by share.reviewYear.collectAsStateWithLifecycle()
+    LaunchedEffect(reviewYear) {
+        reviewYear?.let {
+            navController.navigate(io.github.mario2712.locus.ui.navigation.YearReviewRoute(it))
+            share.reviewOpened()
+        }
+    }
     sharedText?.let { text ->
         io.github.mario2712.locus.share.SharedPlaceDialog(
             text = text,
@@ -154,7 +161,11 @@ fun LocusApp() {
                 StatsScreen(
                     onBack = { navController.popBackStack() }, onOpenDay = openDay,
                     onOpenPlace = { navController.navigate(PlaceRoute(it)) },
+                    onOpenReview = { navController.navigate(io.github.mario2712.locus.ui.navigation.YearReviewRoute(it)) },
                 )
+            }
+            composable<io.github.mario2712.locus.ui.navigation.YearReviewRoute> {
+                io.github.mario2712.locus.ui.review.YearReviewScreen(onClose = { navController.popBackStack() })
             }
             composable<DataRoute> { DataScreen(onBack = { navController.popBackStack() }) }
             composable<ProfileRoute> { ProfileScreen(onBack = { navController.popBackStack() }) }

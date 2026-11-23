@@ -18,12 +18,12 @@ data class CountryPresence(
 
 /** Kennzahlen eines Landes für eine Person. */
 data class CountryStats(
-    val countryIso2: String,
+    override val countryIso2: String,
     /** Erster bekannter Besuch; [io.github.mario2712.locus.domain.model.UNKNOWN_DATE], wenn nur ohne Datum erfasst. */
-    val firstDate: LocalDate,
+    override val firstDate: LocalDate,
     val lastDate: LocalDate,
-) {
-    val dateKnown: Boolean get() = firstDate != io.github.mario2712.locus.domain.model.UNKNOWN_DATE
+) : io.github.mario2712.locus.domain.stats.CountryStatsLike {
+    override val dateKnown: Boolean get() = firstDate != io.github.mario2712.locus.domain.model.UNKNOWN_DATE
 }
 
 class CountryPoints internal constructor(

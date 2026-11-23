@@ -23,6 +23,7 @@ import kotlinx.serialization.Serializable
 
 /** Detailansicht eines Tages; Datum als ISO-Text (yyyy-MM-dd). */
 @Serializable data class DayRoute(val date: String)
+@Serializable data class YearReviewRoute(val year: Int)
 
 /** Die fünf Ziele der unteren Navigationsleiste. */
 enum class TopLevelDestination(

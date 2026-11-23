@@ -28,6 +28,10 @@
         <item quantity="one">Vor %1$d Jahr</item>
         <item quantity="other">Vor %1$d Jahren</item>
     </plurals>
+    <plurals name="review_trips"><item quantity="one">%1$d Reise</item><item quantity="other">%1$d Reisen</item></plurals>
+    <plurals name="review_nights"><item quantity="one">%1$d Nacht auswärts</item><item quantity="other">%1$d Nächte auswärts</item></plurals>
+    <plurals name="review_flights"><item quantity="one">%1$d Flug</item><item quantity="other">%1$d Flüge</item></plurals>
+    <plurals name="review_days"><item quantity="one">%1$d Tag</item><item quantity="other">%1$d Tage</item></plurals>
     <plurals name="today_missing">
         <item quantity="one">%1$d Tag ohne Eintrag – nachtragen</item>
         <item quantity="other">%1$d Tage ohne Eintrag – nachtragen</item>
@@ -199,6 +203,40 @@
     <string name="share_nothing_found">Kein passender Ort gefunden. Suche ihn über die Ortsauswahl oder wähle ihn auf der Karte.</string>
     <string name="share_take_point">📍 Diesen Punkt übernehmen</string>
     <string name="share_hint">Einen Treffer antippen oder den Punkt aus Google Maps mit dem Namen übernehmen. Kurzlinks löst Locus einmal bei Google auf.</string>
+    <string name="review_open">🎞 Jahresrückblick %1$d</string>
+    <string name="review_share">Teilen</string>
+    <string name="review_intro_title">Dein Jahr %1$d</string>
+    <string name="review_recorded_days">Tage erfasst</string>
+    <string name="review_include_work">Arbeit einbeziehen</string>
+    <string name="review_countries_title">Länder</string>
+    <string name="review_new_countries">Neu: %1$s</string>
+    <string name="review_travel_title">Unterwegs</string>
+    <string name="review_trip_title">Reise des Jahres</string>
+    <string name="review_farthest">Am weitesten weg: %1$s (%2$s)</string>
+    <string name="review_top_title">Deine Top-Städte</string>
+    <string name="review_top_places">Am öftesten besucht</string>
+    <string name="review_new_title">Neu entdeckt</string>
+    <string name="review_new_cities">neue Städte und Gemeinden</string>
+    <string name="review_months_title">Monat für Monat</string>
+    <string name="review_together_title">Mit %1$s</string>
+    <string name="review_together_days">gemeinsame Tage</string>
+    <string name="review_special_title">Besondere Tage</string>
+    <string name="review_birthday">🎂 Geburtstag: %1$s</string>
+    <string name="review_nye">🎆 Silvester: %1$s</string>
+    <string name="review_work_title">Arbeit</string>
+    <string name="review_work_line">%1$d Tage Homeoffice · %2$d Tage Büro · %3$d Tage Dienstreise</string>
+    <string name="review_compare_title">Im Vergleich zu %1$d</string>
+    <string name="review_notification_title">Dein Jahresrückblick %1$d ist fertig</string>
+    <string name="review_notification_text">Länder, Reisen und Lieblingsorte des Jahres – zum Durchwischen und Teilen.</string>
+    <string name="stats_tab_special">Besonderes</string>
+    <string name="special_birthdays">🎂 Geburtstage – %1$s</string>
+    <string name="special_nye">🎆 Silvester</string>
+    <string name="special_christmas">🎄 Weihnachten</string>
+    <string name="special_abroad_n">%1$d davon im Ausland</string>
+    <string name="special_first_visit">Alter beim ersten Besuch</string>
+    <string name="special_first_visit_range">Jüngster Erstbesuch: %1$s mit %2$d · Ältester: %3$s mit %4$d</string>
+    <string name="special_no_birthdate">Geburtsdatum im Profil hinterlegen, um Geburtstage und „Alter beim ersten Besuch“ zu sehen.</string>
+    <string name="special_age">mit %1$d</string>
     <string name="timeline_filter_period">Zeitraum</string>
     <string name="timeline_filter_period_all">Alles</string>
     <string name="timeline_filter_work">Arbeit</string>
