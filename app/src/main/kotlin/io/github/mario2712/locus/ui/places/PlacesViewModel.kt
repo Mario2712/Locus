@@ -58,6 +58,13 @@ class PlacesViewModel @Inject constructor(
 
     fun deleteUnused() = viewModelScope.launch { cleanup.deleteUnused() }
 
+    /** Unbenutzte Orte als Listeneinträge – auch reine Länder-Orte, die in den Reitern nicht erscheinen. */
+    val unusedItems: StateFlow<List<PlaceListItem>> = combine(cleanup.observeUnused(), editorCatalog.data) { ids, editor ->
+        editor.places.filter { it.id in ids }.sortedBy { it.displayName.lowercase() }.map { place ->
+            PlaceListItem(place, 0, null, group = PlaceGroups.groupOf(place, emptyList()), locationCount = 0)
+        }
+    }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), emptyList())
+
     val items: StateFlow<List<PlaceListItem>> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data) { s, v, editor ->
         // Homebase zählt an Tagen mit Start/Ende zuhause mit.
         val resolved = io.github.mario2712.locus.domain.timeline.ImplicitHome.augment(Timeline.resolve(s, editor.homebases, today), v, Defaults.ME, editor.homebases, today)

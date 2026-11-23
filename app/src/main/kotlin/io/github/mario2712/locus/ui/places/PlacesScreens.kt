@@ -79,6 +79,7 @@ private enum class PlacesTab { CITIES, LOCATIONS }
 fun PlacesScreen(onBack: () -> Unit, onOpenPlace: (String) -> Unit, viewModel: PlacesViewModel = hiltViewModel()) {
     val items by viewModel.items.collectAsStateWithLifecycle()
     val unused by viewModel.unused.collectAsStateWithLifecycle()
+    val unusedItems by viewModel.unusedItems.collectAsStateWithLifecycle()
     var unusedOnly by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     var confirmCleanup by remember { mutableStateOf(false) }
     // rememberSaveable: Reiter und Filter bleiben beim Zurückkommen aus der Detailansicht erhalten.
@@ -139,7 +140,7 @@ fun PlacesScreen(onBack: () -> Unit, onOpenPlace: (String) -> Unit, viewModel: P
                 }
             }
             if (unusedOnly) {
-                val list = items.filter { it.place.id in unused }
+                val list = unusedItems
                 item {
                     Column(Modifier.padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(stringResource(R.string.places_unused_hint), style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
