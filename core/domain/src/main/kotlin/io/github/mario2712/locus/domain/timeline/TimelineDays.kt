@@ -25,12 +25,13 @@ object TimelineDays {
         val first = (own.map { it.startDate } + ownVisits.map { it.date }).minOrNull() ?: return emptyList()
         val last = maxOf(today, (own.map { it.startDate } + ownVisits.map { it.date }).max())
         val visitsByDate = ownVisits.groupBy { it.date }
+        val index = TimelineIndex(own, person)
         return generateSequence(last) { it.minusDays(1) }
             .takeWhile { !it.isBefore(first) }
             .mapNotNull { date ->
-                val stations = own.filter { it.covers(date) && (it.startDate == date || !it.overnight) }
+                val stations = index.covering(date).filter { it.startDate == date || !it.overnight }
                     .sortedWith(compareBy({ if (it.startDate < date) 0 else 1 }, { it.sortIndex }))
-                val base = Timeline.baseAtStart(date, person, own)
+                val base = index.baseAtStart(date)
                 val dayVisits = visitsByDate[date].orEmpty()
                 if (stations.isEmpty() && dayVisits.isEmpty() && base == null) null
                 else TimelineDay(date, base, stations, dayVisits)

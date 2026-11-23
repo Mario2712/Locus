@@ -76,6 +76,11 @@ android {
         buildConfig = true
     }
 
+    // UI-Tests laufen per Robolectric als Unit-Tests (kein Emulator nötig).
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+
     lint {
         warningsAsErrors = false
         abortOnError = true
@@ -111,4 +116,8 @@ dependencies {
     implementation(libs.maplibre.android)
 
     testImplementation(libs.junit4)
+    testImplementation(libs.robolectric)
+    testImplementation(platform(libs.compose.bom))
+    testImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(libs.compose.ui.test.manifest)
 }

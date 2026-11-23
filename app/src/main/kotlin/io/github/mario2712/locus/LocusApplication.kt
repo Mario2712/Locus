@@ -32,6 +32,7 @@ class LocusApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        io.github.mario2712.locus.diagnostics.CrashLog.install(this)
         reminderNotifier.createChannel()
         // Standarddaten anlegen; die UI beobachtet Flows und aktualisiert sich danach automatisch.
         appScope.launch {

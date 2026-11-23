@@ -111,6 +111,8 @@ fun DataScreen(onBack: () -> Unit, viewModel: DataViewModel = hiltViewModel()) {
                 }
                 Text(stringResource(R.string.data_backup_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            CrashLogCard()
+
             SectionCard(stringResource(R.string.data_transfer)) {
                 OutlinedButton(enabled = !busy, onClick = { exportLauncher.launch(viewModel.fileName()) }, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.data_export))
@@ -146,5 +148,35 @@ fun DataScreen(onBack: () -> Unit, viewModel: DataViewModel = hiltViewModel()) {
             },
             confirmButton = { TextButton(onClick = viewModel::dismiss) { Text(stringResource(R.string.action_ok)) } },
         )
+    }
+}
+
+/** Fehlerprotokoll: Anzahl, Teilen (als Text, z. B. per Mail) und Löschen. */
+@androidx.compose.runtime.Composable
+private fun CrashLogCard() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var count by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(io.github.mario2712.locus.diagnostics.CrashLog.count(context)) }
+    SectionCard(stringResource(R.string.crashlog_title)) {
+        Text(
+            if (count == 0) stringResource(R.string.crashlog_empty) else stringResource(R.string.crashlog_count, count),
+            style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+        )
+        Text(stringResource(R.string.crashlog_hint), style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant)
+        if (count > 0) {
+            androidx.compose.foundation.layout.Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = {
+                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(android.content.Intent.EXTRA_SUBJECT, "Locus Fehlerprotokoll")
+                        putExtra(android.content.Intent.EXTRA_TEXT, io.github.mario2712.locus.diagnostics.CrashLog.read(context))
+                    }
+                    context.startActivity(android.content.Intent.createChooser(send, null))
+                }) { Text(stringResource(R.string.crashlog_share)) }
+                TextButton(onClick = { io.github.mario2712.locus.diagnostics.CrashLog.clear(context); count = 0 }) {
+                    Text(stringResource(R.string.crashlog_clear))
+                }
+            }
+        }
     }
 }

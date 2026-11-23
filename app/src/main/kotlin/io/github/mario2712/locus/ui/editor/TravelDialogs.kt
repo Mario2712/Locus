@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.mario2712.locus.R
@@ -179,7 +180,10 @@ fun ReturnHomeDialog(
                 Text(stringResource(R.string.return_home_arrival, homeName), style = MaterialTheme.typography.labelLarge)
                 TransportChips(home.transport) { home = home.copy(transport = it) }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = home.nextDay, onCheckedChange = { home = home.copy(nextDay = it) })
+                    Checkbox(
+                        checked = home.nextDay, onCheckedChange = { home = home.copy(nextDay = it) },
+                        modifier = Modifier.testTag("home-next-day"),
+                    )
                     Text(stringResource(R.string.journey_next_day))
                 }
                 Text(

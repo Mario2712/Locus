@@ -38,15 +38,13 @@ object ImplicitHome {
         today: LocalDate,
     ): List<Stay> {
         if (homebases.periods.isEmpty()) return resolved
-        val own = resolved.filter { person in it.participants && it.precision == DatePrecision.DAY }
-        val days = (
-            own.flatMap { stay -> generateSequence(stay.startDate) { it.plusDays(1) }.takeWhile { !it.isAfter(stay.endDate) }.toList() } +
-                visits.filter { person in it.participants && it.precision == DatePrecision.DAY }.map { it.date }
-            ).toSortedSet()
+        val index = TimelineIndex(resolved, person)
+        val days = (index.coveredDays + visits.filter { person in it.participants && it.precision == DatePrecision.DAY }.map { it.date })
+            .toSortedSet()
         val extra = days.mapNotNull { day ->
             val home = homebases.at(day) ?: return@mapNotNull null
-            val atHome = own.none { it.placeId == home && it.covers(day) } &&
-                (Timeline.baseAtStart(day, person, own) == null || Timeline.baseAtEnd(day, person, own, homebases, today) == null)
+            val atHome = index.covering(day).none { it.placeId == home } &&
+                (index.baseAtStart(day) == null || index.baseAtEnd(day, homebases, today) == null)
             if (!atHome) return@mapNotNull null
             Stay(id = "implicit-${person.value}-$day", placeId = home, typeId = TYPE_ID, startDate = day, participants = setOf(person))
         }

@@ -179,10 +179,11 @@ object YearStats {
             .filter { it.value > 0 }.toList().sortedByDescending { it.second }.take(5)
 
         // Nächte auswärts: Basis am Abend ist nicht die Homebase
+        val index = io.github.mario2712.locus.domain.timeline.TimelineIndex(own, person)
         var nights = 0
         var d = from
         while (!d.isAfter(to)) {
-            if (Timeline.baseAtEnd(d, person, own, homebases, today) != null) nights++
+            if (index.baseAtEnd(d, homebases, today) != null) nights++
             d = d.plusDays(1)
         }
 

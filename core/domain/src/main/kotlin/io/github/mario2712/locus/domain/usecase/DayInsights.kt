@@ -59,10 +59,10 @@ object DayInsights {
         rank: (String) -> Int = { 0 },
     ): Map<LocalDate, DaySummary> {
         val classifier = DayClassifier(rank)
-        val own = staysOf(person, stays)
+        val index = io.github.mario2712.locus.domain.timeline.TimelineIndex(stays, person)
         return generateSequence(from) { it.plusDays(1) }
             .takeWhile { !it.isAfter(to) }
-            .mapNotNull { day -> classifier.classify(day, own)?.let { day to it } }
+            .mapNotNull { day -> classifier.classify(day, index.covering(day))?.let { day to it } }
             .toMap()
     }
 }

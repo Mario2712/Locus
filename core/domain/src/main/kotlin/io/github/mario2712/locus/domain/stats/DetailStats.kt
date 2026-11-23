@@ -77,6 +77,7 @@ object DetailStatsCalculator {
         today: LocalDate,
     ): DetailStats {
         val own = resolved.filter { person in it.participants && it.precision == DatePrecision.DAY }
+        val index = io.github.mario2712.locus.domain.timeline.TimelineIndex(own, person)
         val ownVisits = visits.filter { person in it.participants && it.precision == DatePrecision.DAY }
         val rangeVisits = ownVisits.filter { it.date in from..to }
 
@@ -123,7 +124,7 @@ object DetailStatsCalculator {
         var carry: Pair<LocalDate, String>? = null
         byStart.toSortedMap().forEach { (date, dayStays) ->
             val chain = dayStays.sortedWith(Timeline.chronological)
-            var previous: String? = Timeline.baseAtStart(date, person, own)?.placeId
+            var previous: String? = index.baseAtStart(date)?.placeId
                 ?: carry?.takeIf { it.first == date.minusDays(1) }?.second
                 ?: homebases.at(date)
             var lastMode: TransportMode? = null
@@ -136,7 +137,7 @@ object DetailStatsCalculator {
             }
             // Implizite Heimkehr (z. B. nach dem Büro) mit demselben Verkehrsmittel wie der Hinweg
             val home = homebases.at(date)
-            val endsAtHome = Timeline.baseAtEnd(date, person, own, homebases, today) == null
+            val endsAtHome = index.baseAtEnd(date, homebases, today) == null
             val mode = lastMode
             val endsInTransit = isTransit(chain.last())
             if (endsAtHome && !endsInTransit && home != null && previous != home && mode != null) {
