@@ -82,6 +82,9 @@ sealed interface StatsPeriod {
     data class Year(val year: Int) : StatsPeriod
     data class Month(val month: YearMonth) : StatsPeriod
     data object Last30 : StatsPeriod
+
+    /** Gesamter Zeitraum ab dem ersten Eintrag. */
+    data object All : StatsPeriod
     data class Custom(val from: LocalDate, val to: LocalDate) : StatsPeriod
 }
 
@@ -93,6 +96,8 @@ data class StatsUiState(
     val person: StatsPerson = StatsPerson.ME,
     /** Gleich langer Zeitraum davor (Vorjahr bis zum selben Tag, Vormonat …) für ▲/▼. */
     val previous: YearStatsData? = null,
+    /** Nur bei „Gesamt“: Kennzahlen je Jahr, neuestes zuerst. */
+    val perYear: List<Pair<Int, YearStatsData>> = emptyList(),
     val years: List<Int> = emptyList(),
     val stats: YearStatsData? = null,
     val editor: EditorData = EditorData(),
@@ -133,11 +138,21 @@ class StatsViewModel @Inject constructor(
             is StatsPeriod.Month -> p.month.atDay(1) to p.month.atEndOfMonth()
             StatsPeriod.Last30 -> today.minusDays(29) to today
             is StatsPeriod.Custom -> p.from to p.to
+            StatsPeriod.All -> {
+                val first = (s.filter { it.precision != io.github.mario2712.locus.domain.model.DatePrecision.UNKNOWN }.map { it.startDate } +
+                    v.filter { it.precision != io.github.mario2712.locus.domain.model.DatePrecision.UNKNOWN }.map { it.date }).minOrNull()
+                (first ?: today) to today
+            }
         }
-        fun compute(a: LocalDate, b: LocalDate) = YearStats.compute(
-            a, b, subject, s, v, editor.placesById, editor.typesById, editor.categoriesById, editor.rank, editor.homebases, today, wf,
+        fun compute(a: LocalDate, b: LocalDate, allTime: Boolean = false) = YearStats.compute(
+            a, b, subject, s, v, editor.placesById, editor.typesById, editor.categoriesById, editor.rank, editor.homebases, today, wf, allTime,
         )
-        val stats = compute(from, to)
+        val stats = compute(from, to, allTime = p == StatsPeriod.All)
+        val perYear = if (p == StatsPeriod.All) {
+            (today.year downTo from.year).map { y -> y to compute(LocalDate.of(y, 1, 1), LocalDate.of(y, 12, 31)) }
+        } else {
+            emptyList()
+        }
         // Vorzeitraum gleicher Länge; läuft der Zeitraum noch, nur bis zum selben Tag.
         val effectiveTo = minOf(to, today)
         val (prevFrom, prevTo) = when (p) {
@@ -149,8 +164,8 @@ class StatsViewModel @Inject constructor(
             }
         }
         val firstEntry = (allStays.map { it.startDate } + allVisits.map { it.date }).minOrNull()
-        val previous = if (firstEntry != null && !prevTo.isBefore(firstEntry)) compute(prevFrom, prevTo) else null
-        StatsUiState(p, who, previous, years, stats, editor, wf)
+        val previous = if (p != StatsPeriod.All && firstEntry != null && !prevTo.isBefore(firstEntry)) compute(prevFrom, prevTo) else null
+        StatsUiState(p, who, previous, perYear, years, stats, editor, wf)
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), StatsUiState(StatsPeriod.Year(today.year)))
 
     fun select(value: StatsPeriod) {
@@ -273,8 +288,30 @@ private fun OverviewTab(state: StatsUiState, stats: YearStatsData, onOpenDay: (L
         }
     }
 
-    SectionCard(stringResource(R.string.stats_heatmap)) {
-        Heatmap(stats, editor, onOpenDay)
+    if (state.period == StatsPeriod.All) {
+        // Statt einer Heatmap über viele Jahre: Kennzahlen je Jahr
+        if (state.perYear.isNotEmpty()) {
+            SectionCard(stringResource(R.string.stats_per_year)) {
+                YearRow(stringResource(R.string.stats_year), stringResource(R.string.stats_recorded_days_short), stringResource(R.string.stats_countries),
+                    stringResource(R.string.stats_trips), stringResource(R.string.stats_nights_short), header = true)
+                state.perYear.forEach { (year, y) ->
+                    YearRow(year.toString(), y.recordedDays.toString(), y.countries.size.toString(), y.trips.toString(), y.nightsAway.toString())
+                }
+            }
+        }
+    } else {
+        SectionCard(stringResource(R.string.stats_heatmap)) {
+            Heatmap(stats, editor, onOpenDay)
+        }
+    }
+}
+
+@Composable
+private fun YearRow(c1: String, c2: String, c3: String, c4: String, c5: String, header: Boolean = false) {
+    val style = if (header) MaterialTheme.typography.labelMedium else MaterialTheme.typography.bodySmall
+    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
+        Text(c1, Modifier.weight(0.8f), style = style)
+        listOf(c2, c3, c4, c5).forEach { Text(it, Modifier.weight(1f), style = style) }
     }
 }
 
@@ -441,6 +478,7 @@ private fun periodLabel(period: StatsPeriod): String = when (period) {
     is StatsPeriod.Year -> stringResource(R.string.stats_period_year, period.year)
     is StatsPeriod.Month -> Format.month(period.month.atDay(1))
     StatsPeriod.Last30 -> stringResource(R.string.stats_period_last30)
+    StatsPeriod.All -> stringResource(R.string.stats_period_all)
     is StatsPeriod.Custom -> "${Format.fullDate(period.from)} – ${Format.fullDate(period.to)}"
 }
 
@@ -453,6 +491,7 @@ private fun PeriodSelector(state: StatsUiState, viewModel: StatsViewModel) {
     var customFrom by remember { mutableStateOf<LocalDate?>(null) }
     val p = state.period
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FilterChip(p == StatsPeriod.All, { viewModel.select(StatsPeriod.All) }, label = { Text(stringResource(R.string.stats_period_all)) })
         Box {
             FilterChip(p is StatsPeriod.Year, { yearMenu = true }, label = {
                 Text((p as? StatsPeriod.Year)?.year?.toString() ?: stringResource(R.string.stats_choose_year))

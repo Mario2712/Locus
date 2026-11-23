@@ -112,6 +112,8 @@ object YearStats {
         homebases: io.github.mario2712.locus.domain.timeline.Homebases,
         today: LocalDate,
         workFilter: WorkFilter = WorkFilter.ALL,
+        /** Gesamtstatistik: Länder inklusive ohne Datum erfasster (vor Beginn der Aufzeichnungen). */
+        allTime: Boolean = false,
     ): YearStatsData {
         val from = rangeFrom
         val to = minOf(rangeTo, today)
@@ -156,7 +158,7 @@ object YearStats {
         val yearStays = resolved.filter { it.startDate <= to && it.endDate >= from }
         val yearVisits = visits.filter { it.date in from..to }
         val yearPoints = CountryPointsCalculator().calculate(yearStays, yearVisits, places, stayTypes, visitCategories)
-        val countries = yearPoints.countriesOf(person).sorted()
+        val countries = (if (allTime) points.countriesOf(person) else yearPoints.countriesOf(person)).sorted()
 
         // Städte: Ort selbst oder Stadt der Örtlichkeit
         fun cityOf(placeId: String): String? {
