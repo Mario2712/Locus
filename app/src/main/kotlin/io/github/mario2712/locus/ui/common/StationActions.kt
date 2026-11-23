@@ -79,6 +79,19 @@ class StationActions @Inject constructor(
         return UiMessage.Saved
     }
 
+    suspend fun returnJourney(
+        date: LocalDate,
+        participants: Set<PersonId>,
+        stops: List<JourneyLeg>,
+        homebaseId: String,
+        homeTransport: Set<TransportMode>,
+        homeDayOffset: Int,
+        liveTime: LocalTime?,
+    ): UiMessage {
+        commands.returnJourney(date, participants, stops, homebaseId, homeTransport, homeDayOffset, liveTime)
+        return UiMessage.Saved
+    }
+
     suspend fun returnHome(
         date: LocalDate,
         participants: Set<PersonId>,

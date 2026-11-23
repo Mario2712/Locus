@@ -135,25 +135,71 @@ private fun LegFields(
     }
 }
 
-/** Heimreise: nur Verkehrsmittel wählen und bestätigen. */
+/** Ergebnis des Heimreise-Dialogs: Zwischenstopps (Transit) und Ankunft zuhause, Tage relativ zum Abreisetag. */
+data class ReturnDraft(
+    val stops: List<JourneyLeg>,
+    val homeTransport: Set<TransportMode>,
+    val homeDayOffset: Int,
+)
+
+/**
+ * Heimreise: Verkehrsmittel nach Hause, optional Zwischenstopps (Umstieg, Landung in München …),
+ * jeweils mit „Ankunft am Folgetag“ (kumulativ wie beim Reise-Dialog).
+ */
 @Composable
 fun ReturnHomeDialog(
     homeName: String,
     initialTransport: Set<TransportMode>,
+    editor: EditorData,
     onDismiss: () -> Unit,
-    onConfirm: (Set<TransportMode>) -> Unit,
+    onConfirm: (ReturnDraft) -> Unit,
+    onCreatePlace: suspend (PlaceDraft) -> Place,
 ) {
-    var transport by remember { mutableStateOf(initialTransport) }
+    var stops by remember { mutableStateOf(listOf<LegDraft>()) }
+    var home by remember { mutableStateOf(LegDraft(transport = initialTransport)) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.return_home_title, homeName)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.editor_transport), style = MaterialTheme.typography.labelLarge)
-                TransportChips(transport) { transport = it }
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                stops.forEachIndexed { index, stop ->
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(stringResource(R.string.journey_stop, index + 1), style = MaterialTheme.typography.labelLarge)
+                            LegFields(stop, editor, onCreatePlace) { updated ->
+                                stops = stops.toMutableList().also { it[index] = updated }
+                            }
+                            TextButton(onClick = { stops = stops.filterIndexed { i, _ -> i != index } }) {
+                                Text(stringResource(R.string.action_remove))
+                            }
+                        }
+                    }
+                }
+                TextButton(onClick = { stops = stops + LegDraft() }) { Text(stringResource(R.string.journey_add_stop)) }
+                Text(stringResource(R.string.return_home_arrival, homeName), style = MaterialTheme.typography.labelLarge)
+                TransportChips(home.transport) { home = home.copy(transport = it) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = home.nextDay, onCheckedChange = { home = home.copy(nextDay = it) })
+                    Text(stringResource(R.string.journey_next_day))
+                }
+                Text(
+                    stringResource(R.string.return_home_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         },
-        confirmButton = { TextButton(onClick = { onConfirm(transport) }) { Text(stringResource(R.string.action_save)) } },
+        confirmButton = {
+            TextButton(enabled = stops.all { it.placeId != null }, onClick = {
+                var offset = 0
+                val legs = stops.map { leg ->
+                    if (leg.nextDay) offset++
+                    JourneyLeg(requireNotNull(leg.placeId), leg.transport, offset)
+                }
+                if (home.nextDay) offset++
+                onConfirm(ReturnDraft(legs, home.transport, offset))
+            }) { Text(stringResource(R.string.action_save)) }
+        },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
     )
 }

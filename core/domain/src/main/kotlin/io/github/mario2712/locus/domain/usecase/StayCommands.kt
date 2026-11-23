@@ -176,6 +176,37 @@ class StayCommands(
     )
 
     /**
+     * Heimreise mit Zwischenstopps (z. B. Umstieg in München, Landung erst am Folgetag): Stopps als Transit,
+     * am Ende die Homebase. [homeDayOffset] und die Offsets der Stopps zählen ab [date].
+     */
+    suspend fun returnJourney(
+        date: LocalDate,
+        participants: Set<PersonId>,
+        stops: List<JourneyLeg>,
+        homebaseId: String,
+        homeTransport: Set<TransportMode>,
+        homeDayOffset: Int,
+        liveTime: LocalTime? = null,
+    ): List<Stay> {
+        val transit = stops.mapIndexed { index, leg ->
+            addStation(
+                date = date.plusDays(leg.dayOffset.toLong()),
+                participants = participants,
+                stayTypeId = Defaults.StayTypeIds.TRANSIT,
+                placeId = leg.placeId,
+                transport = leg.transport,
+                overnight = false,
+                liveTime = liveTime.takeIf { index == 0 && leg.dayOffset == 0 },
+            )
+        }
+        val home = addStation(
+            date.plusDays(homeDayOffset.toLong()), participants, Defaults.StayTypeIds.FREE, homebaseId, homeTransport,
+            overnight = false, liveTime = liveTime.takeIf { stops.isEmpty() && homeDayOffset == 0 },
+        )
+        return transit + home
+    }
+
+    /**
      * „Wechsel ab [time]“: beendet den laufenden Aufenthalt zu [time] und beginnt einen neuen.
      * Ein laufender mehrtägiger Aufenthalt endet am [date]. Der neue Aufenthalt kann bis
      * [endDate] dauern (z. B. „ab 13:00 Kurzurlaub bis Sonntag“).

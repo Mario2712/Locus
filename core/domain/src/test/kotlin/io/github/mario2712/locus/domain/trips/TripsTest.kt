@@ -42,6 +42,19 @@ class TripsTest {
     private fun d(s: String) = LocalDate.parse(s)
 
     @Test
+    fun `Heimreise mit Landung am Folgetag beendet die Reise erst dann`() = runTest {
+        commands.journey(d("2026-06-19"), setOf(ME), listOf(JourneyLeg("taschkent", setOf(TransportMode.PLANE))), StayTypeIds.VACATION)
+        commands.returnJourney(
+            d("2026-06-23"), setOf(ME),
+            listOf(JourneyLeg("ist", setOf(TransportMode.PLANE)), JourneyLeg("muc", setOf(TransportMode.PLANE), dayOffset = 1)),
+            home, setOf(TransportMode.CAR), homeDayOffset = 1,
+        )
+        val trip = Trips.derive(repo.all, emptyList(), places, ME, home, d("2026-11-21")).single()
+        assertEquals(d("2026-06-24"), trip.end)
+        assertEquals(listOf(d("2026-06-23"), d("2026-06-24"), d("2026-06-24")), repo.all.drop(1).map { it.startDate })
+    }
+
+    @Test
     fun `Usbekistan-Reise mit Abflug am Vortag, Weiterreise und Heimreise`() = runTest {
         commands.journey(
             d("2026-04-30"), setOf(ME, JOHANNA),

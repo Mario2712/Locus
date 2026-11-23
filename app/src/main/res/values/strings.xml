@@ -172,6 +172,8 @@
     <string name="places_unused_delete_all">Alle %1$d löschen</string>
     <string name="places_unused_none">Keine unbenutzten Orte.</string>
     <string name="places_unused_confirm">%1$d unbenutzte Orte löschen?</string>
+    <string name="return_home_arrival">Ankunft %1$s</string>
+    <string name="return_home_hint">Zwischenstopps (Umstieg, Landeflughafen) werden als Transit erfasst. „Folgetag“ wirkt kumulativ: Ist die Landung am Folgetag markiert, liegt auch die Ankunft zuhause dort.</string>
     <string name="timeline_filter_period">Zeitraum</string>
     <string name="timeline_filter_period_all">Alles</string>
     <string name="timeline_filter_work">Arbeit</string>

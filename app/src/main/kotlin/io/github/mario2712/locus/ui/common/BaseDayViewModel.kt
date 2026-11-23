@@ -179,9 +179,10 @@ abstract class BaseDayViewModel(
         send(actions.journey(date, draft.participants, draft.legs, draft.typeId, live()))
     }
 
-    fun returnHome(state: DayState, transport: Set<TransportMode>) = viewModelScope.launch {
-        val home = state.editor.homebaseAt(date) ?: state.editor.homebase ?: return@launch
-        send(actions.returnHome(date, defaultParticipants(state), home.id, transport, live()))
+    fun returnHome(state: DayState, draft: io.github.mario2712.locus.ui.editor.ReturnDraft) = viewModelScope.launch {
+        val arrival = date.plusDays(draft.homeDayOffset.toLong())
+        val home = state.editor.homebaseAt(arrival) ?: state.editor.homebase ?: return@launch
+        send(actions.returnJourney(date, defaultParticipants(state), draft.stops, home.id, draft.homeTransport, draft.homeDayOffset, live()))
     }
 
     fun newVisitDraft(state: DayState, placeId: String? = null) =

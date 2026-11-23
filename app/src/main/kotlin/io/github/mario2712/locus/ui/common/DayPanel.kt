@@ -185,8 +185,10 @@ fun DayPanel(state: DayState, viewModel: BaseDayViewModel) {
         ReturnHomeDialog(
             homeName = homeName,
             initialTransport = viewModel.prefillTransport(tripBase?.placeId),
+            editor = editor,
             onDismiss = { showReturnHome = false },
             onConfirm = { viewModel.returnHome(state, it); showReturnHome = false },
+            onCreatePlace = viewModel::createPlace,
         )
     }
 
