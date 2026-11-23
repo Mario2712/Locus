@@ -244,6 +244,13 @@ fun YearReviewScreen(onClose: () -> Unit, viewModel: YearReviewViewModel = hiltV
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onClose) { Text("✕", color = atlas.ink, fontSize = 18.sp) }
                 Text("Locus · ${data.year}", color = atlas.inkSoft, style = monoStyle(), modifier = Modifier.weight(1f))
+                // Arbeit ein-/ausblenden (Standard: aus; Dienstreisen zählen immer als Reisen)
+                TextButton(enabled = !capturing, onClick = { viewModel.setIncludeWork(!state.includeWork) }) {
+                    Text(
+                        stringResource(if (state.includeWork) R.string.review_work_on else R.string.review_work_off),
+                        color = if (state.includeWork) atlas.visited else atlas.inkSoft,
+                    )
+                }
                 TextButton(enabled = !capturing, onClick = {
                     val layer = layers[pager.currentPage] ?: return@TextButton
                     scope.launch {

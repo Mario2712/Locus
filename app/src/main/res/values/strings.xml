@@ -238,6 +238,8 @@
     <string name="special_no_birthdate">Geburtsdatum im Profil hinterlegen, um Geburtstage und „Alter beim ersten Besuch“ zu sehen.</string>
     <string name="special_age">mit %1$d</string>
     <string name="review_share_all">Alles</string>
+    <string name="review_work_on">Mit Arbeit</string>
+    <string name="review_work_off">Ohne Arbeit</string>
     <string name="review_title_eyebrow">Ein Jahr in Orten</string>
     <string name="review_km_air">Kilometer, Luftlinie</string>
     <string name="review_trips_eyebrow">Deine Reisen</string>
