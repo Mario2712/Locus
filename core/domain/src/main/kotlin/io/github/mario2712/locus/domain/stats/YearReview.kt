@@ -32,6 +32,12 @@ data class YearReviewData(
     val birthday: DayWhere?,
     val newYearsEve: DayWhere?,
     val includeWork: Boolean,
+    /** Reisen, die im Jahr beginnen (chronologisch). */
+    val trips: List<TripSummary> = emptyList(),
+    /** Länder, die im Jahr zum ersten Mal besucht wurden, mit Alter (jüngstes zuerst). */
+    val firstVisits: List<FirstVisitAge> = emptyList(),
+    /** Häufigste Besuchskategorie je Ort (für Symbole bei den Lieblingsorten). */
+    val mainCategoryByPlace: Map<String, String> = emptyMap(),
 )
 
 object YearReview {
@@ -89,7 +95,19 @@ object YearReview {
             SpecialDays.annual(MonthDay.from(b), person, Timeline.resolve(stays, homebases, today), visits, places, homebases, rank, today)
                 .firstOrNull { it.date.year == year }
         }
-        return YearReviewData(year, stats, previous, months, together.first, together.second, birthday, nye, includeWork)
+        val homes = homeCountries(homebases, places)
+        val firstVisits = birthDate?.let { b ->
+            val countryStats = points.calculate(Timeline.resolve(stays, homebases, today), visits, places, stayTypes, visitCategories)
+                .byPerson[person].orEmpty().values
+            SpecialDays.firstVisitAges(b, countryStats, homes).filter { it.firstDate.year == year }
+        }.orEmpty()
+        val mainCategory = visits.filter { person in it.participants && it.date.year == year }
+            .groupBy { it.placeId }
+            .mapValues { (_, list) -> list.flatMap { it.categoryIds }.groupingBy { it }.eachCount().maxBy { it.value }.key }
+        return YearReviewData(
+            year, stats, previous, months, together.first, together.second, birthday, nye, includeWork,
+            trips = trips.sortedBy { it.start }, firstVisits = firstVisits, mainCategoryByPlace = mainCategory,
+        )
     }
 
     private fun homeCountries(homebases: Homebases, places: Map<String, Place>): Set<String> =

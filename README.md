@@ -112,3 +112,10 @@ Sobald die Secrets gesetzt sind und der Stand in `main` liegt, baut jeder Push a
 signierte Release-APK (Artefakt `locus-release-apk`). Für ein GitHub-Release mit APK:
 `git tag v1.0.0; git push origin v1.0.0` – oder im Browser unter *Releases → Draft a new release*
 einen neuen Tag `v1.0.0` auf `main` anlegen.
+
+## Lizenzen von Drittinhalten
+
+- Ländergrenzen: Natural Earth (gemeinfrei).
+- Kartenkacheln der Detailkarte: OpenFreeMap / OpenStreetMap-Mitwirkende (ODbL).
+- Ortssuche: Photon (komoot) auf Basis von OpenStreetMap (ODbL).
+- Schrift „Instrument Serif“ (Jahresrückblick): SIL Open Font License 1.1, siehe `app/src/main/assets/licenses/instrument-serif-OFL.txt`.

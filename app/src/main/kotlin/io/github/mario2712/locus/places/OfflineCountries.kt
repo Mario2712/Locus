@@ -19,12 +19,19 @@ class OfflineCountries @Inject constructor(@ApplicationContext private val conte
     private val mutex = Mutex()
     private var locator: CountryLocator? = null
 
+    private var shapes: List<CountryShape>? = null
+
     suspend fun locate(latitude: Double, longitude: Double): String? = withContext(Dispatchers.Default) {
-        val l = mutex.withLock { locator ?: load().also { locator = it } }
+        val l = mutex.withLock { locator ?: CountryLocator(loadShapes()).also { locator = it } }
         l.locate(latitude, longitude)
     }
 
-    private fun load(): CountryLocator {
+    /** Länderumrisse (einmal geladen, danach aus dem Speicher) – z. B. zum Zeichnen eigener Karten. */
+    suspend fun shapes(): List<CountryShape> = withContext(Dispatchers.Default) { mutex.withLock { loadShapes() } }
+
+    private fun loadShapes(): List<CountryShape> = shapes ?: parse().also { shapes = it }
+
+    private fun parse(): List<CountryShape> {
         val json = context.assets.open("countries.geojson").bufferedReader().use { it.readText() }
         val features = JSONObject(json).getJSONArray("features")
         val shapes = (0 until features.length()).mapNotNull { i ->
@@ -39,7 +46,7 @@ class OfflineCountries @Inject constructor(@ApplicationContext private val conte
             }
             CountryShape(iso, polygons)
         }
-        return CountryLocator(shapes)
+        return shapes
     }
 
     private fun polygon(rings: JSONArray): List<List<DoubleArray>> = (0 until rings.length()).map { r ->
