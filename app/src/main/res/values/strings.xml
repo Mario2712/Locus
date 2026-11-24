@@ -297,6 +297,7 @@
     <string name="trips_filter_alone">Allein</string>
     <string name="trips_filter_empty">Keine Reisen für diese Filter.</string>
     <string name="stats_period_all">Gesamt</string>
+    <string name="stats_work_by_year">Arbeitsorte je Jahr</string>
     <string name="stats_per_year">Jahre im Überblick</string>
     <string name="stats_year">Jahr</string>
     <string name="stats_recorded_days_short">Tage</string>

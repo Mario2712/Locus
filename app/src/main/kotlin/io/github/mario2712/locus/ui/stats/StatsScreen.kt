@@ -448,14 +448,27 @@ private fun WorkTab(stats: YearStatsData, editor: EditorData) {
         SectionCard(stringResource(R.string.stats_work)) { Text(stringResource(R.string.stats_no_work)) }
         return
     }
-    SectionCard(stringResource(R.string.stats_work)) {
-        WorkRow(stringResource(R.string.stats_month), stringResource(R.string.stats_ho_only), stringResource(R.string.stats_office),
-            stringResource(R.string.stats_hybrid), stringResource(R.string.stats_business), header = true)
-        workMonths.forEach { m ->
-            WorkRow(
-                m.month.month.getDisplayName(TextStyle.SHORT, Locale.GERMAN),
-                m.homeofficeOnly.toString(), m.officeDays.toString(), m.hybridDays.toString(), m.businessTripDays.toString(),
-            )
+    // Über mehr als ein Jahr: je Jahr zusammengefasst; über eine Jahresgrenze: Monat mit Jahr („Nov. 25“).
+    val years = workMonths.map { it.month.year }.distinct()
+    val byYear = workMonths.size > 13 || years.size > 2
+    SectionCard(stringResource(if (byYear) R.string.stats_work_by_year else R.string.stats_work)) {
+        WorkRow(stringResource(if (byYear) R.string.stats_year else R.string.stats_month), stringResource(R.string.stats_ho_only),
+            stringResource(R.string.stats_office), stringResource(R.string.stats_hybrid), stringResource(R.string.stats_business), header = true)
+        if (byYear) {
+            workMonths.groupBy { it.month.year }.toSortedMap(compareByDescending { it }).forEach { (year, list) ->
+                WorkRow(
+                    year.toString(), list.sumOf { it.homeofficeOnly }.toString(), list.sumOf { it.officeDays }.toString(),
+                    list.sumOf { it.hybridDays }.toString(), list.sumOf { it.businessTripDays }.toString(),
+                )
+            }
+        } else {
+            workMonths.forEach { m ->
+                val name = m.month.month.getDisplayName(TextStyle.SHORT, Locale.GERMAN)
+                WorkRow(
+                    if (years.size > 1) "$name ${m.month.year % 100}" else name,
+                    m.homeofficeOnly.toString(), m.officeDays.toString(), m.hybridDays.toString(), m.businessTripDays.toString(),
+                )
+            }
         }
         WorkRow(
             stringResource(R.string.stats_total),
