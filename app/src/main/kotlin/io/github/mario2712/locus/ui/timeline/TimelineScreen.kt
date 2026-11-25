@@ -99,7 +99,12 @@ class TimelineViewModel @Inject constructor(
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), TimelineUiState())
 
     fun setFilter(value: TimelineFilter) {
-        filter.value = value
+        filter.value = value.copy(query = filter.value.query)
+    }
+
+    /** Suchtext separat, damit das Eingabefeld nie auf die (verzögerte) Neuberechnung warten muss. */
+    fun setQuery(query: String) {
+        filter.value = filter.value.copy(query = query)
     }
 }
 
@@ -108,7 +113,7 @@ fun TimelineScreen(onBack: () -> Unit, onOpenDay: (LocalDate) -> Unit, viewModel
     val state by viewModel.state.collectAsStateWithLifecycle()
     BackScaffold(stringResource(R.string.timeline_title), onBack) { modifier ->
         LazyColumn(modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-            item(key = "filters") { TimelineFilters(state, viewModel::setFilter) }
+            item(key = "filters") { TimelineFilters(state, viewModel::setFilter, viewModel::setQuery) }
             if (state.days.isEmpty()) {
                 item {
                     Text(
@@ -137,14 +142,20 @@ fun TimelineScreen(onBack: () -> Unit, onOpenDay: (LocalDate) -> Unit, viewModel
 /** Ortssuche plus „Filter (n)“; aktive Filter als Chips mit ✕. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun TimelineFilters(state: TimelineUiState, onChange: (TimelineFilter) -> Unit) {
+private fun TimelineFilters(state: TimelineUiState, onChange: (TimelineFilter) -> Unit, onQuery: (String) -> Unit) {
     val f = state.filter
     val editor = state.editor
     var sheet by remember { mutableStateOf(false) }
+    var text by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(f.query) }
     Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Eigener Textzustand: Tippen bleibt flüssig, gefiltert wird kurz verzögert.
+            androidx.compose.runtime.LaunchedEffect(text) {
+                kotlinx.coroutines.delay(250)
+                onQuery(text)
+            }
             OutlinedTextField(
-                value = f.query, onValueChange = { onChange(f.copy(query = it)) }, singleLine = true,
+                value = text, onValueChange = { text = it }, singleLine = true,
                 label = { Text(stringResource(R.string.timeline_filter_place)) }, modifier = Modifier.weight(1f),
             )
             FilterChip(f.count > 0, { sheet = true }, label = {
@@ -175,7 +186,7 @@ private fun TimelineFilters(state: TimelineUiState, onChange: (TimelineFilter) -
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f),
                 )
-                TextButton(onClick = { onChange(TimelineFilter()) }) { Text(stringResource(R.string.timeline_filter_reset)) }
+                TextButton(onClick = { text = ""; onQuery(""); onChange(TimelineFilter()) }) { Text(stringResource(R.string.timeline_filter_reset)) }
             }
         }
     }
