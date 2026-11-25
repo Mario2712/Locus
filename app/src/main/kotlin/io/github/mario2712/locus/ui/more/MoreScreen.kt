@@ -1,6 +1,9 @@
 package io.github.mario2712.locus.ui.more
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.background
 import io.github.mario2712.locus.ui.common.SectionCard
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.Alignment
@@ -105,10 +108,18 @@ fun AboutScreen(onBack: () -> Unit, viewModel: MoreViewModel = hiltViewModel()) 
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                androidx.compose.foundation.Image(
-                    painterResource(R.mipmap.ic_launcher), contentDescription = null,
-                    modifier = Modifier.size(88.dp),
-                )
+                // Adaptives Icon lässt sich nicht direkt laden: Hintergrund + Vordergrund selbst zusammensetzen
+                // (sichtbarer Kern 72 von 108 dp → Vordergrund 1,5× größer als der Kreis).
+                androidx.compose.foundation.layout.Box(
+                    Modifier.size(88.dp).clip(androidx.compose.foundation.shape.CircleShape)
+                        .background(androidx.compose.ui.res.colorResource(R.color.ic_launcher_background)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    androidx.compose.foundation.Image(
+                        painterResource(R.drawable.ic_launcher_foreground), contentDescription = null,
+                        modifier = Modifier.requiredSize(132.dp),
+                    )
+                }
                 Text("Locus", style = MaterialTheme.typography.headlineMedium)
                 Text(stringResource(R.string.about_tagline), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
