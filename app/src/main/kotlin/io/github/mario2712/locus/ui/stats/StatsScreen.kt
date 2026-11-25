@@ -591,29 +591,31 @@ private fun WorkTab(stats: YearStatsData, editor: EditorData) {
 @Composable
 private fun RecordsTab(stats: YearStatsData, editor: EditorData, onOpenPlace: (String) -> Unit, perYear: List<Pair<Int, YearStatsData>>) {
     val r = stats.details.records
+    fun date(d: LocalDate?) = d?.let(Format::fullDate).orEmpty()
+    fun range(a: LocalDate?, b: LocalDate?) = if (a != null && b != null) "${Format.fullDate(a)} – ${Format.fullDate(b)}" else date(a)
     SectionCard(stringResource(R.string.stats_tab_records)) {
         RecordRow("🧳", stringResource(R.string.stats_record_longest_trip),
-            r.longestTrip?.let { "${io.github.mario2712.locus.ui.trips.tripTitle(it, editor)} · ${stringResource(R.string.trips_days, it.days)}" })
+            r.longestTrip?.let { "${io.github.mario2712.locus.ui.trips.tripTitle(it, editor)} · ${stringResource(R.string.trips_days, it.days)} · ${range(it.start, it.end)}" })
         RecordRow("🌍", stringResource(R.string.stats_record_most_countries),
             r.mostCountriesTrip?.let { t ->
-                "${io.github.mario2712.locus.ui.trips.tripTitle(t, editor)} · " + t.countryIso2s.mapNotNull { ReferenceData.country(it)?.flag }.joinToString("")
+                "${io.github.mario2712.locus.ui.trips.tripTitle(t, editor)} · " + t.countryIso2s.mapNotNull { ReferenceData.country(it)?.flag }.joinToString("") + " · ${t.start.year}"
             })
         RecordRow("📍", stringResource(R.string.stats_record_farthest),
             r.farthestPlaceId?.let { "${editor.placeName(it)} · ${formatKm(r.farthestMeters / 1000)}" },
             onClick = r.farthestPlaceId?.let { id -> { onOpenPlace(id) } })
         RecordRow("📅", stringResource(R.string.stats_record_absence),
-            r.longestAbsenceDays.takeIf { it > 0 }?.let { days -> stringResource(R.string.stats_record_days_from, days, r.longestAbsenceFrom?.let(Format::mediumDate).orEmpty()) })
+            r.longestAbsenceDays.takeIf { it > 0 }?.let { days -> stringResource(R.string.stats_record_days_from, days, date(r.longestAbsenceFrom)) })
         RecordRow("⏳", stringResource(R.string.stats_record_pause),
-            r.longestPauseDays.takeIf { it > 0 }?.let { days -> stringResource(R.string.stats_record_days_from, days, r.longestPauseFrom?.let(Format::mediumDate).orEmpty()) })
+            r.longestPauseDays.takeIf { it > 0 }?.let { days -> stringResource(R.string.stats_record_days_from, days, date(r.longestPauseFrom)) })
         RecordRow("🛣️", stringResource(R.string.stats_record_day_distance),
-            r.longestDay?.let { "${formatKm(r.longestDayMeters / 1000)} · ${Format.mediumDate(it)}" })
+            r.longestDay?.let { "${formatKm(r.longestDayMeters / 1000)} · ${date(it)}" })
         RecordRow("🗺️", stringResource(R.string.stats_record_day_trip),
-            r.farthestDayTripPlaceId?.let { "${editor.placeName(it)} · ${formatKm(r.farthestDayTripMeters / 1000)}" },
+            r.farthestDayTripPlaceId?.let { "${editor.placeName(it)} · ${formatKm(r.farthestDayTripMeters / 1000)} · ${date(r.farthestDayTripDate)}" },
             onClick = r.farthestDayTripPlaceId?.let { id -> { onOpenPlace(id) } })
         RecordRow("🏳️", stringResource(R.string.stats_record_favorite_country),
             r.favoriteCountry?.let { iso -> ReferenceData.country(iso)?.let { "${it.flag} ${it.nameDe} · ${stringResource(R.string.places_days, r.favoriteCountryDays)}" } })
         RecordRow("🏨", stringResource(R.string.stats_record_longest_stay),
-            r.longestStayPlaceId?.let { "${editor.placeName(it)} · ${stringResource(R.string.stats_nights_n, r.longestStayNights)}" },
+            r.longestStayPlaceId?.let { "${editor.placeName(it)} · ${stringResource(R.string.stats_nights_n, r.longestStayNights)} · ab ${date(r.longestStayFrom)}" },
             onClick = r.longestStayPlaceId?.let { id -> { onOpenPlace(id) } })
         if (perYear.isNotEmpty()) {
             val mostCountries = perYear.maxByOrNull { it.second.countries.size }?.takeIf { it.second.countries.isNotEmpty() }
@@ -623,9 +625,9 @@ private fun RecordsTab(stats: YearStatsData, editor: EditorData, onOpenPlace: (S
             RecordRow("✈️", stringResource(R.string.stats_record_flights_year), mostFlights?.let { (y, s) -> "$y · ${s.details.flights}" })
         }
         RecordRow("🏠", stringResource(R.string.stats_record_ho_streak),
-            r.homeofficeStreak.takeIf { it > 0 }?.let { stringResource(R.string.stats_workdays, it) })
+            r.homeofficeStreak.takeIf { it > 0 }?.let { stringResource(R.string.stats_workdays, it) + " · " + range(r.homeofficeStreakFrom, r.homeofficeStreakTo) })
         RecordRow("🏢", stringResource(R.string.stats_record_office_streak),
-            r.officeStreak.takeIf { it > 0 }?.let { stringResource(R.string.stats_workdays, it) })
+            r.officeStreak.takeIf { it > 0 }?.let { stringResource(R.string.stats_workdays, it) + " · " + range(r.officeStreakFrom, r.officeStreakTo) })
     }
     val compass = listOf(r.northmost to "N", r.southmost to "S", r.eastmost to "O", r.westmost to "W")
     if (compass.any { it.first != null }) {

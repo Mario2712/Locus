@@ -27,8 +27,12 @@ data class Records(
     val farthestMeters: Double = 0.0,
     /** Längste Serie von Arbeitstagen im Homeoffice (freie Tage unterbrechen nicht). */
     val homeofficeStreak: Int = 0,
+    val homeofficeStreakFrom: java.time.LocalDate? = null,
+    val homeofficeStreakTo: java.time.LocalDate? = null,
     /** Längste Serie von Arbeitstagen mit Büro als Hauptart. */
     val officeStreak: Int = 0,
+    val officeStreakFrom: java.time.LocalDate? = null,
+    val officeStreakTo: java.time.LocalDate? = null,
     /** Himmelsrichtungen: nördlichster, südlichster, östlichster, westlichster Ort. */
     val northmost: String? = null,
     val southmost: String? = null,
@@ -46,12 +50,14 @@ data class Records(
     /** Weitester Tagesausflug (ohne Übernachtung auswärts). */
     val farthestDayTripPlaceId: String? = null,
     val farthestDayTripMeters: Double = 0.0,
+    val farthestDayTripDate: java.time.LocalDate? = null,
     /** Land außerhalb des Homebase-Landes mit den meisten Tagen. */
     val favoriteCountry: String? = null,
     val favoriteCountryDays: Int = 0,
     /** Meiste Nächte am Stück in derselben Unterkunft. */
     val longestStayPlaceId: String? = null,
     val longestStayNights: Int = 0,
+    val longestStayFrom: java.time.LocalDate? = null,
 )
 
 /** Detail-Statistiken für die Reiter „Besuche“, „Unterwegs“, „Arbeit“ und „Rekorde“. */
@@ -192,10 +198,26 @@ object DetailStatsCalculator {
         var best = 0
         var officeRun = 0
         var officeBest = 0
+        var hoStart: LocalDate? = null
+        var hoBest: Pair<LocalDate, LocalDate>? = null
+        var ofStart: LocalDate? = null
+        var ofBest: Pair<LocalDate, LocalDate>? = null
         summaries.toSortedMap().filterKeys { it in from..to }.values.forEach { day ->
             if (stayTypes[day.mainTypeId]?.group != StayGroup.WORK) return@forEach
-            if (day.mainTypeId == StayTypeIds.HOMEOFFICE) { streak++; best = maxOf(best, streak) } else streak = 0
-            if (day.mainTypeId == StayTypeIds.OFFICE) { officeRun++; officeBest = maxOf(officeBest, officeRun) } else officeRun = 0
+            if (day.mainTypeId == StayTypeIds.HOMEOFFICE) {
+                if (streak == 0) hoStart = day.date
+                streak++
+                if (streak > best) { best = streak; hoBest = hoStart!! to day.date }
+            } else {
+                streak = 0
+            }
+            if (day.mainTypeId == StayTypeIds.OFFICE) {
+                if (officeRun == 0) ofStart = day.date
+                officeRun++
+                if (officeRun > officeBest) { officeBest = officeRun; ofBest = ofStart!! to day.date }
+            } else {
+                officeRun = 0
+            }
         }
 
         // Himmelsrichtungen (alle Orte mit Koordinaten im Zeitraum)
@@ -231,13 +253,14 @@ object DetailStatsCalculator {
         // Weitester Tagesausflug: Tag beginnt und endet zuhause
         var dayTripBest = 0.0
         var dayTripPlace: String? = null
+        var dayTripDate: LocalDate? = null
         byStart.forEach { (date, dayStays) ->
             if (index.baseAtStart(date) != null || index.baseAtEnd(date, homebases, today) != null) return@forEach
             // Endet der Tag an einem Transit-Halt (z. B. Abflughafen), ist es kein Tagesausflug, sondern Reisebeginn.
             if (isTransit(dayStays.sortedWith(Timeline.chronological).last())) return@forEach
             (dayStays.map { it.placeId } + rangeVisits.filter { it.date == date }.map { it.placeId }).forEach { id ->
                 val d = km(homebases.at(date), id) * 1000
-                if (d > dayTripBest) { dayTripBest = d; dayTripPlace = id }
+                if (d > dayTripBest) { dayTripBest = d; dayTripPlace = id; dayTripDate = date }
             }
         }
         // Lieblingsland im Ausland (Tage mit zählenden Stationen)
@@ -279,7 +302,13 @@ object DetailStatsCalculator {
                 farthestPlaceId = farthestId,
                 farthestMeters = farthest,
                 homeofficeStreak = best,
+                homeofficeStreakFrom = hoBest?.first,
+                homeofficeStreakTo = hoBest?.second,
                 officeStreak = officeBest,
+                officeStreakFrom = ofBest?.first,
+                officeStreakTo = ofBest?.second,
+                farthestDayTripDate = dayTripDate,
+                longestStayFrom = longestStay?.startDate,
                 northmost = located.maxByOrNull { it.second.first }?.first,
                 southmost = located.minByOrNull { it.second.first }?.first,
                 eastmost = located.maxByOrNull { it.second.second }?.first,
