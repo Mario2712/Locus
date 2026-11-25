@@ -52,6 +52,8 @@ data class DayState(
     /** Vorschläge für Besuche: Örtlichkeiten in den Städten des Tages, dann zuletzt besuchte Orte. */
     val visitSuggestions: List<String> = emptyList(),
     val editor: EditorData = EditorData(),
+    /** Ausgangspunkte für Karte und Ortssuche: zuletzt erfasster Eintrag des Tages, dann Unterkunft bzw. Homebase. */
+    val anchorPlaceIds: List<String> = emptyList(),
 ) {
     val onTrip: Boolean get() = baseAtEnd != null
 }
@@ -103,7 +105,11 @@ abstract class BaseDayViewModel(
         val dayVisits = input.visits.filter { it.date == date }.sortedBy { it.time }
 
         val currentPlace = own.lastOrNull()?.placeId ?: baseAtStart?.placeId ?: homeId
+        val anchors = io.github.mario2712.locus.domain.usecase.MapAnchors.forDay(
+            date, me, input.stays, input.visits, baseAtStart?.placeId ?: baseAtEnd?.placeId, homeId,
+        )
         return DayState(
+            anchorPlaceIds = anchors,
             date = date,
             isToday = date == today,
             holiday = AustrianHolidays.nameOf(date),

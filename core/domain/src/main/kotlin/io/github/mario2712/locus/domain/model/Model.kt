@@ -171,6 +171,9 @@ data class Stay(
     /** Verkehrsmittel auf dem Weg zu dieser Station. */
     val transport: Set<TransportMode> = emptySet(),
 ) {
+    /** Zeitpunkt der Erfassung (Epoch-Millis, aus der Datenbank); nicht Teil von equals/copy. */
+    var createdAtMillis: Long? = null
+
     init {
         require(!endDate.isBefore(startDate)) { "endDate darf nicht vor startDate liegen" }
         require(participants.isNotEmpty()) { "Ein Aufenthalt braucht mindestens eine Person" }
@@ -206,6 +209,9 @@ data class Visit(
     val source: EntrySource = EntrySource.MANUAL,
     val extraCategoryIds: Set<String> = emptySet(),
 ) {
+    /** Zeitpunkt der Erfassung (Epoch-Millis, aus der Datenbank); nicht Teil von equals/copy. */
+    var createdAtMillis: Long? = null
+
     val categoryIds: Set<String> get() = linkedSetOf(categoryId) + extraCategoryIds
 
     init {

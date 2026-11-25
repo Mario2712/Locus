@@ -109,6 +109,8 @@ fun PlaceField(
     preferLocations: Boolean = false,
     /** Passende Orte für diesen Eintrag (z. B. Orte in der Stadt des Tages), oben angezeigt. */
     suggestedIds: List<String> = emptyList(),
+    /** Ausgangspunkte für Karte und Online-Suche, wichtigster zuerst (zuletzt erfasster Eintrag, Unterkunft …). */
+    anchorIds: List<String> = emptyList(),
 ) {
     var showPicker by remember { mutableStateOf(false) }
     var editPlace by remember { mutableStateOf<Place?>(null) }
@@ -136,6 +138,7 @@ fun PlaceField(
             onCreatePlace = onCreatePlace,
             preferLocations = preferLocations,
             suggestedIds = suggestedIds,
+            anchorIds = anchorIds,
         )
     }
 }
@@ -163,6 +166,7 @@ fun PlacePickerDialog(
     onCreatePlace: suspend (PlaceDraft) -> Place,
     preferLocations: Boolean = false,
     suggestedIds: List<String> = emptyList(),
+    anchorIds: List<String> = emptyList(),
 ) {
     val controller = LocalPlaceSearch.current
     var showAll by remember { mutableStateOf(false) }
@@ -174,6 +178,17 @@ fun PlacePickerDialog(
     var mapStart by remember { mutableStateOf<MapStart?>(null) }
     var mapPins by remember { mutableStateOf<List<PlaceCandidate>>(emptyList()) }
     var picked by remember { mutableStateOf<Triple<Double, Double, PlaceCandidate>?>(null) }
+    // Ausgangspunkt für Online-Suche: erster Anker mit Koordinaten (oder dessen Stadt)
+    val anchorPoint = remember(anchorIds, places) {
+        val byId = places.associateBy { it.id }
+        anchorIds.firstNotNullOfOrNull { id ->
+            val p = byId[id] ?: return@firstNotNullOfOrNull null
+            val lat = p.latitude
+            val lon = p.longitude
+            if (lat != null && lon != null) lat to lon
+            else p.parentPlaceId?.let(byId::get)?.let { c -> c.latitude?.let { la -> c.longitude?.let { lo -> la to lo } } }
+        }
+    }
     val filtered = places.filter {
         query.isBlank() || it.displayName.contains(query, ignoreCase = true) || it.name.contains(query, ignoreCase = true)
     }
@@ -210,7 +225,7 @@ fun PlacePickerDialog(
                             onClick = {
                                 online = OnlineState.Loading
                                 scope.launch {
-                                    show(runCatching { controller.search(query) }.getOrElse { SearchResult.Offline })
+                                    show(runCatching { controller.search(query, anchorPoint) }.getOrElse { SearchResult.Offline })
                                 }
                             },
                         ) { Text(stringResource(R.string.search_online)) }
@@ -230,7 +245,7 @@ fun PlacePickerDialog(
                             scope.launch {
                                 val byId = places.associateBy { it.id }
                                 mapPins = emptyList()
-                                mapStart = mapStartFor(suggestedIds.mapNotNull(byId::get), emptyList(), places) { controller.currentPosition() }
+                                mapStart = mapStartFor((anchorIds + suggestedIds).distinct().mapNotNull(byId::get), emptyList(), places) { controller.currentPosition() }
                             }
                         }) { Text(stringResource(R.string.map_pick_button)) }
                     }

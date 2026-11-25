@@ -54,6 +54,8 @@ fun StationEditorDialog(
     onDelete: (() -> Unit)?,
     onCreatePlace: suspend (PlaceDraft) -> Place,
     suggestedPlaceIds: List<String> = emptyList(),
+    /** Ausgangspunkte für Karte/Suche (zuletzt erfasster Eintrag des Tages, Unterkunft, Homebase). */
+    anchorPlaceIds: List<String> = emptyList(),
     /** Bei bestehenden Stationen: neue Station davor (`true`) bzw. danach einfügen. */
     onInsert: ((before: Boolean) -> Unit)? = null,
 ) {
@@ -96,6 +98,7 @@ fun StationEditorDialog(
                 PlaceField(
                     editor.sortedPlaces, draft.placeId, { draft = draft.copy(placeId = it) }, onCreatePlace,
                     suggestedIds = suggestedPlaceIds,
+                    anchorIds = (listOfNotNull(initial.placeId) + anchorPlaceIds).distinct(),
                 )
                 Text(stringResource(R.string.editor_transport), style = MaterialTheme.typography.labelLarge)
                 TransportChips(draft.transport) { draft = draft.copy(transport = it) }

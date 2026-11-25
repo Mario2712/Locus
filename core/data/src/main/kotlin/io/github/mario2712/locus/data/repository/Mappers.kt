@@ -73,7 +73,7 @@ internal fun StayWithPersons.toDomain() = Stay(
     participants = persons.mapTo(linkedSetOf()) { PersonId(it.personId) },
     tripId = stay.tripId, note = stay.note, source = stay.source,
     overnight = stay.overnight, transport = decodeTransport(stay.transport),
-)
+).also { it.createdAtMillis = stay.meta.createdAt }
 
 internal fun Stay.toEntity(meta: SyncMeta) = StayEntity(
     id = id, placeId = placeId, typeId = typeId, startDate = startDate, endDate = endDate,
@@ -91,7 +91,7 @@ internal fun VisitWithPersons.toDomain() = Visit(
     countsForCountryPointsOverride = visit.countsForCountryPointsOverride, tripId = visit.tripId,
     note = visit.note, rating = visit.rating, photoUri = visit.photoUri, source = visit.source,
     extraCategoryIds = decodeIds(visit.extraCategoryIds),
-)
+).also { it.createdAtMillis = visit.meta.createdAt }
 
 internal fun Visit.toEntity(meta: SyncMeta) = VisitEntity(
     id = id, placeId = placeId, categoryId = categoryId, date = date, time = time, precision = precision,

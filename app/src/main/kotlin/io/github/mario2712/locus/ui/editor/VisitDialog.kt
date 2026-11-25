@@ -34,6 +34,7 @@ fun VisitDialog(
     onDelete: (() -> Unit)?,
     onCreatePlace: suspend (PlaceDraft) -> Place,
     suggestedPlaceIds: List<String> = emptyList(),
+    anchorPlaceIds: List<String> = emptyList(),
 ) {
     var draft by remember { mutableStateOf(initial) }
     val byCategory = editor.categoriesCount(draft.categoryIds)
@@ -48,6 +49,7 @@ fun VisitDialog(
                 PlaceField(
                     editor.sortedPlaces, draft.placeId, { draft = draft.copy(placeId = it) }, onCreatePlace,
                     preferLocations = true, suggestedIds = suggestedPlaceIds,
+                    anchorIds = (listOfNotNull(initial.placeId) + anchorPlaceIds).distinct(),
                 )
                 Text(stringResource(R.string.visit_categories), style = MaterialTheme.typography.labelLarge)
                 CategoryChips(editor.activeCategories, draft.categoryIds) { draft = draft.copy(categoryIds = it) }

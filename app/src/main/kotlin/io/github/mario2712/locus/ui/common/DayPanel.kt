@@ -191,6 +191,7 @@ fun DayPanel(state: DayState, viewModel: BaseDayViewModel) {
                     stationDraft = anchor?.let { viewModel.insertDraft(state, it, before) }
                 }
             },
+            anchorPlaceIds = state.anchorPlaceIds,
         )
     }
     visitDraft?.let { draft ->
@@ -202,6 +203,7 @@ fun DayPanel(state: DayState, viewModel: BaseDayViewModel) {
             onDelete = draft.id?.let { id -> { viewModel.deleteVisit(id); visitDraft = null } },
             onCreatePlace = viewModel::createPlace,
             suggestedPlaceIds = state.visitSuggestions,
+            anchorPlaceIds = state.anchorPlaceIds,
         )
     }
     journeyMode?.let { mode ->
@@ -213,6 +215,7 @@ fun DayPanel(state: DayState, viewModel: BaseDayViewModel) {
             onDismiss = { journeyMode = null },
             onConfirm = { viewModel.journey(it); journeyMode = null },
             onCreatePlace = viewModel::createPlace,
+            anchorPlaceIds = state.anchorPlaceIds,
         )
     }
     if (showReturnHome) {
@@ -223,6 +226,7 @@ fun DayPanel(state: DayState, viewModel: BaseDayViewModel) {
             onDismiss = { showReturnHome = false },
             onConfirm = { viewModel.returnHome(state, it); showReturnHome = false },
             onCreatePlace = viewModel::createPlace,
+            anchorPlaceIds = state.anchorPlaceIds,
         )
     }
 

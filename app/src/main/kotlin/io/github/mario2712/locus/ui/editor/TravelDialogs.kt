@@ -59,6 +59,8 @@ fun JourneyDialog(
     onDismiss: () -> Unit,
     onConfirm: (JourneyDraft) -> Unit,
     onCreatePlace: suspend (PlaceDraft) -> Place,
+    /** Ausgangspunkte des Tages (zuletzt erfasster Eintrag, Unterkunft, Homebase). */
+    anchorPlaceIds: List<String> = emptyList(),
 ) {
     var typeId by remember { mutableStateOf(initialTypeId ?: editor.tripTypes.firstOrNull()?.id) }
     var destination by remember { mutableStateOf(LegDraft()) }
@@ -77,7 +79,8 @@ fun JourneyDialog(
                     Card(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(stringResource(R.string.journey_stop, index + 1), style = MaterialTheme.typography.labelLarge)
-                            LegFields(stop, editor, onCreatePlace) { updated ->
+                            // Karte/Suche starten beim vorherigen Stopp im Dialog
+                            LegFields(stop, editor, onCreatePlace, listOfNotNull(stops.getOrNull(index - 1)?.placeId) + anchorPlaceIds) { updated ->
                                 stops = stops.toMutableList().also { it[index] = updated }
                             }
                             TextButton(onClick = { stops = stops.filterIndexed { i, _ -> i != index } }) {
@@ -91,7 +94,7 @@ fun JourneyDialog(
                 }
 
                 Text(stringResource(R.string.journey_destination), style = MaterialTheme.typography.labelLarge)
-                LegFields(destination, editor, onCreatePlace) { destination = it }
+                LegFields(destination, editor, onCreatePlace, listOfNotNull(stops.lastOrNull()?.placeId) + anchorPlaceIds) { destination = it }
 
                 Text(stringResource(R.string.editor_participants), style = MaterialTheme.typography.labelLarge)
                 ParticipantChips(editor.persons, participants) { participants = it }
@@ -126,9 +129,11 @@ private fun LegFields(
     leg: LegDraft,
     editor: EditorData,
     onCreatePlace: suspend (PlaceDraft) -> Place,
+    anchors: List<String> = emptyList(),
     onChange: (LegDraft) -> Unit,
 ) {
-    PlaceField(editor.sortedPlaces, leg.placeId, { onChange(leg.copy(placeId = it)) }, onCreatePlace)
+    PlaceField(editor.sortedPlaces, leg.placeId, { onChange(leg.copy(placeId = it)) }, onCreatePlace,
+        anchorIds = (listOfNotNull(leg.placeId) + anchors).distinct())
     TransportChips(leg.transport) { onChange(leg.copy(transport = it)) }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Checkbox(checked = leg.nextDay, onCheckedChange = { onChange(leg.copy(nextDay = it)) })
@@ -155,6 +160,7 @@ fun ReturnHomeDialog(
     onDismiss: () -> Unit,
     onConfirm: (ReturnDraft) -> Unit,
     onCreatePlace: suspend (PlaceDraft) -> Place,
+    anchorPlaceIds: List<String> = emptyList(),
 ) {
     var stops by remember { mutableStateOf(listOf<LegDraft>()) }
     var home by remember { mutableStateOf(LegDraft(transport = initialTransport)) }
@@ -167,7 +173,8 @@ fun ReturnHomeDialog(
                     Card(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(stringResource(R.string.journey_stop, index + 1), style = MaterialTheme.typography.labelLarge)
-                            LegFields(stop, editor, onCreatePlace) { updated ->
+                            // Karte/Suche starten beim vorherigen Stopp im Dialog
+                            LegFields(stop, editor, onCreatePlace, listOfNotNull(stops.getOrNull(index - 1)?.placeId) + anchorPlaceIds) { updated ->
                                 stops = stops.toMutableList().also { it[index] = updated }
                             }
                             TextButton(onClick = { stops = stops.filterIndexed { i, _ -> i != index } }) {

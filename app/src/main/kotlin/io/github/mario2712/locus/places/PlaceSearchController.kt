@@ -70,12 +70,13 @@ class PlaceSearchController @Inject constructor(
 
     fun hasLocationPermission(): Boolean = location.hasPermission()
 
-    suspend fun search(query: String): SearchResult<List<PlaceCandidate>> = try {
-        val near = location.takeIf { it.hasPermission() }?.let { runCatching { it.current() }.getOrNull() }
-        val results = search.search(query, near?.latitude, near?.longitude)
+    /** Online-Suche; Treffer nahe [near] (z. B. dem letzten Ort des Tages) bevorzugt, sonst nahe dem Standort. */
+    suspend fun search(query: String, near: Pair<Double, Double>? = null): SearchResult<List<PlaceCandidate>> = try {
+        val point = near ?: location.takeIf { it.hasPermission() }?.let { runCatching { it.current() }.getOrNull() }?.let { it.latitude to it.longitude }
+        val results = search.search(query, point?.first, point?.second)
         SearchResult.Ok(
-            if (near == null) results
-            else results.map { it.copy(distanceMeters = PlaceCandidates.distanceMeters(near.latitude, near.longitude, it.latitude, it.longitude)) },
+            if (point == null) results
+            else results.map { it.copy(distanceMeters = PlaceCandidates.distanceMeters(point.first, point.second, it.latitude, it.longitude)) },
         )
     } catch (e: Exception) {
         if (e is kotlinx.coroutines.CancellationException) throw e
