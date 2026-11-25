@@ -5,9 +5,13 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val GERMAN = Locale.GERMAN
+/** Österreichisches Deutsch für Datumsangaben („Jänner“, „Jän.“). */
+private val GERMAN = Locale.forLanguageTag("de-AT")
 
 object Format {
+    /** Sprache für Datums- und Monatsnamen (österreichisches Deutsch). */
+    val locale: Locale = GERMAN
+
     private val longDate = DateTimeFormatter.ofPattern("EEEE, d. MMMM yyyy", GERMAN)
     private val mediumDate = DateTimeFormatter.ofPattern("EE, d. MMM", GERMAN)
     private val shortDate = DateTimeFormatter.ofPattern("dd.MM.", GERMAN)

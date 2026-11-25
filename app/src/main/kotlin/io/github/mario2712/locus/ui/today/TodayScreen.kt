@@ -117,7 +117,7 @@ fun TodayScreen(
                     state.week.forEach { day ->
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                day.date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.GERMAN),
+                                day.date.dayOfWeek.getDisplayName(TextStyle.SHORT, io.github.mario2712.locus.ui.common.Format.locale),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = if (day.isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             )

@@ -153,7 +153,11 @@ fun LocusApp() {
                     onOpenPlaces = { navController.navigate(PlacesRoute) },
                     onOpenStats = { navController.navigate(StatsRoute) },
                     onOpenData = { navController.navigate(DataRoute) },
+                    onOpenAbout = { navController.navigate(io.github.mario2712.locus.ui.navigation.AboutRoute) },
                 )
+            }
+            composable<io.github.mario2712.locus.ui.navigation.AboutRoute> {
+                io.github.mario2712.locus.ui.more.AboutScreen(onBack = { navController.popBackStack() })
             }
             composable<DayRoute> { DayScreen(onBack = { navController.popBackStack() }) }
             composable<SettingsRoute> { SettingsScreen(onBack = { navController.popBackStack() }) }

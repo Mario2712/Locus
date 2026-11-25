@@ -45,7 +45,7 @@ fun MonthPickerDialog(initial: YearMonth, latest: YearMonth, onDismiss: () -> Un
                         selected = month == initial,
                         enabled = !month.isAfter(latest),
                         onClick = { onSelect(month) },
-                        label = { Text(month.month.getDisplayName(TextStyle.SHORT, Locale.GERMAN)) },
+                        label = { Text(month.month.getDisplayName(TextStyle.SHORT, io.github.mario2712.locus.ui.common.Format.locale)) },
                         modifier = Modifier.weight(1f),
                     )
                 }

@@ -56,7 +56,7 @@ fun RuleDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(day.getDisplayName(TextStyle.FULL, Locale.GERMAN)) },
+        title = { Text(day.getDisplayName(TextStyle.FULL, io.github.mario2712.locus.ui.common.Format.locale)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (editor.templates.isNotEmpty()) {

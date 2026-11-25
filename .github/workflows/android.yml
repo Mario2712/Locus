@@ -34,6 +34,9 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      - name: Build-Datum setzen
+        run: echo "LOCUS_BUILD_DATE=$(date -u +%Y-%m-%d)" >> "$GITHUB_ENV"
+
       - name: Domain-Tests
         run: ./gradlew :core:domain:test
 
@@ -106,6 +109,9 @@ jobs:
           java-version: "21"
 
       - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build-Datum setzen
+        run: echo "LOCUS_BUILD_DATE=$(date -u +%Y-%m-%d)" >> "$GITHUB_ENV"
 
       - name: Keystore aus Secrets wiederherstellen
         env:

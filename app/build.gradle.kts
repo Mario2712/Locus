@@ -32,6 +32,8 @@ android {
         ndk { abiFilters += "arm64-v8a" }
         // Debug-Builds tragen die CI-Run-Nummer, damit man am Gerät sieht, welche Version installiert ist.
         versionName = ciVersionName ?: "$baseVersion-dev" + (ciVersionCode?.let { ".$it" } ?: "")
+        // Build-Datum aus der CI (Umgebungsvariable hält den Konfigurations-Cache korrekt), lokal leer.
+        buildConfigField("String", "BUILD_DATE", "\"${System.getenv("LOCUS_BUILD_DATE") ?: ""}\"")
     }
 
     signingConfigs {
@@ -114,6 +116,7 @@ dependencies {
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.maplibre.android)
+    implementation(libs.androidx.core.splashscreen)
 
     testImplementation(libs.junit4)
     testImplementation(libs.robolectric)

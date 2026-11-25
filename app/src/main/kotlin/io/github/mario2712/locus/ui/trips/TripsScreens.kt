@@ -276,7 +276,7 @@ private fun PastTripDialog(editor: EditorData, viewModel: TripsViewModel, onDism
                             (1..12).forEach { m ->
                                 FilterChip(
                                     month == m, { month = m },
-                                    label = { Text(java.time.Month.of(m).getDisplayName(TextStyle.SHORT, Locale.GERMAN)) },
+                                    label = { Text(java.time.Month.of(m).getDisplayName(TextStyle.SHORT, io.github.mario2712.locus.ui.common.Format.locale)) },
                                 )
                             }
                         }

@@ -105,7 +105,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                 DayOfWeek.entries.forEach { day ->
                     val rule = state.rules[day]
                     Row(Modifier.fillMaxWidth().clickable { editDay = day }.padding(vertical = 8.dp)) {
-                        Text(day.getDisplayName(TextStyle.FULL, Locale.GERMAN), Modifier.weight(0.35f))
+                        Text(day.getDisplayName(TextStyle.FULL, io.github.mario2712.locus.ui.common.Format.locale), Modifier.weight(0.35f))
                         Text(
                             rule?.let { r ->
                                 r.templateId?.let { editor.templatesById[it]?.name } ?: editor.stepsLabel(r.steps(editor.templatesById))

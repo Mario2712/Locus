@@ -543,7 +543,7 @@ private fun WorkTab(stats: YearStatsData, editor: EditorData) {
             }
         } else {
             workMonths.forEach { m ->
-                val name = m.month.month.getDisplayName(TextStyle.SHORT, Locale.GERMAN)
+                val name = m.month.month.getDisplayName(TextStyle.SHORT, io.github.mario2712.locus.ui.common.Format.locale)
                 WorkRow(
                     if (years.size > 1) "$name ${m.month.year % 100}" else name,
                     m.homeofficeOnly.toString(), m.officeDays.toString(), m.hybridDays.toString(), m.businessTripDays.toString(),
@@ -568,7 +568,7 @@ private fun WorkTab(stats: YearStatsData, editor: EditorData) {
                     stringResource(R.string.stats_business), "", header = true)
                 typical.forEach { t ->
                     fun f(x: Double) = String.format(Locale.GERMAN, "%.1f", x)
-                    WorkRow(t.month.getDisplayName(TextStyle.SHORT, Locale.GERMAN), f(t.homeoffice), f(t.office), f(t.businessTrip), "")
+                    WorkRow(t.month.getDisplayName(TextStyle.SHORT, io.github.mario2712.locus.ui.common.Format.locale), f(t.homeoffice), f(t.office), f(t.businessTrip), "")
                 }
                 Text(stringResource(R.string.stats_typical_month_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -593,7 +593,7 @@ private fun WorkTab(stats: YearStatsData, editor: EditorData) {
             }
             java.time.DayOfWeek.entries.filter { it in weekday }.forEach { day ->
                 Row(Modifier.fillMaxWidth()) {
-                    Text(day.getDisplayName(TextStyle.SHORT, Locale.GERMAN), Modifier.weight(0.8f), style = MaterialTheme.typography.bodySmall)
+                    Text(day.getDisplayName(TextStyle.SHORT, io.github.mario2712.locus.ui.common.Format.locale), Modifier.weight(0.8f), style = MaterialTheme.typography.bodySmall)
                     types.forEach { t -> Text((weekday[day]?.get(t.id) ?: 0).toString(), Modifier.weight(1f), style = MaterialTheme.typography.bodySmall) }
                 }
             }
@@ -847,7 +847,7 @@ private fun Heatmap(stats: YearStatsData, editor: EditorData, onOpenDay: (LocalD
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         stats.months.forEach { month ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(month.month.getDisplayName(TextStyle.NARROW, Locale.GERMAN), Modifier.width(14.dp), style = MaterialTheme.typography.labelSmall)
+                Text(month.month.getDisplayName(TextStyle.NARROW, io.github.mario2712.locus.ui.common.Format.locale), Modifier.width(14.dp), style = MaterialTheme.typography.labelSmall)
                 (1..month.lengthOfMonth()).forEach { day ->
                     val date = month.atDay(day)
                     val type = stats.mainTypeByDate[date]

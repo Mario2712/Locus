@@ -200,7 +200,7 @@ private fun MonthGrid(
         Row(Modifier.fillMaxWidth()) {
             DayOfWeek.entries.forEach { dow ->
                 Text(
-                    dow.getDisplayName(TextStyle.SHORT, Locale.GERMAN),
+                    dow.getDisplayName(TextStyle.SHORT, io.github.mario2712.locus.ui.common.Format.locale),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

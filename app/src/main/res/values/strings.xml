@@ -605,5 +605,18 @@
     <string name="data_status_visit_categories">Besuchskategorien: %1$d</string>
     <string name="data_status_countries">Zählbare Länder: %1$d</string>
     <string name="data_status_entries">Orte: %1$d · Aufenthalte: %2$d</string>
+    <string name="more_group_analyze">Auswerten</string>
+    <string name="more_group_manage">Verwalten</string>
+    <string name="more_group_data">Daten</string>
+    <string name="about_title">Über Locus</string>
+    <string name="about_tagline">Wo warst du – und wann?</string>
+    <string name="about_version_title">App</string>
+    <string name="about_version">Version</string>
+    <string name="about_build_date">Build-Datum</string>
+    <string name="about_developer">Entwicklung</string>
+    <string name="about_privacy_title">Datenschutz</string>
+    <string name="about_privacy">Alle Einträge bleiben auf diesem Gerät. Online geht nur, was du selbst auslöst: die Ortssuche (Photon, OpenStreetMap), die Detailkarte (OpenFreeMap) und das Auflösen geteilter Google-Maps-Links. Sicherungen landen in „Download/Locus“ oder dort, wo du sie speicherst.</string>
+    <string name="about_licenses_title">Quellen &amp; Lizenzen</string>
+    <string name="about_licenses">Ländergrenzen: Natural Earth (gemeinfrei) · Karten und Orte: © OpenStreetMap-Mitwirkende (ODbL), OpenFreeMap, Photon von komoot · Schrift „Instrument Serif“: SIL Open Font License 1.1 · Kartenbibliothek: MapLibre (BSD) · AndroidX, Jetpack Compose, Kotlin, Hilt, Room (Apache 2.0)</string>
     <string name="version_label">Version %1$s</string>
 </resources>

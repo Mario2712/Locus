@@ -1,6 +1,7 @@
 package io.github.mario2712.locus
 
 import android.os.Bundle
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -19,6 +20,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var sharedInbox: io.github.mario2712.locus.share.SharedInbox
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         handleShare(intent)
