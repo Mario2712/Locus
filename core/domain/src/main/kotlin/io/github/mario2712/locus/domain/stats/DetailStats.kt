@@ -27,6 +27,31 @@ data class Records(
     val farthestMeters: Double = 0.0,
     /** Längste Serie von Arbeitstagen im Homeoffice (freie Tage unterbrechen nicht). */
     val homeofficeStreak: Int = 0,
+    /** Längste Serie von Arbeitstagen mit Büro als Hauptart. */
+    val officeStreak: Int = 0,
+    /** Himmelsrichtungen: nördlichster, südlichster, östlichster, westlichster Ort. */
+    val northmost: String? = null,
+    val southmost: String? = null,
+    val eastmost: String? = null,
+    val westmost: String? = null,
+    /** Längste Abwesenheit: Tage am Stück nicht zuhause (über Reisen hinweg). */
+    val longestAbsenceDays: Int = 0,
+    val longestAbsenceFrom: java.time.LocalDate? = null,
+    /** Längste Pause zwischen zwei Reisen (Tage). */
+    val longestPauseDays: Int = 0,
+    val longestPauseFrom: java.time.LocalDate? = null,
+    /** Längste Strecke an einem Tag (Luftlinie, Meter) und der Tag. */
+    val longestDayMeters: Double = 0.0,
+    val longestDay: java.time.LocalDate? = null,
+    /** Weitester Tagesausflug (ohne Übernachtung auswärts). */
+    val farthestDayTripPlaceId: String? = null,
+    val farthestDayTripMeters: Double = 0.0,
+    /** Land außerhalb des Homebase-Landes mit den meisten Tagen. */
+    val favoriteCountry: String? = null,
+    val favoriteCountryDays: Int = 0,
+    /** Meiste Nächte am Stück in derselben Unterkunft. */
+    val longestStayPlaceId: String? = null,
+    val longestStayNights: Int = 0,
 )
 
 /** Detail-Statistiken für die Reiter „Besuche“, „Unterwegs“, „Arbeit“ und „Rekorde“. */
@@ -118,6 +143,7 @@ object DetailStatsCalculator {
         }
         val legs = mutableMapOf<TransportMode, Int>()
         val kms = mutableMapOf<TransportMode, Double>()
+        val dayKm = mutableMapOf<LocalDate, Double>()
         val byStart = own.filter { it.startDate in from..to }.groupBy { it.startDate }
         fun isTransit(stay: Stay) = stay.typeId == StayTypeIds.TRANSIT || stay.typeId == StayTypeIds.ON_THE_WAY
         // Endet ein Tag an einem Transit-Halt (z. B. Abflughafen), geht es am nächsten Tag von dort weiter.
@@ -131,7 +157,11 @@ object DetailStatsCalculator {
             chain.forEach { stay ->
                 stay.transport.forEach { legs[it] = (legs[it] ?: 0) + 1 }
                 val mode = dominant(stay.transport)
-                if (mode != null) kms[mode] = (kms[mode] ?: 0.0) + km(previous, stay.placeId)
+                if (mode != null) {
+                    val leg = km(previous, stay.placeId)
+                    kms[mode] = (kms[mode] ?: 0.0) + leg
+                    dayKm[date] = (dayKm[date] ?: 0.0) + leg
+                }
                 lastMode = mode
                 previous = stay.placeId
             }
@@ -141,7 +171,9 @@ object DetailStatsCalculator {
             val mode = lastMode
             val endsInTransit = isTransit(chain.last())
             if (endsAtHome && !endsInTransit && home != null && previous != home && mode != null) {
-                kms[mode] = (kms[mode] ?: 0.0) + km(previous, home)
+                val leg = km(previous, home)
+                kms[mode] = (kms[mode] ?: 0.0) + leg
+                dayKm[date] = (dayKm[date] ?: 0.0) + leg
             }
             carry = if (endsInTransit) date to chain.last().placeId else null
         }
@@ -158,10 +190,71 @@ object DetailStatsCalculator {
         }
         var streak = 0
         var best = 0
+        var officeRun = 0
+        var officeBest = 0
         summaries.toSortedMap().filterKeys { it in from..to }.values.forEach { day ->
             if (stayTypes[day.mainTypeId]?.group != StayGroup.WORK) return@forEach
             if (day.mainTypeId == StayTypeIds.HOMEOFFICE) { streak++; best = maxOf(best, streak) } else streak = 0
+            if (day.mainTypeId == StayTypeIds.OFFICE) { officeRun++; officeBest = maxOf(officeBest, officeRun) } else officeRun = 0
         }
+
+        // Himmelsrichtungen (alle Orte mit Koordinaten im Zeitraum)
+        val located = candidates.map { it.first }.distinct().mapNotNull { id -> coords(id)?.let { id to it } }
+        // Längste Abwesenheit: Nächte am Stück nicht an der Homebase
+        var absenceRun = 0
+        var absenceBest = 0
+        var absenceStart: LocalDate? = null
+        var absenceBestStart: LocalDate? = null
+        var day = from
+        while (!day.isAfter(minOf(to, today))) {
+            if (index.baseAtEnd(day, homebases, today) != null) {
+                if (absenceRun == 0) absenceStart = day
+                absenceRun++
+                if (absenceRun > absenceBest) { absenceBest = absenceRun; absenceBestStart = absenceStart }
+            } else {
+                absenceRun = 0
+            }
+            day = day.plusDays(1)
+        }
+        // Längste Reisepause: zwischen Reisen bzw. von der letzten Reise bis heute
+        val sortedTrips = rangeTrips.sortedBy { it.start }
+        var pauseBest = 0L
+        var pauseFrom: LocalDate? = null
+        sortedTrips.zipWithNext().forEach { (a, b) ->
+            val gap = java.time.temporal.ChronoUnit.DAYS.between(a.end, b.start) - 1
+            if (gap > pauseBest) { pauseBest = gap; pauseFrom = a.end.plusDays(1) }
+        }
+        sortedTrips.lastOrNull()?.takeIf { !it.ongoing }?.let { last ->
+            val gap = java.time.temporal.ChronoUnit.DAYS.between(last.end, minOf(to, today))
+            if (gap > pauseBest) { pauseBest = gap; pauseFrom = last.end.plusDays(1) }
+        }
+        // Weitester Tagesausflug: Tag beginnt und endet zuhause
+        var dayTripBest = 0.0
+        var dayTripPlace: String? = null
+        byStart.forEach { (date, dayStays) ->
+            if (index.baseAtStart(date) != null || index.baseAtEnd(date, homebases, today) != null) return@forEach
+            // Endet der Tag an einem Transit-Halt (z. B. Abflughafen), ist es kein Tagesausflug, sondern Reisebeginn.
+            if (isTransit(dayStays.sortedWith(Timeline.chronological).last())) return@forEach
+            (dayStays.map { it.placeId } + rangeVisits.filter { it.date == date }.map { it.placeId }).forEach { id ->
+                val d = km(homebases.at(date), id) * 1000
+                if (d > dayTripBest) { dayTripBest = d; dayTripPlace = id }
+            }
+        }
+        // Lieblingsland im Ausland (Tage mit zählenden Stationen)
+        fun countryOf(id: String) = places[id]?.let { io.github.mario2712.locus.domain.reference.ReferenceData.countableCountry(it.countryIso2)?.iso2 }
+        val countryDays = mutableMapOf<String, MutableSet<LocalDate>>()
+        own.filter { stayTypes[it.typeId]?.countsForCountryPoints == true && it.startDate <= to && it.endDate >= from }.forEach { s ->
+            val iso = countryOf(s.placeId) ?: return@forEach
+            var d = maxOf(s.startDate, from)
+            while (!d.isAfter(minOf(s.endDate, to))) {
+                if (iso != homebases.at(d)?.let(::countryOf)) countryDays.getOrPut(iso) { mutableSetOf() } += d
+                d = d.plusDays(1)
+            }
+        }
+        val favorite = countryDays.maxByOrNull { it.value.size }
+        // Längster Aufenthalt am selben Ort (Übernachtungs-Basen, Nächte bis zum nächsten Wechsel)
+        val longestStay = own.filter { it.overnight && it.startDate in from..to && !homebases.isHome(it.placeId, it.startDate) }
+            .maxByOrNull { java.time.temporal.ChronoUnit.DAYS.between(it.startDate, it.endDate) }
 
         // Arbeit je Wochentag
         val weekday = mutableMapOf<DayOfWeek, MutableMap<String, Int>>()
@@ -186,6 +279,23 @@ object DetailStatsCalculator {
                 farthestPlaceId = farthestId,
                 farthestMeters = farthest,
                 homeofficeStreak = best,
+                officeStreak = officeBest,
+                northmost = located.maxByOrNull { it.second.first }?.first,
+                southmost = located.minByOrNull { it.second.first }?.first,
+                eastmost = located.maxByOrNull { it.second.second }?.first,
+                westmost = located.minByOrNull { it.second.second }?.first,
+                longestAbsenceDays = if (absenceBest > 0) absenceBest + 1 else 0,
+                longestAbsenceFrom = absenceBestStart,
+                longestPauseDays = pauseBest.toInt(),
+                longestPauseFrom = pauseFrom,
+                longestDayMeters = (dayKm.maxByOrNull { it.value }?.value ?: 0.0) * 1000,
+                longestDay = dayKm.maxByOrNull { it.value }?.key,
+                farthestDayTripPlaceId = dayTripPlace,
+                farthestDayTripMeters = dayTripBest,
+                favoriteCountry = favorite?.key,
+                favoriteCountryDays = favorite?.value?.size ?: 0,
+                longestStayPlaceId = longestStay?.placeId,
+                longestStayNights = longestStay?.let { java.time.temporal.ChronoUnit.DAYS.between(it.startDate, it.endDate).toInt() } ?: 0,
             ),
             workByWeekday = weekday,
         )

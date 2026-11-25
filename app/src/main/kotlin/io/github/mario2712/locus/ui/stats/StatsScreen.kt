@@ -75,6 +75,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
+import kotlin.math.roundToInt
 import javax.inject.Inject
 
 /** Gewählter Zeitraum der Statistik. */
@@ -106,6 +107,10 @@ data class StatsUiState(
     /** Gleich langer Zeitraum davor (Vorjahr bis zum selben Tag, Vormonat …) für ▲/▼. */
     val previous: YearStatsData? = null,
     val special: SpecialStats = SpecialStats(),
+    /** Nur bei „Gesamt“: Weltabdeckung, treue und wiederentdeckte Orte. */
+    val coverage: io.github.mario2712.locus.domain.stats.WorldCoverage? = null,
+    val loyal: List<io.github.mario2712.locus.domain.stats.LoyalPlace> = emptyList(),
+    val rediscovered: List<io.github.mario2712.locus.domain.stats.Rediscovered> = emptyList(),
     /** Nur bei „Gesamt“: Kennzahlen je Jahr, neuestes zuerst. */
     val perYear: List<Pair<Int, YearStatsData>> = emptyList(),
     val years: List<Int> = emptyList(),
@@ -192,7 +197,15 @@ class StatsViewModel @Inject constructor(
             firstVisitAges = subjectPerson?.birthDate?.let { io.github.mario2712.locus.domain.stats.SpecialDays.firstVisitAges(it, countryStats, homeCountries) }.orEmpty(),
             hasBirthDate = subjectPerson?.birthDate != null,
         )
-        StatsUiState(p, who, previous, special, perYear, years, stats, editor, wf)
+        val all = p == StatsPeriod.All
+        val lt = io.github.mario2712.locus.domain.stats.LongTermStats
+        StatsUiState(
+            p, who, previous, special,
+            coverage = if (all) lt.worldCoverage(countryStats) else null,
+            loyal = if (all) lt.loyalPlaces(subject, v, editor.placesById, editor.homebases) else emptyList(),
+            rediscovered = if (all) lt.rediscovered(subject, if (who == StatsPerson.TOGETHER) io.github.mario2712.locus.domain.timeline.Timeline.resolve(s, editor.homebases, today) else resolvedAll, v, editor.placesById, editor.homebases) else emptyList(),
+            perYear = perYear, years = years, stats = stats, editor = editor, workFilter = wf,
+        )
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), StatsUiState(StatsPeriod.Year(today.year)))
 
     fun select(value: StatsPeriod) {
@@ -245,10 +258,10 @@ fun StatsScreen(
                     }
                     OverviewTab(state, stats, onOpenDay)
                 }
-                1 -> VisitsTab(stats, state.editor, onOpenPlace)
+                1 -> VisitsTab(stats, state.editor, onOpenPlace, state)
                 2 -> TravelTab(stats, state.editor)
                 3 -> WorkTab(stats, state.editor)
-                4 -> RecordsTab(stats, state.editor, onOpenPlace)
+                4 -> RecordsTab(stats, state.editor, onOpenPlace, state.perYear)
                 else -> SpecialTab(state.special, state.editor, onOpenDay)
             }
         }
@@ -272,6 +285,26 @@ private fun OverviewTab(state: StatsUiState, stats: YearStatsData, onOpenDay: (L
     val editor = state.editor
     val prev = state.previous
     SectionCard(periodLabel(state.period)) {
+        val coverage = state.coverage
+        if (coverage != null) {
+            // Gesamt: Weltabdeckung statt „neu“
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatTile("${coverage.countries} / ${coverage.ofCountries}", stringResource(R.string.stats_world_share, coverage.countries * 100 / coverage.ofCountries))
+                StatTile("${coverage.continents.size} / ${io.github.mario2712.locus.domain.model.Continent.entries.size}", stringResource(R.string.stats_continents))
+                StatTile(stats.citiesVisited.toString(), stringResource(R.string.stats_cities_total))
+                StatTile(stats.trips.toString(), stringResource(R.string.stats_trips))
+                StatTile(stats.nightsAway.toString(), stringResource(R.string.stats_nights_away))
+                StatTile(stats.recordedDays.toString(), stringResource(R.string.stats_recorded_days))
+            }
+            Text(coverage.continents.joinToString(" · ") { it.nameDe }, style = MaterialTheme.typography.bodySmall)
+            if (coverage.undated > 0) {
+                Text(stringResource(R.string.stats_undated_countries, coverage.undated), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (stats.countries.isNotEmpty()) {
+                Text(stats.countries.mapNotNull { ReferenceData.country(it)?.flag }.joinToString(" "), style = MaterialTheme.typography.titleLarge)
+            }
+            return@SectionCard
+        }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             StatTile(stats.recordedDays.toString(), stringResource(R.string.stats_recorded_days), prev?.let { stats.recordedDays - it.recordedDays })
             StatTile(stats.countries.size.toString(), stringResource(R.string.stats_countries), prev?.let { stats.countries.size - it.countries.size })
@@ -330,11 +363,22 @@ private fun OverviewTab(state: StatsUiState, stats: YearStatsData, onOpenDay: (L
         // Statt einer Heatmap über viele Jahre: Kennzahlen je Jahr
         if (state.perYear.isNotEmpty()) {
             SectionCard(stringResource(R.string.stats_per_year)) {
-                YearRow(stringResource(R.string.stats_year), stringResource(R.string.stats_recorded_days_short), stringResource(R.string.stats_countries),
+                var openYear by rememberSaveable { mutableStateOf<Int?>(null) }
+                YearRow(stringResource(R.string.stats_year), stringResource(R.string.stats_countries), stringResource(R.string.stats_new_short),
                     stringResource(R.string.stats_trips), stringResource(R.string.stats_nights_short), header = true)
                 state.perYear.forEach { (year, y) ->
-                    YearRow(year.toString(), y.recordedDays.toString(), y.countries.size.toString(), y.trips.toString(), y.nightsAway.toString())
+                    Column(Modifier.fillMaxWidth().clickable { openYear = if (openYear == year) null else year }) {
+                        YearRow(year.toString(), y.countries.size.toString(), y.newCountries.size.takeIf { it > 0 }?.let { "+$it" } ?: "–",
+                            y.trips.toString(), y.nightsAway.toString())
+                        if (openYear == year && y.countries.isNotEmpty()) {
+                            Text(
+                                y.countries.joinToString(" ") { iso -> (ReferenceData.country(iso)?.flag ?: iso) + if (iso in y.newCountries) "✱" else "" },
+                                style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 6.dp),
+                            )
+                        }
+                    }
                 }
+                Text(stringResource(R.string.stats_per_year_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     } else {
@@ -355,7 +399,7 @@ private fun YearRow(c1: String, c2: String, c3: String, c4: String, c5: String, 
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun VisitsTab(stats: YearStatsData, editor: EditorData, onOpenPlace: (String) -> Unit) {
+private fun VisitsTab(stats: YearStatsData, editor: EditorData, onOpenPlace: (String) -> Unit, state: StatsUiState) {
     val d = stats.details
     if (d.visitsByCategory.isEmpty()) {
         SectionCard(stringResource(R.string.stats_tab_visits)) { Text(stringResource(R.string.stats_no_visits)) }
@@ -382,7 +426,29 @@ private fun VisitsTab(stats: YearStatsData, editor: EditorData, onOpenPlace: (St
         }
         RankList(d.topPlacesByCategory[category].orEmpty(), editor, onOpenPlace)
     }
-    if (d.newCityIds.isNotEmpty() || d.newLocationIds.isNotEmpty()) {
+    if (state.period == StatsPeriod.All) {
+        // Gesamt: „neu“ wäre alles – stattdessen treue und wiederentdeckte Orte (nur wenn vorhanden)
+        if (state.loyal.isNotEmpty()) {
+            SectionCard(stringResource(R.string.stats_loyal)) {
+                state.loyal.forEach { l ->
+                    Text(
+                        stringResource(R.string.stats_loyal_line, editor.placeName(l.placeId), l.years, l.ofYears),
+                        Modifier.fillMaxWidth().clickable { onOpenPlace(l.placeId) }.padding(vertical = 4.dp),
+                    )
+                }
+            }
+        }
+        if (state.rediscovered.isNotEmpty()) {
+            SectionCard(stringResource(R.string.stats_rediscovered)) {
+                state.rediscovered.forEach { r ->
+                    Text(
+                        stringResource(R.string.stats_rediscovered_line, editor.placeName(r.placeId), r.gapYears, r.returnDate.year),
+                        Modifier.fillMaxWidth().clickable { onOpenPlace(r.placeId) }.padding(vertical = 4.dp),
+                    )
+                }
+            }
+        }
+    } else if (d.newCityIds.isNotEmpty() || d.newLocationIds.isNotEmpty()) {
         SectionCard(stringResource(R.string.stats_new_discovered)) {
             if (d.newCityIds.isNotEmpty()) {
                 Text(stringResource(R.string.stats_new_cities_n, d.newCityIds.size), style = MaterialTheme.typography.labelLarge)
@@ -475,7 +541,33 @@ private fun WorkTab(stats: YearStatsData, editor: EditorData) {
             stats.work.sumOf { it.homeofficeOnly }.toString(), stats.work.sumOf { it.officeDays }.toString(),
             stats.work.sumOf { it.hybridDays }.toString(), stats.work.sumOf { it.businessTripDays }.toString(), header = true,
         )
+        fun avg(f: (io.github.mario2712.locus.domain.stats.MonthWork) -> Int) = String.format(Locale.GERMAN, "%.1f", workMonths.map(f).average())
+        WorkRow(stringResource(R.string.stats_avg_month), avg { it.homeofficeOnly }, avg { it.officeDays }, avg { it.hybridDays }, avg { it.businessTripDays })
         Text(stringResource(R.string.stats_work_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+    if (byYear) {
+        val lt = io.github.mario2712.locus.domain.stats.LongTermStats
+        val typical = lt.typicalMonths(stats.work)
+        if (typical.isNotEmpty()) {
+            SectionCard(stringResource(R.string.stats_typical_month)) {
+                WorkRow(stringResource(R.string.stats_month), stringResource(R.string.stats_ho_only), stringResource(R.string.stats_office),
+                    stringResource(R.string.stats_business), "", header = true)
+                typical.forEach { t ->
+                    fun f(x: Double) = String.format(Locale.GERMAN, "%.1f", x)
+                    WorkRow(t.month.getDisplayName(TextStyle.SHORT, Locale.GERMAN), f(t.homeoffice), f(t.office), f(t.businessTrip), "")
+                }
+                Text(stringResource(R.string.stats_typical_month_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        val share = lt.homeofficeShareByYear(stats.work).filter { (y, _) -> workMonths.any { it.month.year == y } }
+        if (share.isNotEmpty()) {
+            SectionCard(stringResource(R.string.stats_ho_share)) {
+                share.entries.sortedByDescending { it.key }.forEach { (year, value) ->
+                    BarRow(year.toString(), (value * 100).roundToInt(), 100f, 0xFF2A78D6)
+                }
+                Text(stringResource(R.string.stats_ho_share_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
     }
     val weekday = stats.details.workByWeekday
     if (weekday.isNotEmpty()) {
@@ -497,7 +589,7 @@ private fun WorkTab(stats: YearStatsData, editor: EditorData) {
 }
 
 @Composable
-private fun RecordsTab(stats: YearStatsData, editor: EditorData, onOpenPlace: (String) -> Unit) {
+private fun RecordsTab(stats: YearStatsData, editor: EditorData, onOpenPlace: (String) -> Unit, perYear: List<Pair<Int, YearStatsData>>) {
     val r = stats.details.records
     SectionCard(stringResource(R.string.stats_tab_records)) {
         RecordRow("🧳", stringResource(R.string.stats_record_longest_trip),
@@ -509,8 +601,44 @@ private fun RecordsTab(stats: YearStatsData, editor: EditorData, onOpenPlace: (S
         RecordRow("📍", stringResource(R.string.stats_record_farthest),
             r.farthestPlaceId?.let { "${editor.placeName(it)} · ${formatKm(r.farthestMeters / 1000)}" },
             onClick = r.farthestPlaceId?.let { id -> { onOpenPlace(id) } })
+        RecordRow("📅", stringResource(R.string.stats_record_absence),
+            r.longestAbsenceDays.takeIf { it > 0 }?.let { days -> stringResource(R.string.stats_record_days_from, days, r.longestAbsenceFrom?.let(Format::mediumDate).orEmpty()) })
+        RecordRow("⏳", stringResource(R.string.stats_record_pause),
+            r.longestPauseDays.takeIf { it > 0 }?.let { days -> stringResource(R.string.stats_record_days_from, days, r.longestPauseFrom?.let(Format::mediumDate).orEmpty()) })
+        RecordRow("🛣️", stringResource(R.string.stats_record_day_distance),
+            r.longestDay?.let { "${formatKm(r.longestDayMeters / 1000)} · ${Format.mediumDate(it)}" })
+        RecordRow("🗺️", stringResource(R.string.stats_record_day_trip),
+            r.farthestDayTripPlaceId?.let { "${editor.placeName(it)} · ${formatKm(r.farthestDayTripMeters / 1000)}" },
+            onClick = r.farthestDayTripPlaceId?.let { id -> { onOpenPlace(id) } })
+        RecordRow("🏳️", stringResource(R.string.stats_record_favorite_country),
+            r.favoriteCountry?.let { iso -> ReferenceData.country(iso)?.let { "${it.flag} ${it.nameDe} · ${stringResource(R.string.places_days, r.favoriteCountryDays)}" } })
+        RecordRow("🏨", stringResource(R.string.stats_record_longest_stay),
+            r.longestStayPlaceId?.let { "${editor.placeName(it)} · ${stringResource(R.string.stats_nights_n, r.longestStayNights)}" },
+            onClick = r.longestStayPlaceId?.let { id -> { onOpenPlace(id) } })
+        if (perYear.isNotEmpty()) {
+            val mostCountries = perYear.maxByOrNull { it.second.countries.size }?.takeIf { it.second.countries.isNotEmpty() }
+            RecordRow("🌍", stringResource(R.string.stats_record_countries_year),
+                mostCountries?.let { (y, s) -> "$y · ${s.countries.size} " + s.countries.mapNotNull { ReferenceData.country(it)?.flag }.joinToString("") })
+            val mostFlights = perYear.maxByOrNull { it.second.details.flights }?.takeIf { it.second.details.flights > 0 }
+            RecordRow("✈️", stringResource(R.string.stats_record_flights_year), mostFlights?.let { (y, s) -> "$y · ${s.details.flights}" })
+        }
         RecordRow("🏠", stringResource(R.string.stats_record_ho_streak),
             r.homeofficeStreak.takeIf { it > 0 }?.let { stringResource(R.string.stats_workdays, it) })
+        RecordRow("🏢", stringResource(R.string.stats_record_office_streak),
+            r.officeStreak.takeIf { it > 0 }?.let { stringResource(R.string.stats_workdays, it) })
+    }
+    val compass = listOf(r.northmost to "N", r.southmost to "S", r.eastmost to "O", r.westmost to "W")
+    if (compass.any { it.first != null }) {
+        SectionCard(stringResource(R.string.stats_compass)) {
+            compass.forEach { (id, dir) ->
+                if (id != null) {
+                    Row(Modifier.fillMaxWidth().clickable { onOpenPlace(id) }.padding(vertical = 4.dp)) {
+                        Text(dir, Modifier.width(28.dp), style = MaterialTheme.typography.titleMedium)
+                        Text(editor.placeName(id))
+                    }
+                }
+            }
+        }
     }
 }
 

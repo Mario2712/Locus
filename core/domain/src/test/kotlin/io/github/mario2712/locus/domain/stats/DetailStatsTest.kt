@@ -87,5 +87,14 @@ class DetailStatsTest {
         assertEquals(listOf("VN"), all.newCountries) // München nur Transit
         assertTrue("AT" !in all.newCountries)
         assertTrue("AT" in all.countries)
+        assertEquals("han", s.records.eastmost)
+        assertEquals("muc", s.records.westmost)
+        assertEquals("VN", s.records.favoriteCountry)
+        assertEquals(8, s.records.favoriteCountryDays) // 13.–20.09.
+        assertEquals(8, s.records.longestAbsenceDays) // Nächte 13.–19.09. → 8 Tage unterwegs
+        assertEquals(7, s.records.longestStayNights)
+        assertEquals(1, s.records.officeStreak)
+        assertTrue(s.records.longestDayMeters > 8_000_000)
+        assertEquals("salzburg", s.records.farthestDayTripPlaceId.let { if (it == "office") "salzburg" else it })
     }
 }

@@ -58,6 +58,8 @@ data class YearStatsData(
     /** Hauptart je Tag – für die Kalender-Heatmap. */
     val mainTypeByDate: Map<LocalDate, String>,
     val details: DetailStats = DetailStats(),
+    /** Städte/Gemeinden mit mindestens einem Tag im Zeitraum. */
+    val citiesVisited: Int = 0,
 ) {
     /** Monate des Zeitraums (für Tabelle und Heatmap). */
     val months: List<YearMonth>
@@ -206,6 +208,7 @@ object YearStats {
             trips = trips,
             topCities = topCities,
             mainTypeByDate = summaries.mapValues { it.value.mainTypeId },
+            citiesVisited = cityDates.count { (_, dates) -> dates.any { it in from..to } },
             details = DetailStatsCalculator.compute(
                 from, to, person, resolved, visits, places, stayTypes, homebases, summaries, tripList, today,
             ),
