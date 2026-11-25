@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Clock
@@ -49,6 +50,7 @@ class PlacesViewModel @Inject constructor(
     visits: VisitRepository,
     editorCatalog: EditorCatalog,
     private val cleanup: io.github.mario2712.locus.places.PlaceCleanup,
+    timelineCache: io.github.mario2712.locus.ui.common.TimelineCache,
 ) : ViewModel() {
     private val today = LocalDate.now(clock)
 
@@ -65,15 +67,21 @@ class PlacesViewModel @Inject constructor(
         }
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), emptyList())
 
-    val items: StateFlow<List<PlaceListItem>> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data) { s, v, editor ->
+    val items: StateFlow<List<PlaceListItem>> = timelineCache.snapshot.map { snap ->
+        val v = snap.visits
+        val editor = snap.editor
         // Homebase zählt an Tagen mit Start/Ende zuhause mit.
-        val resolved = io.github.mario2712.locus.domain.timeline.ImplicitHome.augment(Timeline.resolve(s, editor.homebases, today), v, Defaults.ME, editor.homebases, today)
+        val resolved = snap.withImplicitHome(Defaults.ME)
         val children = editor.places.filter { it.parentPlaceId != null }.groupBy({ it.parentPlaceId!! }, { it.id })
-        editor.places.filter { it.kind != io.github.mario2712.locus.domain.model.PlaceKind.COUNTRY }.map { place ->
-            val record = PlaceStats.record(place.id, Defaults.ME, resolved, v, children[place.id].orEmpty().toSet())
+        val shown = editor.places.filter { it.kind != io.github.mario2712.locus.domain.model.PlaceKind.COUNTRY }
+        // Alle Orts-Akten in einem Durchlauf statt pro Ort über alle Einträge
+        val records = PlaceStats.records(shown.associate { it.id to children[it.id].orEmpty().toSet() }, Defaults.ME, resolved, v)
+        val visitsByPlace = v.groupBy { it.placeId }
+        shown.map { place ->
+            val record = records.getValue(place.id)
             PlaceListItem(
                 place, record.totalDays, record.lastDate,
-                group = PlaceGroups.groupOf(place, v.filter { it.placeId == place.id }),
+                group = PlaceGroups.groupOf(place, visitsByPlace[place.id].orEmpty()),
                 locationCount = children[place.id].orEmpty().size,
             )
         }.sortedWith(compareByDescending<PlaceListItem> { it.totalDays }.thenBy { it.place.displayName.lowercase() })

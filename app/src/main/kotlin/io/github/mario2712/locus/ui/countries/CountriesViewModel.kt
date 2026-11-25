@@ -61,6 +61,7 @@ class CountriesViewModel @Inject constructor(
     visits: VisitRepository,
     private val wishes: WishRepository,
     editorCatalog: EditorCatalog,
+    timelineCache: io.github.mario2712.locus.ui.common.TimelineCache,
     private val calculator: CountryPointsCalculator,
     private val places: PlaceRepository,
     private val stayRepository: StayRepository,
@@ -70,14 +71,17 @@ class CountriesViewModel @Inject constructor(
     private val clockRef = clock
 
     val state: StateFlow<CountriesUiState> = combine(
-        stays.observeAll(), visits.observeAll(), wishes.observeAll(), editorCatalog.data,
-    ) { s, v, w, editor ->
+        timelineCache.snapshot, wishes.observeAll(),
+    ) { snap, w ->
+        val s = snap.stays
+        val v = snap.visits
+        val editor = snap.editor
         val a = editor.persons.firstOrNull { it.isMe } ?: return@combine CountriesUiState(editor = editor)
         val b = editor.persons.firstOrNull { !it.isMe }
-        val resolved = Timeline.resolve(s, editor.homebases, today)
+        val resolved = snap.resolved
         val points = calculator.calculate(resolved, v, editor.placesById, editor.typesById, editor.categoriesById)
         // Für Tage-Zählungen ist die Homebase an Tagen mit Start/Ende zuhause implizit dabei.
-        val withHome = io.github.mario2712.locus.domain.timeline.ImplicitHome.augment(resolved, v, a.id, editor.homebases, today)
+        val withHome = snap.withImplicitHome(a.id)
         val overview = CountryOverview.build(points, a.id, b?.id, w, CountryOverview.countryDays(withHome, editor.placesById, a.id))
 
         // Tage je Ort (Stationen tagesgenau + Besuche), dann je Stadt zusammengefasst.

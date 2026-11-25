@@ -54,8 +54,8 @@ class BackupManager @Inject constructor(
         settings.setEntryDefaults(
             current.copy(
                 prefillTransport = s.prefillTransport,
-                dailyParticipants = s.dailyParticipants.map(io.github.mario2712.locus.domain.model::PersonId).toSet().ifEmpty { current.dailyParticipants },
-                tripParticipants = s.tripParticipants.map(io.github.mario2712.locus.domain.model::PersonId).toSet().ifEmpty { current.tripParticipants },
+                dailyParticipants = s.dailyParticipants.map { io.github.mario2712.locus.domain.model.PersonId(it) }.toSet().ifEmpty { current.dailyParticipants },
+                tripParticipants = s.tripParticipants.map { io.github.mario2712.locus.domain.model.PersonId(it) }.toSet().ifEmpty { current.tripParticipants },
                 documentedSinceYear = s.documentedSinceYear,
                 sortByUsage = s.sortByUsage,
             ),

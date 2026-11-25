@@ -32,6 +32,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -125,16 +126,22 @@ class StatsViewModel @Inject constructor(
     stays: StayRepository,
     visits: VisitRepository,
     editorCatalog: EditorCatalog,
+    timelineCache: io.github.mario2712.locus.ui.common.TimelineCache,
 ) : ViewModel() {
     val today: LocalDate = LocalDate.now(clock)
     private val period = MutableStateFlow<StatsPeriod>(StatsPeriod.Year(today.year))
     private val workFilter = MutableStateFlow(WorkFilter.ALL)
     private val person = MutableStateFlow(StatsPerson.ME)
     private val options = combine(workFilter, person) { w, who -> w to who }
+    /** Sichtbarer Reiter: Teile, die nur ein anderer Reiter braucht, werden nicht berechnet. */
+    private val tab = MutableStateFlow(0)
 
     val state: StateFlow<StatsUiState> = combine(
-        stays.observeAll(), visits.observeAll(), editorCatalog.data, period, options,
-    ) { allStays, allVisits, editor, p, (wf, who) ->
+        timelineCache.snapshot, period, options, tab,
+    ) { snap, p, (wf, who), visibleTab ->
+        val allStays = snap.stays
+        val allVisits = snap.visits
+        val editor = snap.editor
         val me = Defaults.ME
         val partner = editor.persons.firstOrNull { !it.isMe }?.id
         // Gemeinsam: nur Einträge, bei denen beide dabei waren (aus meiner Sicht gerechnet).
@@ -163,7 +170,8 @@ class StatsViewModel @Inject constructor(
             a, b, subject, s, v, editor.placesById, editor.typesById, editor.categoriesById, editor.rank, editor.homebases, today, wf, allTime,
         )
         val stats = compute(from, to, allTime = p == StatsPeriod.All)
-        val perYear = if (p == StatsPeriod.All) {
+        // Nur berechnen, was der sichtbare Reiter zeigt (0 Überblick, 1 Besuche, 4 Rekorde, 5 Besonderes).
+        val perYear = if (p == StatsPeriod.All && (visibleTab == 0 || visibleTab == 4)) {
             (today.year downTo from.year).map { y -> y to compute(LocalDate.of(y, 1, 1), LocalDate.of(y, 12, 31)) }
         } else {
             emptyList()
@@ -179,16 +187,18 @@ class StatsViewModel @Inject constructor(
             }
         }
         val firstEntry = (allStays.map { it.startDate } + allVisits.map { it.date }).minOrNull()
-        val previous = if (p != StatsPeriod.All && firstEntry != null && !prevTo.isBefore(firstEntry)) compute(prevFrom, prevTo) else null
+        val previous = if (visibleTab == 0 && p != StatsPeriod.All && firstEntry != null && !prevTo.isBefore(firstEntry)) compute(prevFrom, prevTo) else null
         // Jahrestage (unabhängig vom Zeitraum, über alle Jahre)
-        val resolvedAll = io.github.mario2712.locus.domain.timeline.Timeline.resolve(allStays, editor.homebases, today)
+        val resolvedAll = snap.resolved
         val subjectPerson = editor.persons.firstOrNull { it.id == subject }
         fun annual(day: java.time.MonthDay, personId: io.github.mario2712.locus.domain.model.PersonId) =
             io.github.mario2712.locus.domain.stats.SpecialDays.annual(day, personId, resolvedAll, allVisits, editor.placesById, editor.homebases, editor.rank, today)
         val homeCountries = editor.homebases.placeIds.mapNotNull { id -> editor.placesById[id]?.let { ReferenceData.countableCountry(it.countryIso2)?.iso2 } }.toSet()
-        val countryStats = io.github.mario2712.locus.domain.countrypoints.CountryPointsCalculator()
+        val all = p == StatsPeriod.All
+        val needCountries = visibleTab == 5 || (all && visibleTab == 0)
+        val countryStats = if (!needCountries) emptyList() else io.github.mario2712.locus.domain.countrypoints.CountryPointsCalculator()
             .calculate(resolvedAll, allVisits, editor.placesById, editor.typesById, editor.categoriesById).byPerson[subject].orEmpty().values
-        val special = SpecialStats(
+        val special = if (visibleTab != 5) SpecialStats() else SpecialStats(
             birthdays = editor.persons.mapNotNull { person ->
                 person.birthDate?.let { b -> person.name to annual(java.time.MonthDay.from(b), person.id).filter { !it.date.isBefore(b) } }
             },
@@ -197,13 +207,12 @@ class StatsViewModel @Inject constructor(
             firstVisitAges = subjectPerson?.birthDate?.let { io.github.mario2712.locus.domain.stats.SpecialDays.firstVisitAges(it, countryStats, homeCountries) }.orEmpty(),
             hasBirthDate = subjectPerson?.birthDate != null,
         )
-        val all = p == StatsPeriod.All
         val lt = io.github.mario2712.locus.domain.stats.LongTermStats
         StatsUiState(
             p, who, previous, special,
-            coverage = if (all) lt.worldCoverage(countryStats) else null,
-            loyal = if (all) lt.loyalPlaces(subject, v, editor.placesById, editor.homebases) else emptyList(),
-            rediscovered = if (all) lt.rediscovered(subject, if (who == StatsPerson.TOGETHER) io.github.mario2712.locus.domain.timeline.Timeline.resolve(s, editor.homebases, today) else resolvedAll, v, editor.placesById, editor.homebases) else emptyList(),
+            coverage = if (all && visibleTab == 0) lt.worldCoverage(countryStats) else null,
+            loyal = if (all && visibleTab == 1) lt.loyalPlaces(subject, v, editor.placesById, editor.homebases) else emptyList(),
+            rediscovered = if (all && visibleTab == 1) lt.rediscovered(subject, if (who == StatsPerson.TOGETHER) io.github.mario2712.locus.domain.timeline.Timeline.resolve(s, editor.homebases, today) else resolvedAll, v, editor.placesById, editor.homebases) else emptyList(),
             perYear = perYear, years = years, stats = stats, editor = editor, workFilter = wf,
         )
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), StatsUiState(StatsPeriod.Year(today.year)))
@@ -214,6 +223,10 @@ class StatsViewModel @Inject constructor(
 
     fun setPerson(value: StatsPerson) {
         person.value = value
+    }
+
+    fun setTab(value: Int) {
+        tab.value = value
     }
 
     fun setWorkFilter(value: WorkFilter) {
@@ -232,6 +245,7 @@ fun StatsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableIntStateOf(0) }
+    LaunchedEffect(tab) { viewModel.setTab(tab) }
     val tabs = listOf(
         R.string.stats_tab_overview, R.string.stats_tab_visits, R.string.stats_tab_travel, R.string.stats_tab_work,
         R.string.stats_tab_records, R.string.stats_tab_special,

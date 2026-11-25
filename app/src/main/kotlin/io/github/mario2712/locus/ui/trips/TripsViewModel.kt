@@ -61,6 +61,7 @@ class TripsViewModel @Inject constructor(
     stays: StayRepository,
     visits: VisitRepository,
     private val editorCatalog: EditorCatalog,
+    timelineCache: io.github.mario2712.locus.ui.common.TimelineCache,
     private val commands: StayCommands,
     private val actions: io.github.mario2712.locus.ui.common.StationActions,
 ) : ViewModel() {
@@ -71,10 +72,13 @@ class TripsViewModel @Inject constructor(
     private val yearFilter = MutableStateFlow<Int?>(null)
     private val filters = combine(workFilter, personFilter, yearFilter) { w, p, y -> Triple(w, p, y) }
 
-    val state: StateFlow<TripsUiState> = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data, filters) { s, v, editor, (wf, pf, year) ->
+    val state: StateFlow<TripsUiState> = combine(timelineCache.snapshot, filters) { snap, (wf, pf, year) ->
+        val s = snap.stays
+        val v = snap.visits
+        val editor = snap.editor
         val home = editor.homebases
         val trips = Trips.derive(s, v, editor.placesById, Defaults.ME, home, today)
-        val resolved = Timeline.resolve(s, home, today)
+        val resolved = snap.resolved
         val allDays = TimelineDays.build(resolved, v, Defaults.ME, today)
         TripsUiState(
             trips = trips,

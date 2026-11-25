@@ -60,6 +60,7 @@ class CalendarViewModel @Inject constructor(
     private val stays: StayRepository,
     private val visits: io.github.mario2712.locus.domain.repository.VisitRepository,
     private val editorCatalog: EditorCatalog,
+    timelineCache: io.github.mario2712.locus.ui.common.TimelineCache,
     private val editing: StationActions,
 ) : ViewModel() {
 
@@ -72,10 +73,13 @@ class CalendarViewModel @Inject constructor(
     val messages = messageChannel.receiveAsFlow()
 
     val state: StateFlow<CalendarUiState> = combine(
-        month, stays.observeAll(), visits.observeAll(), editorCatalog.data, selection,
-    ) { m, all, allVisits, editor, sel ->
-        // Laufende Reisen (Basis ohne Ende) werden bis zur nächsten Basis bzw. bis heute aufgelöst.
-        val resolved = Timeline.resolve(all, editor.homebases, today)
+        month, timelineCache.snapshot, selection,
+    ) { m, snap, sel ->
+        val all = snap.stays
+        val allVisits = snap.visits
+        val editor = snap.editor
+        // Laufende Reisen sind im gemeinsamen Zwischenspeicher bereits aufgelöst.
+        val resolved = snap.resolved
         val summaries = DayInsights.summaries(m.atDay(1), m.atEndOfMonth(), me, resolved, editor.rank)
         val foreign = io.github.mario2712.locus.domain.countrypoints.ForeignDays.of(
             m.atDay(1), m.atEndOfMonth(), me, resolved, allVisits, editor.placesById, editor.typesById,

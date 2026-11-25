@@ -73,18 +73,22 @@ class MapViewModel @Inject constructor(
     visits: VisitRepository,
     wishes: WishRepository,
     editorCatalog: EditorCatalog,
+    timelineCache: io.github.mario2712.locus.ui.common.TimelineCache,
     private val calculator: CountryPointsCalculator,
 ) : ViewModel() {
     private val today = LocalDate.now(clock)
     private val filter = MutableStateFlow(MapFilter())
 
     val state: StateFlow<MapUiState> = combine(
-        stays.observeAll(), visits.observeAll(), wishes.observeAll(), editorCatalog.data, filter,
-    ) { s, v, w, editor, f ->
+        timelineCache.snapshot, wishes.observeAll(), filter,
+    ) { snap, w, f ->
+        val s = snap.stays
+        val v = snap.visits
+        val editor = snap.editor
         val a = editor.persons.firstOrNull { it.isMe } ?: return@combine MapUiState(filter = f, editor = editor)
         val b = editor.persons.firstOrNull { !it.isMe }
         val home = editor.homebases
-        val resolvedAll = Timeline.resolve(s, home, today)
+        val resolvedAll = snap.resolved
         val years = (resolvedAll.map { it.startDate.year } + v.map { it.date.year }).distinct().sortedDescending()
 
         val (resolved, yearVisits) = if (f.year == null) {

@@ -36,10 +36,27 @@ object PlaceStats {
         resolved: List<Stay>,
         visits: List<Visit>,
         childPlaceIds: Set<String> = emptySet(),
-    ): PlaceRecord {
-        val ids = childPlaceIds + placeId
-        val stays = resolved.filter { it.placeId in ids && person in it.participants && it.precision == DatePrecision.DAY }
-        val ownVisits = visits.filter { it.placeId in ids && person in it.participants }
+    ): PlaceRecord = records(mapOf(placeId to childPlaceIds), person, resolved, visits).getValue(placeId)
+
+    /**
+     * Orts-Akten für viele Orte auf einmal ([targets]: Ort → zugehörige Örtlichkeiten). Stationen und Besuche
+     * werden nur einmal nach Ort gruppiert – bei hunderten Orten um Größenordnungen schneller als einzeln.
+     */
+    fun records(
+        targets: Map<String, Set<String>>,
+        person: PersonId,
+        resolved: List<Stay>,
+        visits: List<Visit>,
+    ): Map<String, PlaceRecord> {
+        val staysByPlace = resolved.filter { person in it.participants && it.precision == DatePrecision.DAY }.groupBy { it.placeId }
+        val visitsByPlace = visits.filter { person in it.participants }.groupBy { it.placeId }
+        return targets.mapValues { (placeId, children) ->
+            val ids = children + placeId
+            build(placeId, ids.flatMap { staysByPlace[it].orEmpty() }, ids.flatMap { visitsByPlace[it].orEmpty() })
+        }
+    }
+
+    private fun build(placeId: String, stays: List<Stay>, ownVisits: List<Visit>): PlaceRecord {
         val stayDayTypes = stays.flatMap { stay ->
             generateSequence(stay.startDate) { it.plusDays(1) }.takeWhile { !it.isAfter(stay.endDate) }.map { it to stay.typeId }.toList()
         }

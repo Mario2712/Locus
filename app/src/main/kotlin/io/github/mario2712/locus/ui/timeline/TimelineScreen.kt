@@ -56,6 +56,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.time.Clock
 import java.time.LocalDate
@@ -81,13 +82,15 @@ class TimelineViewModel @Inject constructor(
     stays: StayRepository,
     visits: VisitRepository,
     editorCatalog: EditorCatalog,
+    timelineCache: io.github.mario2712.locus.ui.common.TimelineCache,
 ) : ViewModel() {
     private val today = LocalDate.now(clock)
     private val filter = MutableStateFlow(TimelineFilter())
 
     // Tage nur bei Datenänderungen neu aufbauen, nicht bei jeder Filtereingabe.
-    private val allDays = combine(stays.observeAll(), visits.observeAll(), editorCatalog.data) { s, v, editor ->
-        val days = TimelineDays.build(Timeline.resolve(s, editor.homebases, today), v, Defaults.ME, today)
+    private val allDays = timelineCache.snapshot.map { snap ->
+        val editor = snap.editor
+        val days = TimelineDays.build(snap.resolved, snap.visits, Defaults.ME, today)
         Triple(days, editor, TimelineFilter.usage(days))
     }.flowOn(Dispatchers.Default)
 

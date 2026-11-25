@@ -149,6 +149,7 @@ Ziel: Ein Tag ist in **1–3 Tipps** erfasst, ohne Uhrzeiten.
 14. **Daten**: JSON-Export/-Import und automatisches lokales Backup.
 
 ### Später
+- **Vor dem Release (vorgemerkt):** Kalender lädt nur den sichtbaren Monat (statt aller Einträge); Baseline Profile für schnelleren Start
 - „Neues Land!“-Moment
 - Wunschliste mit Nähe-Hinweis
 - Regionen-Sammlungen
