@@ -1,11 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Benachrichtigungs-Symbol: L-Route, einfarbig weiß (Android färbt es ein). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
-    android:autoMirrored="false"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M12,2C8.13,2 5,5.13 5,9c0,5.25 7,13 7,13s7,-7.75 7,-13c0,-3.87 -3.13,-7 -7,-7zM12,11.5c-1.38,0 -2.5,-1.12 -2.5,-2.5s1.12,-2.5 2.5,-2.5 2.5,1.12 2.5,2.5 -1.12,2.5 -2.5,2.5z" />
+    android:viewportWidth="62"
+    android:viewportHeight="62">
+    <group
+        android:translateX="-25.75"
+        android:translateY="-21.25">
+        <path
+            android:pathData="M42,30 V68 Q42,74 48,74 H64"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="7"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+        <path
+            android:pathData="M36.5,30 a5.5,5.5 0,1 0,11 0 a5.5,5.5 0,1 0,-11 0"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeWidth="4" />
+        <path
+            android:fillType="evenOdd"
+            android:pathData="M70,58c-5,0 -9,3.9 -9,8.8C61,73 70,82 70,82s9,-9 9,-15.2C79,61.9 75,58 70,58z M66.8,66.6 a3.2,3.2 0,1 0,6.4 0 a3.2,3.2 0,1 0,-6.4 0"
+            android:fillColor="#FFFFFFFF" />
+    </group>
 </vector>
