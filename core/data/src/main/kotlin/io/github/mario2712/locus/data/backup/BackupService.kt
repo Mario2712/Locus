@@ -35,7 +35,8 @@ class BackupService @Inject constructor(
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     private val dao get() = db.backupDao()
 
-    suspend fun exportJson(): String = json.encodeToString(BackupFile.serializer(), export())
+    suspend fun exportJson(settings: SettingsDto? = null): String =
+        json.encodeToString(BackupFile.serializer(), export().copy(settings = settings))
 
     suspend fun export(): BackupFile = db.withTransaction {
         BackupFile(

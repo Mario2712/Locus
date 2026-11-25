@@ -190,6 +190,8 @@
     <string name="day_reorder">⇅ Reihenfolge ändern</string>
     <string name="day_reorder_done">Fertig</string>
     <string name="day_reorder_hint">Am ☰ ziehen, um die Reihenfolge der Stationen dieses Tages zu ändern.</string>
+    <string name="data_import_settings">Einstellungen übernehmen</string>
+    <string name="data_import_settings_hint">Standardwerte (Personen, Verkehrsmittel, Sortierung, „lückenlos seit“), Abend-Erinnerung und Auto-Backup. Ältere Sicherungen enthalten keine Einstellungen.</string>
     <string name="crashlog_title">Fehlerprotokoll</string>
     <string name="crashlog_empty">Keine Abstürze aufgezeichnet.</string>
     <string name="crashlog_count">%1$d Einträge</string>

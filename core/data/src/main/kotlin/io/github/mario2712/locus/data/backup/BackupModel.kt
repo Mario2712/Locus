@@ -25,11 +25,26 @@ data class BackupFile(
     val wishes: List<WishDto> = emptyList(),
     val patternRules: List<PatternRuleDto> = emptyList(),
     val dayTemplates: List<DayTemplateDto> = emptyList(),
+    /** Geräteeinstellungen (Standardwerte, Erinnerung, Auto-Backup) – optional, ab Schema 5. */
+    val settings: SettingsDto? = null,
 ) {
     companion object {
         const val FORMAT = "locus-backup"
     }
 }
+
+/** Einstellungen, die beim Umzug auf ein anderes Gerät bzw. eine andere App-Variante mitkommen. */
+@Serializable
+data class SettingsDto(
+    val prefillTransport: Boolean = true,
+    val dailyParticipants: List<String> = emptyList(),
+    val tripParticipants: List<String> = emptyList(),
+    val documentedSinceYear: Int = 2014,
+    val sortByUsage: Boolean = false,
+    val reminderEnabled: Boolean = true,
+    val reminderMinutes: Int = 20 * 60 + 30,
+    val autoBackup: Boolean = true,
+)
 
 @Serializable
 data class MetaDto(val createdAt: Long, val updatedAt: Long, val deleted: Boolean, val originDevice: String)

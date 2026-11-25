@@ -31,22 +31,59 @@ class BackupManager @Inject constructor(
     fun suggestedFileName(): String =
         "locus-backup-" + LocalDateTime.now(clock).format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm")) + ".json"
 
+    /** Aktuelle Einstellungen für die Sicherung. */
+    private suspend fun settingsDto(): io.github.mario2712.locus.data.backup.SettingsDto {
+        val d = settings.observeEntryDefaults().first()
+        val r = settings.observeReminder().first()
+        val b = settings.observeBackup().first()
+        return io.github.mario2712.locus.data.backup.SettingsDto(
+            prefillTransport = d.prefillTransport,
+            dailyParticipants = d.dailyParticipants.map { it.value },
+            tripParticipants = d.tripParticipants.map { it.value },
+            documentedSinceYear = d.documentedSinceYear,
+            sortByUsage = d.sortByUsage,
+            reminderEnabled = r.enabled,
+            reminderMinutes = r.time.hour * 60 + r.time.minute,
+            autoBackup = b.autoBackup,
+        )
+    }
+
+    /** Übernimmt Einstellungen aus einer Sicherung. */
+    private suspend fun applySettings(s: io.github.mario2712.locus.data.backup.SettingsDto) {
+        val current = settings.observeEntryDefaults().first()
+        settings.setEntryDefaults(
+            current.copy(
+                prefillTransport = s.prefillTransport,
+                dailyParticipants = s.dailyParticipants.map(io.github.mario2712.locus.domain.model::PersonId).toSet().ifEmpty { current.dailyParticipants },
+                tripParticipants = s.tripParticipants.map(io.github.mario2712.locus.domain.model::PersonId).toSet().ifEmpty { current.tripParticipants },
+                documentedSinceYear = s.documentedSinceYear,
+                sortByUsage = s.sortByUsage,
+            ),
+        )
+        settings.setReminder(io.github.mario2712.locus.domain.model.ReminderSettings(s.reminderEnabled, java.time.LocalTime.of(s.reminderMinutes / 60, s.reminderMinutes % 60)))
+        settings.setBackup(settings.observeBackup().first().copy(autoBackup = s.autoBackup))
+    }
+
     suspend fun exportTo(uri: Uri) = withContext(Dispatchers.IO) {
-        val json = service.exportJson()
+        val json = service.exportJson(settingsDto())
         context.contentResolver.openOutputStream(uri, "wt")?.use { it.write(json.toByteArray()) }
             ?: error("Datei kann nicht geschrieben werden")
         markBackedUp()
     }
 
-    suspend fun importFrom(uri: Uri): ImportResult = withContext(Dispatchers.IO) {
+    /** Import; mit [withSettings] werden auch die mitgesicherten Einstellungen übernommen. */
+    suspend fun importFrom(uri: Uri, withSettings: Boolean = true): ImportResult = withContext(Dispatchers.IO) {
         val text = context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
             ?: error("Datei kann nicht gelesen werden")
-        service.importJson(text)
+        val file = service.parse(text)
+        val result = service.import(file)
+        if (withSettings) file.settings?.let { applySettings(it) }
+        result
     }
 
     /** Schreibt eine Sicherung nach „Download/Locus“ und behält die neuesten [keep] Dateien. */
     suspend fun backupToDownloads(keep: Int = 5): String = withContext(Dispatchers.IO) {
-        val json = service.exportJson()
+        val json = service.exportJson(settingsDto())
         val name = suggestedFileName()
         val resolver = context.contentResolver
         val values = ContentValues().apply {

@@ -74,7 +74,9 @@ class DataViewModel @Inject constructor(
 
     fun backupNow() = run { DataMessage.Saved(backups.backupToDownloads()) }
     fun exportTo(uri: Uri) = run { backups.exportTo(uri); DataMessage.Saved(null) }
-    fun importFrom(uri: Uri) = run { backups.importFrom(uri).let { DataMessage.Imported(it.added, it.updated, it.unchanged) } }
+    fun importFrom(uri: Uri, withSettings: Boolean) = run {
+        backups.importFrom(uri, withSettings).let { DataMessage.Imported(it.added, it.updated, it.unchanged) }
+    }
     fun setAutoBackup(enabled: Boolean) = viewModelScope.launch { settings.setBackup(backup.value.copy(autoBackup = enabled)) }
     fun dismiss() { message.value = null }
 }
@@ -126,11 +128,18 @@ fun DataScreen(onBack: () -> Unit, viewModel: DataViewModel = hiltViewModel()) {
     }
 
     confirmImport?.let { uri ->
+        var withSettings by remember { mutableStateOf(true) }
         AlertDialog(
             onDismissRequest = { confirmImport = null },
             title = { Text(stringResource(R.string.data_import)) },
-            text = { Text(stringResource(R.string.data_import_confirm)) },
-            confirmButton = { TextButton(onClick = { viewModel.importFrom(uri); confirmImport = null }) { Text(stringResource(R.string.data_import_go)) } },
+            text = {
+                androidx.compose.foundation.layout.Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.data_import_confirm))
+                    SwitchRow(stringResource(R.string.data_import_settings), withSettings) { withSettings = it }
+                    Text(stringResource(R.string.data_import_settings_hint), style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
+                }
+            },
+            confirmButton = { TextButton(onClick = { viewModel.importFrom(uri, withSettings); confirmImport = null }) { Text(stringResource(R.string.data_import_go)) } },
             dismissButton = { TextButton(onClick = { confirmImport = null }) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
