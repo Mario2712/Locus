@@ -60,6 +60,7 @@ data class TimelineFilter(
             val parent = place.parentPlaceId?.let(places::get)
             return listOfNotNull(place.name, place.alias, place.cityName, parent?.name, parent?.alias).any { it.lowercase().contains(q) }
         }
+        fun noteMatches(note: String?) = note != null && note.lowercase().contains(q)
         return days.mapNotNull { day ->
             if (from != null && day.date < from) return@mapNotNull null
             if (to != null && day.date > to) return@mapNotNull null
@@ -71,7 +72,9 @@ data class TimelineFilter(
             val matches = (stays.isNotEmpty() || visits.isNotEmpty()) &&
                 (stayTypeIds.isEmpty() || stays.any { it.typeId in stayTypeIds }) &&
                 (categoryIds.isEmpty() || visits.any { v -> v.categoryIds.any { it in categoryIds } }) &&
-                (q.isEmpty() || stays.any { placeMatches(it.placeId) } || visits.any { placeMatches(it.placeId) }) &&
+                // Freitext: Ort (inkl. Stadt) oder Notiz, z. B. der Filmtitel beim Kinobesuch
+                (q.isEmpty() || stays.any { placeMatches(it.placeId) || noteMatches(it.note) } ||
+                    visits.any { placeMatches(it.placeId) || noteMatches(it.note) }) &&
                 (person == null || stays.any { person in it.participants } || visits.any { person in it.participants })
             filtered.takeIf { matches }
         }

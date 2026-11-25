@@ -331,6 +331,19 @@ private fun SheetLabel(text: String) {
     Text(text, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
 }
 
+/** Notiz eingerückt und kursiv, damit Filmtitel & Co. in der Timeline sichtbar sind. */
+@Composable
+private fun NoteLine(note: String) {
+    Text(
+        "   „${note.trim()}“",
+        style = MaterialTheme.typography.bodySmall,
+        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 2,
+        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+    )
+}
+
 /** Eine Zeile pro Tag: Datum, Kette (Basis ▸ Stationen) und Besuche. */
 @Composable
 fun TimelineDayRow(day: TimelineDay, editor: EditorData, label: String, onClick: () -> Unit) {
@@ -360,6 +373,7 @@ fun TimelineDayRow(day: TimelineDay, editor: EditorData, label: String, onClick:
                     ).joinToString(" "),
                 )
             }
+            stay.note?.takeIf { it.isNotBlank() }?.let { NoteLine(it) }
         }
         day.visits.forEach { visit ->
             Text(
@@ -367,6 +381,7 @@ fun TimelineDayRow(day: TimelineDay, editor: EditorData, label: String, onClick:
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            visit.note?.takeIf { it.isNotBlank() }?.let { NoteLine(it) }
         }
     }
 }

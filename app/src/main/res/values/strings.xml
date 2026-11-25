@@ -286,7 +286,7 @@
     <string name="timeline_filter_types">Arten</string>
     <string name="timeline_filter_categories">Kategorien</string>
     <string name="timeline_filter_persons">Personen</string>
-    <string name="timeline_filter_place">Ort suchen</string>
+    <string name="timeline_filter_place">Ort oder Notiz suchen</string>
     <string name="timeline_filter_only_work">Nur Arbeit</string>
     <string name="timeline_filter_count">%1$d von %2$d Tagen</string>
     <string name="timeline_filter_reset">Zurücksetzen</string>

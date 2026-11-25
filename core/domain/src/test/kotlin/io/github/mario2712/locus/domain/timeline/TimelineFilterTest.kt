@@ -24,7 +24,7 @@ class TimelineFilterTest {
     ).associateBy { it.id }
     private val days = listOf(
         TimelineDay(d("2026-03-02"), null, listOf(Stay("o", "salzburg", StayTypeIds.OFFICE, d("2026-03-02"), participants = setOf(me))),
-            listOf(Visit("a", "arzt", VisitCategoryIds.HEALTH, d("2026-03-02"), participants = setOf(me)))),
+            listOf(Visit("a", "arzt", VisitCategoryIds.HEALTH, d("2026-03-02"), participants = setOf(me), note = "Kontrolle Knie"))),
         TimelineDay(d("2026-03-03"), null, listOf(Stay("h", "hallein", StayTypeIds.HOMEOFFICE, d("2026-03-03"), participants = setOf(me))), emptyList()),
         TimelineDay(d("2026-03-07"), null, listOf(Stay("x", "linz", StayTypeIds.EXCURSION, d("2026-03-07"), participants = setOf(me, jo))), emptyList()),
     )
@@ -48,6 +48,7 @@ class TimelineFilterTest {
         assertEquals(listOf(VisitCategoryIds.HEALTH to 1), cats)
         assertEquals(listOf(2, 3), dates(TimelineFilter(query = "hallein"))) // Arzt liegt in Hallein
         assertEquals(listOf(7), dates(TimelineFilter(person = jo)))
+        assertEquals(listOf(2), dates(TimelineFilter(query = "knie"))) // Notiz
         assertEquals(listOf(3, 7), dates(TimelineFilter(from = d("2026-03-03"), to = d("2026-03-31"))))
     }
 }
