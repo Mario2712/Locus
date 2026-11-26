@@ -477,6 +477,26 @@
     <string name="place_link_osm">Mit OSM verknüpfen</string>
     <string name="place_make_homebase">Als Homebase festlegen</string>
     <string name="place_record">Orts-Akte</string>
+    <string name="place_figures">Kennzahlen</string>
+    <string name="place_figures_interval">Ø alle %1$s Tage</string>
+    <string name="place_figures_daily">fast täglich</string>
+    <string name="place_figures_last30">letzte 30 Tage: %1$d×</string>
+    <string name="place_figures_with">Mit %1$s: %2$d von %3$d Tagen</string>
+    <string name="place_stays">Aufenthalte</string>
+    <plurals name="place_stays_count">
+        <item quantity="one">%1$d Aufenthalt</item>
+        <item quantity="other">%1$d Aufenthalte</item>
+    </plurals>
+    <plurals name="place_nights">
+        <item quantity="one">%1$d Nacht</item>
+        <item quantity="other">%1$d Nächte</item>
+    </plurals>
+    <plurals name="place_days">
+        <item quantity="one">%1$d Tag</item>
+        <item quantity="other">%1$d Tage</item>
+    </plurals>
+    <string name="place_show_all">Alle %1$d anzeigen</string>
+    <string name="place_show_less">Weniger anzeigen</string>
     <string name="place_record_days">An %1$d Tagen hier</string>
     <string name="place_record_range">erstmals %1$s · zuletzt %2$s</string>
     <string name="place_record_visits">Besuche: %1$d</string>

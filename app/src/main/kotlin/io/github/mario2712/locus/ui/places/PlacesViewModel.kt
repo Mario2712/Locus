@@ -96,6 +96,7 @@ data class PlaceDetailState(
     val place: Place? = null,
     val record: PlaceRecord? = null,
     val editor: EditorData = EditorData(),
+    val today: LocalDate = LocalDate.now(),
 )
 
 @HiltViewModel
@@ -115,7 +116,7 @@ class PlaceDetailViewModel @Inject constructor(
         val place = editor.placesById[placeId]
         val resolved = io.github.mario2712.locus.domain.timeline.ImplicitHome.augment(Timeline.resolve(s, editor.homebases, today), v, Defaults.ME, editor.homebases, today)
         val children = editor.places.filter { it.parentPlaceId == placeId }.map { it.id }.toSet()
-        PlaceDetailState(place, place?.let { PlaceStats.record(it.id, Defaults.ME, resolved, v, children) }, editor)
+        PlaceDetailState(place, place?.let { PlaceStats.record(it.id, Defaults.ME, resolved, v, children, editor.homebases) }, editor, today)
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), PlaceDetailState())
 
     fun save(place: Place) = viewModelScope.launch { places.upsert(place) }

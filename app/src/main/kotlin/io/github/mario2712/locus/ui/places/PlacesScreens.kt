@@ -318,11 +318,16 @@ fun PlaceDetailScreen(
                         }
                     }
                 }
+                if (record.totalDays > 0) {
+                    PlaceFiguresCard(record, state.editor, state.today)
+                }
+                if (record.stayPeriods.isNotEmpty()) {
+                    PlaceStaysCard(record, onOpenDay)
+                }
                 if (record.dates.isNotEmpty()) {
                     SectionCard(stringResource(R.string.place_record_dates)) {
-                        record.dates.take(50).forEach { date ->
-                            Text(Format.longDate(date), Modifier.fillMaxWidth().clickable { onOpenDay(date) }.padding(vertical = 4.dp))
-                        }
+                        PlaceHeatmap(record, onOpenDay)
+                        PlaceDaysByYear(record, onOpenDay)
                     }
                 }
             }
