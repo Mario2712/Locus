@@ -62,6 +62,7 @@ class CalendarViewModel @Inject constructor(
     private val editorCatalog: EditorCatalog,
     timelineCache: io.github.mario2712.locus.ui.common.TimelineCache,
     private val editing: StationActions,
+    private val safety: io.github.mario2712.locus.backup.SafetyBackups,
 ) : ViewModel() {
 
     val today: LocalDate = LocalDate.now(clock)
@@ -130,6 +131,10 @@ class CalendarViewModel @Inject constructor(
     }
 
     fun fill(range: ClosedRange<LocalDate>, draft: FillDraft) = viewModelScope.launch {
+        val days = java.time.temporal.ChronoUnit.DAYS.between(range.start, range.endInclusive) + 1
+        if (days >= io.github.mario2712.locus.backup.SafetyBackups.FILL_MIN_DAYS) {
+            safety.create(io.github.mario2712.locus.backup.SafetyBackups.Reason.FILL)
+        }
         messageChannel.send(editing.undo.record { editing.fill(range.start, range.endInclusive, me, draft) })
         clearSelection()
     }

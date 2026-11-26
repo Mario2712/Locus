@@ -51,6 +51,7 @@ class PlacesViewModel @Inject constructor(
     editorCatalog: EditorCatalog,
     private val cleanup: io.github.mario2712.locus.places.PlaceCleanup,
     timelineCache: io.github.mario2712.locus.ui.common.TimelineCache,
+    private val safety: io.github.mario2712.locus.backup.SafetyBackups,
 ) : ViewModel() {
     private val today = LocalDate.now(clock)
 
@@ -58,7 +59,10 @@ class PlacesViewModel @Inject constructor(
     val unused: StateFlow<Set<String>> = cleanup.observeUnused()
         .flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), emptySet())
 
-    fun deleteUnused() = viewModelScope.launch { cleanup.deleteUnused() }
+    fun deleteUnused() = viewModelScope.launch {
+        safety.create(io.github.mario2712.locus.backup.SafetyBackups.Reason.CLEANUP)
+        cleanup.deleteUnused()
+    }
 
     /** Unbenutzte Orte als Listeneinträge – auch reine Länder-Orte, die in den Reitern nicht erscheinen. */
     val unusedItems: StateFlow<List<PlaceListItem>> = combine(cleanup.observeUnused(), editorCatalog.data) { ids, editor ->

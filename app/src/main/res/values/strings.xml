@@ -577,6 +577,31 @@
     <string name="stats_heatmap">Tag für Tag</string>
 
     <!-- Daten & Sicherung -->
+    <string name="trash_title">Papierkorb</string>
+    <string name="trash_summary_empty">Keine gelöschten Einträge in den letzten 30 Tagen.</string>
+    <plurals name="trash_summary">
+        <item quantity="one">%1$d gelöschter Eintrag aus den letzten 30 Tagen.</item>
+        <item quantity="other">%1$d gelöschte Einträge aus den letzten 30 Tagen.</item>
+    </plurals>
+    <string name="trash_open">Papierkorb öffnen</string>
+    <string name="trash_hint">Gelöschte Stationen und Besuche bleiben 30 Tage hier und lassen sich einzeln wiederherstellen.</string>
+    <string name="trash_deleted_on">Gelöscht am %1$s</string>
+    <string name="trash_stay">Station</string>
+    <string name="trash_visit">Besuch</string>
+    <string name="trash_unknown_place">Unbekannter Ort</string>
+    <string name="trash_restore">Wiederherstellen</string>
+    <string name="trash_restored">Wiederhergestellt: %1$s</string>
+    <string name="safety_title">Sicherheitskopien</string>
+    <string name="safety_hint">Vor einem Import, vor „Zeitraum füllen“ ab 14 Tagen, vor dem Löschen unbenutzter Orte und vor einer Wiederherstellung legt Locus automatisch eine Kopie aller Daten an (die neuesten 5 bleiben, nur auf diesem Gerät).</string>
+    <string name="safety_empty">Noch keine Sicherheitskopie.</string>
+    <string name="safety_reason_import">Vor Import</string>
+    <string name="safety_reason_fill">Vor „Zeitraum füllen“</string>
+    <string name="safety_reason_cleanup">Vor Löschen unbenutzter Orte</string>
+    <string name="safety_reason_restore">Vor Wiederherstellung</string>
+    <string name="safety_restore">Wiederherstellen</string>
+    <string name="safety_restore_title">Stand wiederherstellen?</string>
+    <string name="safety_restore_confirm">Alle Stationen, Besuche, Orte und Vorlagen werden auf den Stand vom %1$s zurückgesetzt. Was du danach eingetragen oder geändert hast, geht verloren. Der aktuelle Stand wird vorher selbst als Sicherheitskopie abgelegt, du kannst also wieder zurück.</string>
+    <string name="safety_restored">Stand vom %1$s wiederhergestellt.</string>
     <string name="data_title">Daten &amp; Sicherung</string>
     <string name="data_backup">Sicherung</string>
     <string name="data_last_backup">Letzte Sicherung: %1$s</string>

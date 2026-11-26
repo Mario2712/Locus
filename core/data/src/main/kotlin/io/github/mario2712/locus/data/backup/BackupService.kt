@@ -108,8 +108,48 @@ class BackupService @Inject constructor(
     suspend fun importJson(text: String): ImportResult = import(parse(text))
 
     /** Führt eine Sicherung zusammen: je Datensatz gewinnt der neuere Stand (`updatedAt`). */
-    suspend fun import(file: BackupFile): ImportResult = db.withTransaction {
-        val counter = Counter()
+    suspend fun import(file: BackupFile): ImportResult = merge(file, force = false)
+
+    /**
+     * Setzt die Datenbank auf den Stand von [file] zurück (Sicherheitskopie): alle Datensätze der
+     * Datei werden mit aktuellem Zeitstempel geschrieben, Datensätze, die erst danach entstanden
+     * sind, werden als gelöscht markiert. So bleibt der Rückweg auch für einen späteren Sync eindeutig.
+     */
+    suspend fun restore(file: BackupFile): ImportResult = db.withTransaction {
+        val now = meta.now()
+        val device = meta.deviceId()
+        fun MetaDto.bump() = copy(updatedAt = now, originDevice = device)
+        fun SyncMeta.gone() = copy(deleted = true, updatedAt = now, originDevice = device)
+        val bumped = file.copy(
+            persons = file.persons.map { it.copy(meta = it.meta.bump()) },
+            stayTypes = file.stayTypes.map { it.copy(meta = it.meta.bump()) },
+            visitCategories = file.visitCategories.map { it.copy(meta = it.meta.bump()) },
+            regionCollections = file.regionCollections.map { it.copy(meta = it.meta.bump()) },
+            places = file.places.map { it.copy(meta = it.meta.bump()) },
+            stays = file.stays.map { it.copy(meta = it.meta.bump()) },
+            visits = file.visits.map { it.copy(meta = it.meta.bump()) },
+            trips = file.trips.map { it.copy(meta = it.meta.bump()) },
+            wishes = file.wishes.map { it.copy(meta = it.meta.bump()) },
+            patternRules = file.patternRules.map { it.copy(meta = it.meta.bump()) },
+            dayTemplates = file.dayTemplates.map { it.copy(meta = it.meta.bump()) },
+        )
+        // Neuere Datensätze, die es im Stand der Datei noch nicht gab, als gelöscht markieren
+        val keep = { ids: List<String> -> ids.toHashSet() }
+        keep(file.persons.map { it.id }).let { ids -> dao.persons().filter { it.id !in ids && !it.meta.deleted }.forEach { dao.upsertPerson(it.copy(meta = it.meta.gone())) } }
+        keep(file.stayTypes.map { it.id }).let { ids -> dao.stayTypes().filter { it.id !in ids && !it.meta.deleted }.forEach { dao.upsertStayType(it.copy(meta = it.meta.gone())) } }
+        keep(file.visitCategories.map { it.id }).let { ids -> dao.visitCategories().filter { it.id !in ids && !it.meta.deleted }.forEach { dao.upsertVisitCategory(it.copy(meta = it.meta.gone())) } }
+        keep(file.places.map { it.id }).let { ids -> dao.places().filter { it.id !in ids && !it.meta.deleted }.forEach { dao.upsertPlace(it.copy(meta = it.meta.gone())) } }
+        keep(file.stays.map { it.id }).let { ids -> dao.stays().map { it.stay }.filter { it.id !in ids && !it.meta.deleted }.forEach { dao.upsertStay(it.copy(meta = it.meta.gone())) } }
+        keep(file.visits.map { it.id }).let { ids -> dao.visits().map { it.visit }.filter { it.id !in ids && !it.meta.deleted }.forEach { dao.upsertVisit(it.copy(meta = it.meta.gone())) } }
+        keep(file.trips.map { it.id }).let { ids -> dao.trips().map { it.trip }.filter { it.id !in ids && !it.meta.deleted }.forEach { dao.upsertTrip(it.copy(meta = it.meta.gone())) } }
+        keep(file.wishes.map { it.id }).let { ids -> dao.wishes().filter { it.id !in ids && !it.meta.deleted }.forEach { dao.upsertWish(it.copy(meta = it.meta.gone())) } }
+        keep(file.patternRules.map { it.id }).let { ids -> dao.patternRules().filter { it.id !in ids && !it.meta.deleted }.forEach { dao.upsertPatternRule(it.copy(meta = it.meta.gone())) } }
+        keep(file.dayTemplates.map { it.id }).let { ids -> dao.dayTemplates().filter { it.id !in ids && !it.meta.deleted }.forEach { dao.upsertDayTemplate(it.copy(meta = it.meta.gone())) } }
+        merge(bumped, force = true)
+    }
+
+    private suspend fun merge(file: BackupFile, force: Boolean): ImportResult = db.withTransaction {
+        val counter = Counter(force)
         file.persons.forEach { d ->
             counter.merge(dao.personUpdated(d.id), d.meta) {
                 dao.upsertPerson(PersonEntity(d.id, d.name, d.colorArgb, d.isMe, d.meta.entity(), d.birthDate?.let(LocalDate::parse)))
@@ -204,7 +244,7 @@ class BackupService @Inject constructor(
         counter.result()
     }
 
-    private class Counter {
+    private class Counter(private val force: Boolean) {
         var added = 0
         var updated = 0
         var unchanged = 0
@@ -212,7 +252,7 @@ class BackupService @Inject constructor(
         suspend fun merge(existingUpdatedAt: Long?, incoming: MetaDto, write: suspend () -> Unit) {
             when {
                 existingUpdatedAt == null -> { write(); added++ }
-                incoming.updatedAt > existingUpdatedAt -> { write(); updated++ }
+                force || incoming.updatedAt > existingUpdatedAt -> { write(); updated++ }
                 else -> unchanged++
             }
         }

@@ -27,6 +27,7 @@ class BackupManager @Inject constructor(
     private val service: BackupService,
     private val settings: SettingsRepository,
     private val clock: Clock,
+    private val safety: SafetyBackups,
 ) {
     fun suggestedFileName(): String =
         "locus-backup-" + LocalDateTime.now(clock).format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm")) + ".json"
@@ -76,6 +77,7 @@ class BackupManager @Inject constructor(
         val text = context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
             ?: error("Datei kann nicht gelesen werden")
         val file = service.parse(text)
+        safety.create(SafetyBackups.Reason.IMPORT)
         val result = service.import(file)
         if (withSettings) file.settings?.let { applySettings(it) }
         result

@@ -103,4 +103,47 @@ class BackupServiceTest : DbTestBase() {
         assertThrows(IllegalArgumentException::class.java) { BackupService(db, meta).parse("""{"hello":"world"}""") }
         assertEquals(BackupService.SCHEMA_VERSION, db.openHelper.readableDatabase.version)
     }
+
+    @Test
+    fun `Wiederherstellen setzt auf den Stand der Kopie zurueck`() = runTest {
+        fill()
+        val service = BackupService(db, meta)
+        val snapshot = service.parse(service.exportJson())
+
+        // Danach: Station geändert, Besuch gelöscht, neue Station angelegt
+        now = 50_000L
+        val stays = RoomStayRepository(db.stayDao(), meta)
+        val visits = RoomVisitRepository(db.visitDao(), meta)
+        stays.upsert(stays.get("s1")!!.copy(note = "geändert"))
+        visits.delete("v1")
+        stays.upsert(Stay("s2", "hallein", StayTypeIds.OFFICE, d("2026-11-18")))
+
+        now = 60_000L
+        service.restore(snapshot)
+
+        assertNull(stays.get("s1")!!.note)
+        assertEquals("museum", visits.get("v1")!!.placeId)
+        assertNull(stays.get("s2"))
+        // Alle wiederhergestellten Datensätze tragen den neuen Zeitstempel (für einen späteren Sync)
+        assertEquals(60_000L, db.backupDao().stayUpdated("s1"))
+        assertEquals(60_000L, db.backupDao().stayUpdated("s2"))
+    }
+
+    @Test
+    fun `Papierkorb listet geloeschte Eintraege und stellt sie samt Ort wieder her`() = runTest {
+        fill()
+        val trash = io.github.mario2712.locus.data.trash.TrashStore(db, meta)
+        now = 50_000L
+        RoomVisitRepository(db.visitDao(), meta).delete("v1")
+        RoomPlaceRepository(db.placeDao(), meta).delete("museum")
+
+        val items = trash.observe().first()
+        assertEquals(listOf("v1"), items.map { it.id })
+        assertEquals(50_000L, items.single().deletedAtMillis)
+
+        trash.restore(items.single())
+        assertEquals("v1", RoomVisitRepository(db.visitDao(), meta).get("v1")!!.id)
+        assertEquals("Museum", RoomPlaceRepository(db.placeDao(), meta).get("museum")!!.name)
+        assertEquals(emptyList<Any>(), trash.observe().first())
+    }
 }

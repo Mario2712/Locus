@@ -70,4 +70,16 @@ interface BackupDao {
     @Upsert suspend fun upsertTrip(e: TripEntity)
     @Query("DELETE FROM trip_person WHERE trip_id = :id") suspend fun clearTripPersons(id: String)
     @Insert suspend fun insertTripPersons(p: List<TripPersonEntity>)
+
+    // Papierkorb: gelöschte Stationen und Besuche (zuletzt gelöschte zuerst)
+    @Transaction @Query("SELECT * FROM stay WHERE deleted = 1 AND updated_at >= :since ORDER BY updated_at DESC")
+    fun observeDeletedStays(since: Long): kotlinx.coroutines.flow.Flow<List<StayWithPersons>>
+    @Transaction @Query("SELECT * FROM visit WHERE deleted = 1 AND updated_at >= :since ORDER BY updated_at DESC")
+    fun observeDeletedVisits(since: Long): kotlinx.coroutines.flow.Flow<List<VisitWithPersons>>
+    @Query("UPDATE stay SET deleted = 0, updated_at = :now, origin_device = :device WHERE id = :id")
+    suspend fun undeleteStay(id: String, now: Long, device: String)
+    @Query("UPDATE visit SET deleted = 0, updated_at = :now, origin_device = :device WHERE id = :id")
+    suspend fun undeleteVisit(id: String, now: Long, device: String)
+    @Query("UPDATE place SET deleted = 0, updated_at = :now, origin_device = :device WHERE id = :id AND deleted = 1")
+    suspend fun undeletePlace(id: String, now: Long, device: String)
 }

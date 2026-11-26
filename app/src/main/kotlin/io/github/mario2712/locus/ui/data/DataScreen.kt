@@ -39,6 +39,7 @@ import io.github.mario2712.locus.ui.places.BackScaffold
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -52,13 +53,19 @@ sealed interface DataMessage {
     data class Saved(val fileName: String?) : DataMessage
     data class Imported(val added: Int, val updated: Int, val unchanged: Int) : DataMessage
     data class Failed(val reason: String) : DataMessage
+    data class Restored(val atMillis: Long) : DataMessage
 }
 
 @HiltViewModel
 class DataViewModel @Inject constructor(
     private val backups: BackupManager,
     private val settings: SettingsRepository,
+    private val safety: io.github.mario2712.locus.backup.SafetyBackups,
+    trash: io.github.mario2712.locus.data.trash.TrashStore,
 ) : ViewModel() {
+    val snapshots = safety.snapshots
+    val trashCount: StateFlow<Int> = trash.observe().map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
     val backup: StateFlow<BackupSettings> = settings.observeBackup()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(60_000), BackupSettings())
     val message = MutableStateFlow<DataMessage?>(null)
@@ -77,13 +84,20 @@ class DataViewModel @Inject constructor(
     fun importFrom(uri: Uri, withSettings: Boolean) = run {
         backups.importFrom(uri, withSettings).let { DataMessage.Imported(it.added, it.updated, it.unchanged) }
     }
+    fun restore(snapshot: io.github.mario2712.locus.backup.SafetyBackups.Snapshot) = run {
+        safety.restore(snapshot)
+        DataMessage.Restored(snapshot.createdAtMillis)
+    }
     fun setAutoBackup(enabled: Boolean) = viewModelScope.launch { settings.setBackup(backup.value.copy(autoBackup = enabled)) }
     fun dismiss() { message.value = null }
 }
 
 @Composable
-fun DataScreen(onBack: () -> Unit, viewModel: DataViewModel = hiltViewModel()) {
+fun DataScreen(onBack: () -> Unit, onOpenTrash: () -> Unit, viewModel: DataViewModel = hiltViewModel()) {
     val backup by viewModel.backup.collectAsStateWithLifecycle()
+    val snapshots by viewModel.snapshots.collectAsStateWithLifecycle()
+    val trashCount by viewModel.trashCount.collectAsStateWithLifecycle()
+    var confirmRestore by remember { mutableStateOf<io.github.mario2712.locus.backup.SafetyBackups.Snapshot?>(null) }
     val message by viewModel.message.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     var confirmImport by remember { mutableStateOf<Uri?>(null) }
@@ -113,6 +127,31 @@ fun DataScreen(onBack: () -> Unit, viewModel: DataViewModel = hiltViewModel()) {
                 }
                 Text(stringResource(R.string.data_backup_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            SectionCard(stringResource(R.string.trash_title)) {
+                Text(
+                    if (trashCount == 0) stringResource(R.string.trash_summary_empty)
+                    else androidx.compose.ui.res.pluralStringResource(R.plurals.trash_summary, trashCount, trashCount),
+                )
+                OutlinedButton(onClick = onOpenTrash, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.trash_open)) }
+                Text(stringResource(R.string.trash_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
+            SectionCard(stringResource(R.string.safety_title)) {
+                if (snapshots.isEmpty()) Text(stringResource(R.string.safety_empty))
+                snapshots.forEach { snap ->
+                    androidx.compose.foundation.layout.Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(stampText(snap.createdAtMillis), style = MaterialTheme.typography.bodyLarge)
+                            Text(reasonText(snap.reason), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        TextButton(enabled = !busy, onClick = { confirmRestore = snap }) { Text(stringResource(R.string.safety_restore)) }
+                    }
+                }
+                Text(stringResource(R.string.safety_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             CrashLogCard()
 
             SectionCard(stringResource(R.string.data_transfer)) {
@@ -127,6 +166,15 @@ fun DataScreen(onBack: () -> Unit, viewModel: DataViewModel = hiltViewModel()) {
         }
     }
 
+    confirmRestore?.let { snap ->
+        AlertDialog(
+            onDismissRequest = { confirmRestore = null },
+            title = { Text(stringResource(R.string.safety_restore_title)) },
+            text = { Text(stringResource(R.string.safety_restore_confirm, stampText(snap.createdAtMillis))) },
+            confirmButton = { TextButton(onClick = { viewModel.restore(snap); confirmRestore = null }) { Text(stringResource(R.string.safety_restore)) } },
+            dismissButton = { TextButton(onClick = { confirmRestore = null }) { Text(stringResource(R.string.action_cancel)) } },
+        )
+    }
     confirmImport?.let { uri ->
         var withSettings by remember { mutableStateOf(true) }
         AlertDialog(
@@ -152,6 +200,7 @@ fun DataScreen(onBack: () -> Unit, viewModel: DataViewModel = hiltViewModel()) {
                         is DataMessage.Saved -> m.fileName?.let { stringResource(R.string.data_saved_downloads, it) } ?: stringResource(R.string.data_saved)
                         is DataMessage.Imported -> stringResource(R.string.data_imported, m.added, m.updated, m.unchanged)
                         is DataMessage.Failed -> stringResource(R.string.data_failed, m.reason)
+                        is DataMessage.Restored -> stringResource(R.string.safety_restored, stampText(m.atMillis))
                     },
                 )
             },
@@ -159,6 +208,19 @@ fun DataScreen(onBack: () -> Unit, viewModel: DataViewModel = hiltViewModel()) {
         )
     }
 }
+
+private fun stampText(millis: Long): String =
+    DateTimeFormatter.ofPattern("dd.MM.yyyy, HH:mm", Locale.GERMAN).format(Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()))
+
+@Composable
+private fun reasonText(reason: io.github.mario2712.locus.backup.SafetyBackups.Reason): String = stringResource(
+    when (reason) {
+        io.github.mario2712.locus.backup.SafetyBackups.Reason.IMPORT -> R.string.safety_reason_import
+        io.github.mario2712.locus.backup.SafetyBackups.Reason.FILL -> R.string.safety_reason_fill
+        io.github.mario2712.locus.backup.SafetyBackups.Reason.CLEANUP -> R.string.safety_reason_cleanup
+        io.github.mario2712.locus.backup.SafetyBackups.Reason.RESTORE -> R.string.safety_reason_restore
+    },
+)
 
 /** Fehlerprotokoll: Anzahl, Teilen (als Text, z. B. per Mail) und Löschen. */
 @androidx.compose.runtime.Composable

@@ -171,7 +171,15 @@ fun LocusApp() {
             composable<io.github.mario2712.locus.ui.navigation.YearReviewRoute> {
                 io.github.mario2712.locus.ui.review.YearReviewScreen(onClose = { navController.popBackStack() })
             }
-            composable<DataRoute> { DataScreen(onBack = { navController.popBackStack() }) }
+            composable<DataRoute> {
+                DataScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenTrash = { navController.navigate(io.github.mario2712.locus.ui.navigation.TrashRoute) },
+                )
+            }
+            composable<io.github.mario2712.locus.ui.navigation.TrashRoute> {
+                io.github.mario2712.locus.ui.data.TrashScreen(onBack = { navController.popBackStack() })
+            }
             composable<ProfileRoute> { ProfileScreen(onBack = { navController.popBackStack() }) }
             composable<TimelineRoute> { TimelineScreen(onBack = { navController.popBackStack() }, onOpenDay = openDay) }
             composable<TripsRoute> {
