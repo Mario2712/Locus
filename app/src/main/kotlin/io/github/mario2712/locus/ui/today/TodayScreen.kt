@@ -44,6 +44,7 @@ import io.github.mario2712.locus.domain.reference.ReferenceData
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.foundation.clickable
 import io.github.mario2712.locus.ui.common.TypeDot
+import io.github.mario2712.locus.ui.common.showMessage
 import io.github.mario2712.locus.ui.common.text
 import java.time.format.TextStyle
 import java.util.Locale
@@ -59,7 +60,7 @@ fun TodayScreen(
     val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
-        viewModel.messages.collect { snackbar.showSnackbar(it.text(context)) }
+        viewModel.messages.collect { snackbar.showMessage(it, context, viewModel::undo) }
     }
 
     var notificationsGranted by remember {

@@ -29,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.mario2712.locus.R
 import io.github.mario2712.locus.ui.common.DayPanel
 import io.github.mario2712.locus.ui.common.Format
+import io.github.mario2712.locus.ui.common.showMessage
 import io.github.mario2712.locus.ui.common.text
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,7 +40,7 @@ fun DayScreen(onBack: () -> Unit, viewModel: DayViewModel = hiltViewModel()) {
     val snackbar = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
-        viewModel.messages.collect { snackbar.showSnackbar(it.text(context)) }
+        viewModel.messages.collect { snackbar.showMessage(it, context, viewModel::undo) }
     }
 
     Scaffold(

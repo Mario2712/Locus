@@ -25,6 +25,10 @@ sealed interface UiMessage {
     data object Saved : UiMessage
     data object Deleted : UiMessage
     data object DayNotEmpty : UiMessage
+    data object Undone : UiMessage
+
+    /** Meldung zu einer Änderung, die sich per „Rückgängig“ zurücknehmen lässt. */
+    data class Undoable(val inner: UiMessage) : UiMessage
 }
 
 /** Gemeinsame Schreib-Abläufe der Screens (Stationen, Reisen, Besuche) inkl. Warnungen. */
@@ -35,6 +39,8 @@ class StationActions @Inject constructor(
     private val visitCommands: VisitCommands,
     private val overlap: StayOverlapChecker,
     private val trips: io.github.mario2712.locus.domain.repository.TripRepository,
+    /** Letzte Änderung zurücknehmen (siehe [UndoBuffer]). */
+    val undo: UndoBuffer,
 ) {
     suspend fun saveStation(draft: StayDraft): UiMessage {
         val person = draft.participants.first()

@@ -130,9 +130,12 @@ class CalendarViewModel @Inject constructor(
     }
 
     fun fill(range: ClosedRange<LocalDate>, draft: FillDraft) = viewModelScope.launch {
-        messageChannel.send(editing.fill(range.start, range.endInclusive, me, draft))
+        messageChannel.send(editing.undo.record { editing.fill(range.start, range.endInclusive, me, draft) })
         clearSelection()
     }
 
     suspend fun createPlace(draft: PlaceDraft): Place = editorCatalog.createPlace(draft)
+
+    /** Letzte Änderung (z. B. Zeitraum gefüllt) zurücknehmen. */
+    fun undo() = viewModelScope.launch { if (editing.undo.undo()) messageChannel.send(UiMessage.Undone) }
 }

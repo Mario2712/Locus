@@ -147,6 +147,14 @@ abstract class BaseDayViewModel(
     private var lastInputs = TimelineInputs()
 
     private fun send(message: UiMessage) = messageChannel.trySend(message)
+
+    /** Änderung mit „Rückgängig“-Möglichkeit ausführen und melden. */
+    private suspend fun sendUndoable(block: suspend () -> UiMessage) {
+        send(actions.undo.record(block))
+    }
+
+    /** Letzte Änderung zurücknehmen. */
+    fun undo() = viewModelScope.launch { if (actions.undo.undo()) send(UiMessage.Undone) }
     private fun live() = liveTimeFor(date, today)
 
     /** Teilnehmer für neue Einträge: während einer Reise die Reisenden, sonst Alltags-Standard. */
@@ -158,16 +166,15 @@ abstract class BaseDayViewModel(
         else DayInsights.lastTransportTo(placeId, lastInputs.stays)
 
     fun confirmSuggestion(suggestion: DaySuggestion, state: DayState) = viewModelScope.launch {
-        send(actions.applyTemplate(date, state.editor.defaults.dailyParticipants, suggestion.steps))
+        sendUndoable { actions.applyTemplate(date, state.editor.defaults.dailyParticipants, suggestion.steps) }
     }
 
     fun quickStation(combo: StayCombo, state: DayState) = viewModelScope.launch {
-        send(
-            actions.addStation(
+        sendUndoable { actions.addStation(
                 date, defaultParticipants(state), combo.stayTypeId, combo.placeId,
                 prefillTransport(combo.placeId), overnight = false, liveTime = live(),
-            ),
-        )
+            )
+        }
     }
 
     fun newStationDraft(state: DayState, typeId: String? = null) = StayDraft(
@@ -178,7 +185,7 @@ abstract class BaseDayViewModel(
         startTime = live(),
     )
 
-    fun saveStation(draft: StayDraft) = viewModelScope.launch { send(actions.saveStation(draft)) }
+    fun saveStation(draft: StayDraft) = viewModelScope.launch { sendUndoable { actions.saveStation(draft) } }
 
     /**
      * Neue Station vor bzw. nach [anchor] einfügen. Vorschlag: selber Tag wie [anchor], wählbar auch Vortag
@@ -198,17 +205,17 @@ abstract class BaseDayViewModel(
         )
     }
 
-    fun reorderStations(orderedIds: List<String>) = viewModelScope.launch { send(actions.reorderStations(orderedIds)) }
-    fun deleteStation(id: String) = viewModelScope.launch { send(actions.deleteStation(id)) }
+    fun reorderStations(orderedIds: List<String>) = viewModelScope.launch { sendUndoable { actions.reorderStations(orderedIds) } }
+    fun deleteStation(id: String) = viewModelScope.launch { sendUndoable { actions.deleteStation(id) } }
 
     fun journey(draft: JourneyDraft) = viewModelScope.launch {
-        send(actions.journey(date, draft.participants, draft.legs, draft.typeId, live()))
+        sendUndoable { actions.journey(date, draft.participants, draft.legs, draft.typeId, live()) }
     }
 
     fun returnHome(state: DayState, draft: io.github.mario2712.locus.ui.editor.ReturnDraft) = viewModelScope.launch {
         val arrival = date.plusDays(draft.homeDayOffset.toLong())
         val home = state.editor.homebaseAt(arrival) ?: state.editor.homebase ?: return@launch
-        send(actions.returnJourney(date, defaultParticipants(state), draft.stops, home.id, draft.homeTransport, draft.homeDayOffset, live()))
+        sendUndoable { actions.returnJourney(date, defaultParticipants(state), draft.stops, home.id, draft.homeTransport, draft.homeDayOffset, live()) }
     }
 
     fun newVisitDraft(state: DayState, placeId: String? = null) =
@@ -217,8 +224,8 @@ abstract class BaseDayViewModel(
     fun renameTrip(trip: io.github.mario2712.locus.domain.trips.TripSummary, title: String) =
         viewModelScope.launch { send(actions.renameTrip(trip, title)) }
 
-    fun saveVisit(draft: VisitDraft) = viewModelScope.launch { send(actions.saveVisit(draft, live())) }
-    fun deleteVisit(id: String) = viewModelScope.launch { send(actions.deleteVisit(id)) }
+    fun saveVisit(draft: VisitDraft) = viewModelScope.launch { sendUndoable { actions.saveVisit(draft, live()) } }
+    fun deleteVisit(id: String) = viewModelScope.launch { sendUndoable { actions.deleteVisit(id) } }
 
     suspend fun createPlace(draft: PlaceDraft): Place = editorCatalog.createPlace(draft)
 }

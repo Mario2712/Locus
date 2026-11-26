@@ -56,6 +56,7 @@ import io.github.mario2712.locus.ui.common.Format
 import io.github.mario2712.locus.ui.common.MonthPickerDialog
 import io.github.mario2712.locus.ui.common.TypeDot
 import io.github.mario2712.locus.ui.common.themedColor
+import io.github.mario2712.locus.ui.common.showMessage
 import io.github.mario2712.locus.ui.common.text
 import io.github.mario2712.locus.ui.editor.FillRangeDialog
 import java.time.DayOfWeek
@@ -78,7 +79,7 @@ fun CalendarScreen(
     val currentMonth = YearMonth.from(viewModel.today)
 
     LaunchedEffect(Unit) {
-        viewModel.messages.collect { snackbar.showSnackbar(it.text(context)) }
+        viewModel.messages.collect { snackbar.showMessage(it, context, viewModel::undo) }
     }
 
     Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
