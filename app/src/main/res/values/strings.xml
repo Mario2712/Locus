@@ -1,0 +1,670 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Locus</string>
+
+    <!-- Navigation -->
+    <string name="nav_today">Heute</string>
+    <string name="nav_calendar">Kalender</string>
+    <string name="nav_map">Karte</string>
+    <string name="nav_countries">Länder</string>
+    <string name="nav_more">Mehr</string>
+
+    <!-- Allgemeine Aktionen -->
+    <string name="action_save">Speichern</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_delete">Löschen</string>
+    <string name="action_ok">OK</string>
+    <string name="action_close">Schließen</string>
+    <string name="action_undo">Rückgängig</string>
+    <string name="msg_undone">Rückgängig gemacht</string>
+    <string name="action_remove">Entfernen</string>
+    <string name="action_none">Keine</string>
+    <string name="action_back">Zurück</string>
+
+    <!-- Heute -->
+    <string name="today_title">Heute</string>
+    <string name="today_holiday">Feiertag: %1$s</string>
+    <string name="today_confirm">Passt</string>
+    <string name="today_week">Diese Woche</string>
+    <plurals name="today_years_ago">
+        <item quantity="one">Vor %1$d Jahr</item>
+        <item quantity="other">Vor %1$d Jahren</item>
+    </plurals>
+    <plurals name="review_trips"><item quantity="one">%1$d Reise</item><item quantity="other">%1$d Reisen</item></plurals>
+    <plurals name="review_nights"><item quantity="one">%1$d Nacht auswärts</item><item quantity="other">%1$d Nächte auswärts</item></plurals>
+    <plurals name="review_flights"><item quantity="one">%1$d Flug</item><item quantity="other">%1$d Flüge</item></plurals>
+    <plurals name="review_days"><item quantity="one">%1$d Tag</item><item quantity="other">%1$d Tage</item></plurals>
+    <plurals name="today_missing">
+        <item quantity="one">%1$d Tag ohne Eintrag – nachtragen</item>
+        <item quantity="other">%1$d Tage ohne Eintrag – nachtragen</item>
+    </plurals>
+    <string name="today_country_points">Länderpunkte: %1$d</string>
+    <string name="today_no_countries">Noch keine Länder – trag deine erste Reise ein.</string>
+    <string name="today_notifications_title">Erinnerung erlauben</string>
+    <string name="today_notifications_text">Damit dich Locus am Abend an den Eintrag erinnern kann, braucht die App die Berechtigung für Benachrichtigungen.</string>
+    <string name="today_notifications_allow">Erlauben</string>
+
+    <!-- Kalender -->
+    <string name="calendar_previous">Vorheriger Monat</string>
+    <string name="calendar_next">Nächster Monat</string>
+    <string name="calendar_hint">Tippen öffnet den Tag. Lange drücken startet eine Mehrfachauswahl, um mehrere Tage auf einmal nachzutragen. Wischen wechselt den Monat, der Monatsname öffnet die Monatsauswahl.</string>
+    <string name="calendar_selection">Auswahl: %1$s – %2$s (Ende antippen zum Ändern)</string>
+    <string name="calendar_fill">Festlegen …</string>
+    <string name="calendar_today">Heute</string>
+
+    <!-- Tag -->
+
+    <!-- Editor -->
+    <string name="editor_new_stay">Neuer Aufenthalt</string>
+    <string name="editor_edit_stay">Aufenthalt bearbeiten</string>
+    <string name="editor_type">Art</string>
+    <string name="editor_place">Ort</string>
+    <string name="editor_choose_place">Ort wählen</string>
+    <string name="editor_search">Suchen</string>
+    <string name="editor_no_places">Noch keine Orte angelegt.</string>
+    <string name="editor_new_place">Neuer Ort</string>
+    <string name="editor_from_date">Von</string>
+    <string name="editor_to_date">Bis</string>
+    <string name="editor_start_time">Beginn</string>
+    <string name="editor_end_time">Ende</string>
+    <string name="editor_no_time">ganztägig</string>
+    <string name="editor_invalid_times">Das Ende muss nach dem Beginn liegen.</string>
+    <string name="editor_participants">Wer war dabei?</string>
+    <string name="editor_note">Notiz</string>
+
+    <string name="place_name">Name (z. B. Hallein)</string>
+    <string name="place_alias">Kurzname (optional, z. B. Zuhause)</string>
+    <string name="place_country">Land</string>
+    <string name="place_region_optional">Bundesland (optional)</string>
+    <string name="place_favorite">Als Favorit merken</string>
+    <string name="place_search_hint">Tipp: Mit „Online suchen“ findest du Orte samt Koordinaten über OpenStreetMap – manuell angelegte Orte lassen sich später unter „Orte“ verknüpfen.</string>
+
+    <string name="fill_title">%1$s – %2$s festlegen</string>
+    <string name="fill_skip_weekends">Wochenenden und Feiertage überspringen</string>
+    <string name="fill_hint">Bereits eingetragene Tage bleiben unverändert.</string>
+
+    <!-- Rückmeldungen -->
+    <string name="msg_saved">Gespeichert</string>
+    <string name="msg_deleted">Gelöscht</string>
+    <string name="msg_conflict">Gespeichert – überschneidet sich am %1$s mit einem anderen Aufenthalt.</string>
+    <plurals name="msg_filled">
+        <item quantity="one">%1$d Tag eingetragen</item>
+        <item quantity="other">%1$d Tage eingetragen</item>
+    </plurals>
+
+    <!-- Einstellungen -->
+    <string name="settings_title">Einstellungen</string>
+    <string name="catalog_stay_types">Aufenthaltsarten</string>
+    <string name="catalog_types_hint">Name, Farbe und Gruppe anpassen oder eigene Arten anlegen. Die Gruppe bestimmt die Statistik (Arbeit, Frei, Urlaub). Am ☰ ziehen, um die Reihenfolge zu ändern.</string>
+    <string name="catalog_visit_categories">Besuchskategorien</string>
+    <string name="catalog_visit_hint">z. B. „Aktivität / Erlebnis“ für Escape-Room, Kino oder Therme. Eigene Kategorien sind möglich. Am ☰ ziehen, um die Reihenfolge zu ändern.</string>
+    <string name="catalog_new_category">+ Neue Kategorie</string>
+    <string name="catalog_new_type">+ Neue Art</string>
+    <string name="catalog_category">Kategorie</string>
+    <string name="catalog_type">Aufenthaltsart</string>
+    <string name="catalog_name">Name</string>
+    <string name="catalog_color">Farbe</string>
+    <string name="catalog_group">Gruppe</string>
+    <string name="catalog_counts">Zählt für Länderpunkte</string>
+    <string name="catalog_archived">Ausblenden</string>
+    <string name="catalog_archive_hint">Ausgeblendete Einträge stehen nicht mehr zur Auswahl, bestehende Einträge bleiben erhalten.</string>
+    <string name="catalog_no_points">kein Länderpunkt</string>
+    <string name="catalog_hidden">ausgeblendet</string>
+    <string name="catalog_group_work">Arbeit</string>
+    <string name="catalog_group_free">Frei</string>
+    <string name="catalog_group_vacation">Urlaub</string>
+    <string name="catalog_group_other">Sonstiges</string>
+    <string name="settings_patterns">Wochentag-Muster</string>
+    <string name="settings_patterns_hint">Pro Wochentag eine Tagesvorlage oder eine einzelne Station. Daraus entstehen die Vorschläge am Heute-Screen und in der Erinnerung. An Feiertagen entfallen Muster mit Arbeit.</string>
+    <string name="settings_remove_rule">Muster entfernen</string>
+    <string name="settings_reminder">Abend-Erinnerung</string>
+    <string name="settings_reminder_enabled">Täglich erinnern</string>
+    <string name="settings_reminder_time">Uhrzeit</string>
+    <string name="settings_reminder_hint">Die Erinnerung kommt nur, wenn der Tag noch nicht eingetragen ist. Mit „Passt“ wird der Vorschlag direkt übernommen. Während einer Reise fragt sie „Noch in …?“.</string>
+
+    <!-- Erinnerung -->
+    <string name="reminder_channel">Abend-Erinnerung</string>
+    <string name="reminder_channel_description">Erinnert dich, den Tag einzutragen.</string>
+    <string name="reminder_title">Wo warst du heute?</string>
+    <string name="reminder_text">Trag deinen Tag in Locus ein.</string>
+    <string name="reminder_text_suggestion">Vorschlag: %1$s</string>
+    <string name="reminder_action_confirm">Passt</string>
+
+    <!-- Stationen-Kette -->
+    <string name="day_chain_title">Tagesverlauf</string>
+    <string name="chain_home">Zuhause</string>
+    <string name="chain_overnight">Übernachtung</string>
+    <string name="day_suggestion_label">Vorschlag: %1$s</string>
+    <string name="day_where_to">Wohin heute?</string>
+    <string name="day_next">Weiter nach …</string>
+    <string name="day_other_station">Andere Station …</string>
+    <string name="day_visits_title">Besuche</string>
+    <string name="day_visits_empty">Kurz woanders gewesen (z. B. Einkaufen in Oberalm)? Das zählt in der Statistik, ohne den Tagesverlauf zu unterbrechen.</string>
+    <string name="day_add_visit">+ Besuch …</string>
+    <string name="day_others_title">Weitere Einträge</string>
+    <string name="day_no_homebase">Tipp: In Mehr → Einstellungen deine Homebase festlegen – dann beginnt und endet jeder Tag dort automatisch.</string>
+    <string name="msg_day_not_empty">Der Tag hat schon Einträge – Vorschlag nicht übernommen.</string>
+
+    <!-- Reisen -->
+    <string name="trip_header">🧳 %1$s – Tag %2$d</string>
+    <string name="trip_start">Reise starten …</string>
+    <string name="trip_base_now">Übernachtung: %1$s</string>
+    <string name="trip_continue">Weiterreise …</string>
+    <string name="trip_excursion">Ausflug …</string>
+    <string name="trip_return_home">Heimreise</string>
+    <string name="journey_stop">Zwischenstopp %1$d (Umstieg, Abflughafen …)</string>
+    <string name="journey_add_stop">+ Zwischenstopp</string>
+    <string name="journey_destination">Ziel (Übernachtung)</string>
+    <string name="journey_next_day">Ankunft am Folgetag</string>
+    <string name="journey_hint">Zwischenstopps zählen als Transit und geben keinen Länderpunkt. Das Ziel wird zur neuen Basis, bis zur Weiter- oder Heimreise.</string>
+    <string name="return_home_title">Heimreise nach %1$s</string>
+
+    <!-- Editor (Stationen) -->
+    <string name="editor_transport">Verkehrsmittel</string>
+    <string name="editor_overnight">Ich übernachte dort</string>
+    <string name="editor_details">Details (Datum, Uhrzeit, Notiz)</string>
+
+    <!-- Besuche -->
+    <string name="visit_new">Besuch</string>
+    <string name="visit_edit">Besuch bearbeiten</string>
+    <string name="visit_categories">Was hast du gemacht?</string>
+    <string name="visit_counts">Zählt als Länderpunkt</string>
+
+    <!-- Einstellungen (Stationen) -->
+    <string name="settings_homebase">Homebase</string>
+    <string name="settings_homebase_hint">Dein Zuhause. Jeder Tag beginnt und endet hier, solange keine Reise läuft. Bei Umzügen gilt je Zeitraum die damalige Homebase.</string>
+    <string name="settings_sort_by_usage">Häufig genutzte Arten und Kategorien zuerst</string>
+    <string name="timeline_filter_button">Filter</string>
+    <string name="timeline_filter_button_n">Filter (%1$d)</string>
+    <string name="catalog_group_education">Ausbildung</string>
+    <string name="places_unused_n">Unbenutzt (%1$d)</string>
+    <string name="places_unused_hint">Orte, die nirgends vorkommen: keine Station, kein Besuch, keine Vorlage, kein Muster, kein Wunsch, keine Homebase, kein Favorit und keine verwendete Örtlichkeit darin. Nach 7 Tagen räumt die App sie automatisch auf.</string>
+    <string name="places_unused_delete_all">Alle %1$d löschen</string>
+    <string name="places_unused_none">Keine unbenutzten Orte.</string>
+    <string name="places_unused_confirm">%1$d unbenutzte Orte löschen?</string>
+    <string name="return_home_arrival">Ankunft %1$s</string>
+    <string name="return_home_hint">Zwischenstopps (Umstieg, Landeflughafen) werden als Transit erfasst. „Folgetag“ wirkt kumulativ: Ist die Landung am Folgetag markiert, liegt auch die Ankunft zuhause dort.</string>
+    <string name="editor_insert_before">↑ Station davor</string>
+    <string name="editor_insert_after">↓ Station danach</string>
+    <string name="editor_insert_day">Tag</string>
+    <string name="editor_previous_day">(Vortag)</string>
+    <string name="editor_following_day">(Folgetag)</string>
+    <string name="day_reorder">⇅ Reihenfolge ändern</string>
+    <string name="day_reorder_done">Fertig</string>
+    <string name="day_reorder_hint">Am ☰ ziehen, um die Reihenfolge der Stationen dieses Tages zu ändern.</string>
+    <string name="data_import_settings">Einstellungen übernehmen</string>
+    <string name="data_import_settings_hint">Standardwerte (Personen, Verkehrsmittel, Sortierung, „lückenlos seit“), Abend-Erinnerung und Auto-Backup. Ältere Sicherungen enthalten keine Einstellungen.</string>
+    <string name="crashlog_title">Fehlerprotokoll</string>
+    <string name="crashlog_empty">Keine Abstürze aufgezeichnet.</string>
+    <string name="crashlog_count">%1$d Einträge</string>
+    <string name="crashlog_hint">Wird nur auf diesem Gerät gespeichert. Enthält App-/Android-Version, Gerätemodell und den technischen Fehler – keine Einträge oder Orte. „Teilen“ öffnet z. B. eine Mail, die du selbst abschickst.</string>
+    <string name="crashlog_share">Teilen</string>
+    <string name="crashlog_clear">Löschen</string>
+    <string name="today_memories">Heute vor …</string>
+    <string name="share_title">Ort aus Google Maps</string>
+    <string name="share_no_maps_link">Im geteilten Text ist kein Google-Maps-Link.</string>
+    <string name="share_matches">Passende Orte (OpenStreetMap)</string>
+    <string name="share_nothing_found">Kein passender Ort gefunden. Suche ihn über die Ortsauswahl oder wähle ihn auf der Karte.</string>
+    <string name="share_take_point">📍 Diesen Punkt übernehmen</string>
+    <string name="share_hint">Einen Treffer antippen oder den Punkt aus Google Maps mit dem Namen übernehmen. Kurzlinks löst Locus einmal bei Google auf.</string>
+    <string name="review_open">🎞 Jahresrückblick %1$d</string>
+    <string name="review_share">Teilen</string>
+    <string name="review_intro_title">Dein Jahr %1$d</string>
+    <string name="review_recorded_days">Tage erfasst</string>
+    <string name="review_include_work">Arbeit einbeziehen</string>
+    <string name="review_countries_title">Länder</string>
+    <string name="review_new_countries">Neu: %1$s</string>
+    <string name="review_travel_title">Unterwegs</string>
+    <string name="review_trip_title">Reise des Jahres</string>
+    <string name="review_farthest">Am weitesten weg: %1$s (%2$s)</string>
+    <string name="review_top_title">Deine Top-Städte</string>
+    <string name="review_top_places">Am öftesten besucht</string>
+    <string name="review_new_title">Neu entdeckt</string>
+    <string name="review_new_cities">neue Städte und Gemeinden</string>
+    <string name="review_months_title">Monat für Monat</string>
+    <string name="review_together_title">Mit %1$s</string>
+    <string name="review_together_days">gemeinsame Tage</string>
+    <string name="review_special_title">Besondere Tage</string>
+    <string name="review_birthday">🎂 Geburtstag: %1$s</string>
+    <string name="review_nye">🎆 Silvester: %1$s</string>
+    <string name="review_work_title">Arbeit</string>
+    <string name="review_work_line">%1$d Tage Homeoffice · %2$d Tage Büro · %3$d Tage Dienstreise</string>
+    <string name="review_compare_title">Im Vergleich zu %1$d</string>
+    <string name="review_notification_title">Dein Jahresrückblick %1$d ist fertig</string>
+    <string name="review_notification_text">Länder, Reisen und Lieblingsorte des Jahres – zum Durchwischen und Teilen.</string>
+    <string name="stats_tab_special">Besonderes</string>
+    <string name="special_birthdays">🎂 Geburtstage – %1$s</string>
+    <string name="special_nye">🎆 Silvester</string>
+    <string name="special_christmas">🎄 Weihnachten</string>
+    <string name="special_abroad_n">%1$d davon im Ausland</string>
+    <string name="special_first_visit">Alter beim ersten Besuch</string>
+    <string name="special_first_visit_range">Jüngster Erstbesuch: %1$s mit %2$d · Ältester: %3$s mit %4$d</string>
+    <string name="special_no_birthdate">Geburtsdatum im Profil hinterlegen, um Geburtstage und „Alter beim ersten Besuch“ zu sehen.</string>
+    <string name="special_age">mit %1$d</string>
+    <string name="review_share_all">Alles</string>
+    <string name="review_work_on">Mit Arbeit</string>
+    <string name="review_work_off">Ohne Arbeit</string>
+    <string name="review_title_eyebrow">Ein Jahr in Orten</string>
+    <string name="review_km_air">Kilometer, Luftlinie</string>
+    <string name="review_trips_eyebrow">Deine Reisen</string>
+    <string name="review_no_trips">Ein Jahr daheim</string>
+    <string name="review_days_short">%1$d T</string>
+    <string name="review_days_long">%1$d Tage</string>
+    <string name="review_days_caps">TAGE</string>
+    <string name="review_colors_eyebrow">Dein Jahr in Farben</string>
+    <string name="review_colors_title">%1$d %% im Urlaub</string>
+    <string name="review_colors_accent">Urlaub</string>
+    <string name="review_kind_everyday">Alltag (Arbeit ausgeblendet)</string>
+    <string name="review_kind_none">Ohne Eintrag</string>
+    <string name="review_kind_home">Frei / Zuhause</string>
+    <string name="review_kind_excursion">Ausflug</string>
+    <string name="review_kind_vacation">Urlaub</string>
+    <string name="review_kind_business">Dienstreise</string>
+    <string name="review_kind_travel">Anreise / Transit</string>
+    <string name="review_kind_work">Arbeit</string>
+    <string name="review_kind_education">Ausbildung</string>
+    <string name="review_places_eyebrow">Deine Orte</string>
+    <string name="review_places_title">Wo du Tage verbracht hast</string>
+    <string name="review_places_accent">Tage</string>
+    <string name="review_new_cities_n">%1$d neue Städte:</string>
+    <string name="review_moments_eyebrow">Momente</string>
+    <string name="review_moments_title">Was bleibt</string>
+    <string name="review_moments_accent">bleibt</string>
+    <string name="review_m_none">Für dieses Jahr gibt es noch keine besonderen Momente.</string>
+    <string name="review_m_birthday">Geburtstag in %1$s</string>
+    <string name="review_m_longest">Längste Reise: %1$s</string>
+    <string name="review_m_longest_detail">%1$d Tage, %2$d Unterkünfte</string>
+    <string name="review_m_farthest">Am weitesten weg: %1$s</string>
+    <string name="review_m_farthest_detail">%1$s km Luftlinie von %2$s</string>
+    <string name="review_m_first">Zum ersten Mal: %1$s</string>
+    <string name="review_m_first_detail">%1$s mit %2$d – der jüngste Erstbesuch des Jahres</string>
+    <string name="review_m_nye">Silvester in %1$s</string>
+    <string name="review_together_eyebrow">Gemeinsam</string>
+    <string name="review_together_text">Tage mit %1$s unterwegs oder gemeinsam eingetragen. %2$d von %3$d Reisen habt ihr zusammen gemacht.</string>
+    <string name="review_end">Ende des Rückblicks</string>
+    <string name="timeline_filter_period">Zeitraum</string>
+    <string name="timeline_filter_period_all">Alles</string>
+    <string name="timeline_filter_work">Arbeit</string>
+    <string name="timeline_filter_types">Arten</string>
+    <string name="timeline_filter_categories">Kategorien</string>
+    <string name="timeline_filter_persons">Personen</string>
+    <string name="timeline_filter_place">Ort oder Notiz suchen</string>
+    <string name="timeline_filter_only_work">Nur Arbeit</string>
+    <string name="timeline_filter_count">%1$d von %2$d Tagen</string>
+    <string name="timeline_filter_reset">Zurücksetzen</string>
+    <string name="timeline_filter_empty">Keine Tage für diese Filter.</string>
+    <string name="trips_filter_all">Alle</string>
+    <string name="trips_filter_private">Privat</string>
+    <string name="trips_filter_work">Arbeit</string>
+    <string name="trips_filter_everyone">Alle Personen</string>
+    <string name="trips_filter_with">Mit %1$s</string>
+    <string name="trips_filter_alone">Allein</string>
+    <string name="trips_filter_empty">Keine Reisen für diese Filter.</string>
+    <string name="stats_period_all">Gesamt</string>
+    <string name="stats_work_by_year">Arbeitsorte je Jahr</string>
+    <string name="stats_world_share">Länder · %1$d %% der Welt</string>
+    <string name="stats_continents">Kontinente</string>
+    <string name="stats_cities_total">Städte &amp; Gemeinden</string>
+    <string name="stats_undated_countries">davon %1$d ohne Datum (vor Beginn der Aufzeichnungen)</string>
+    <string name="stats_new_short">Neu</string>
+    <string name="stats_per_year_hint">Jahr antippen für die Flaggen; ✱ = in dem Jahr erstmals besucht.</string>
+    <string name="stats_loyal">Treue Orte</string>
+    <string name="stats_loyal_line">%1$s · in %2$d von %3$d Jahren</string>
+    <string name="stats_rediscovered">Wiederentdeckt</string>
+    <string name="stats_rediscovered_line">%1$s · nach %2$d Jahren wieder (%3$d)</string>
+    <string name="stats_avg_month">Ø Monat</string>
+    <string name="stats_typical_month">Typischer Monat</string>
+    <string name="stats_typical_month_hint">Durchschnittliche Tage je Kalendermonat über alle Jahre mit Arbeitstagen.</string>
+    <string name="stats_ho_share">Homeoffice-Anteil je Jahr</string>
+    <string name="stats_ho_share_hint">Reine Homeoffice-Tage in Prozent aller Arbeitstage (Homeoffice, Büro, Dienstreise).</string>
+    <string name="stats_record_absence">Längste Abwesenheit</string>
+    <string name="stats_record_pause">Längste Reisepause</string>
+    <string name="stats_record_days_from">%1$d Tage ab %2$s</string>
+    <string name="stats_record_day_distance">Längste Strecke an einem Tag</string>
+    <string name="stats_record_day_trip">Weitester Tagesausflug</string>
+    <string name="stats_record_favorite_country">Lieblingsland im Ausland</string>
+    <string name="stats_record_longest_stay">Längster Aufenthalt am selben Ort</string>
+    <string name="stats_nights_n">%1$d Nächte</string>
+    <string name="stats_record_countries_year">Meiste Länder in einem Jahr</string>
+    <string name="stats_record_flights_year">Meiste Flüge in einem Jahr</string>
+    <string name="stats_record_office_streak">Längste Büro-Serie</string>
+    <string name="stats_compass">Himmelsrichtungen</string>
+    <string name="stats_per_year">Jahre im Überblick</string>
+    <string name="stats_year">Jahr</string>
+    <string name="stats_recorded_days_short">Tage</string>
+    <string name="stats_nights_short">Nächte</string>
+    <string name="stats_tab_overview">Überblick</string>
+    <string name="stats_tab_visits">Besuche</string>
+    <string name="stats_tab_travel">Unterwegs</string>
+    <string name="stats_tab_work">Arbeit</string>
+    <string name="stats_tab_records">Rekorde</string>
+    <string name="stats_person_me">Ich</string>
+    <string name="stats_person_together">Gemeinsam</string>
+    <string name="stats_compare_hint">▲/▼ im Vergleich zum gleich langen Zeitraum davor (laufendes Jahr: bis zum selben Tag des Vorjahres).</string>
+    <string name="stats_main_type">Hauptart</string>
+    <string name="stats_all_types">Alle Arten</string>
+    <string name="stats_all_types_hint">Geteilte Tage zählen bei jeder Art, z. B. Büro und Homeoffice am selben Tag.</string>
+    <string name="stats_no_visits">Keine Besuche in diesem Zeitraum.</string>
+    <string name="stats_visits_by_category">Besuche nach Kategorie</string>
+    <string name="stats_visits_by_category_hint">Ein Besuch mit mehreren Kategorien zählt bei jeder.</string>
+    <string name="stats_top_places">Top-Örtlichkeiten</string>
+    <string name="stats_top_by_category">Top je Kategorie</string>
+    <string name="stats_new_discovered">Neu entdeckt</string>
+    <string name="stats_new_cities_n">Städte (%1$d)</string>
+    <string name="stats_new_locations_n">Örtlichkeiten (%1$d)</string>
+    <string name="stats_more_n">und %1$d weitere</string>
+    <string name="stats_times">%1$d×</string>
+    <string name="stats_km_total">km (Luftlinie)</string>
+    <string name="stats_flights">Flüge</string>
+    <string name="stats_transport">Verkehrsmittel</string>
+    <string name="stats_legs">%1$d Etappen</string>
+    <string name="stats_km_hint">Luftlinie zwischen den Stationen (bei mehreren Verkehrsmitteln zählt das „größte“). Der Rückweg nach Hause ohne eigene Station zählt mit dem Verkehrsmittel des Hinwegs. Besuche fließen nicht ein.</string>
+    <string name="stats_no_transport">Noch keine Verkehrsmittel erfasst.</string>
+    <string name="stats_no_work">Keine Arbeitstage in diesem Zeitraum.</string>
+    <string name="stats_weekdays">Arbeit nach Wochentag</string>
+    <string name="stats_weekdays_hint">Tage, an denen die Art vorkommt.</string>
+    <string name="stats_record_longest_trip">Längste Reise</string>
+    <string name="stats_record_most_countries">Meiste Länder auf einer Reise</string>
+    <string name="stats_record_farthest">Weitester Ort von zuhause</string>
+    <string name="stats_record_ho_streak">Längste Homeoffice-Serie</string>
+    <string name="stats_workdays">%1$d Arbeitstage in Folge</string>
+    <string name="stats_filter_no_work">Ohne Arbeit</string>
+    <string name="stats_filter_business_trips">Dienstreisen mitzählen</string>
+    <string name="map_pick_button">🗺️ Karte</string>
+    <string name="map_pick_title">Auf Karte wählen</string>
+    <string name="map_pick_here">Hier übernehmen</string>
+    <string name="map_pick_hint">Karte unter dem Pin verschieben und zoomen.</string>
+    <string name="map_pick_offline">Offline – Kartenauswahl nicht verfügbar.</string>
+    <string name="map_pick_no_address">Für diesen Punkt wurde keine Adresse gefunden.</string>
+    <string name="map_pick_no_country">Hier liegt kein Land (Meer?) – bitte einen Punkt an Land wählen.</string>
+    <string name="map_pick_coordinates_only">Keine Adresse hier – Koordinaten werden übernommen</string>
+    <string name="map_pick_lookup_failed">Adresssuche nicht erreichbar – Land offline bestimmt.</string>
+    <string name="map_city_none">Keine Stadt</string>
+    <string name="map_pins_hint">Treffer antippen oder einen eigenen Punkt wählen.</string>
+    <string name="map_show_results">Auf Karte zeigen</string>
+    <string name="map_kind_village">Stadt / Dorf</string>
+    <string name="place_set_position">📍 Position auf Karte setzen</string>
+    <string name="place_set_position_title">Position: %1$s</string>
+    <string name="place_set_position_confirm">Position übernehmen</string>
+    <string name="homebase_add_move">+ Umzug / frühere Homebase</string>
+    <string name="homebase_always">immer (aktuell)</string>
+    <string name="homebase_since_current">seit %1$s (aktuell)</string>
+    <string name="homebase_since">seit %1$s</string>
+    <string name="homebase_until">von Anfang an bis %1$s</string>
+    <string name="homebase_from_start">Von Anfang an</string>
+    <string name="homebase_change_date">Einzugsdatum ändern</string>
+    <string name="homebase_remove">Zeitraum entfernen</string>
+    <string name="settings_templates">Tagesvorlagen</string>
+    <string name="settings_templates_hint">z. B. „Bürotag“ (Büro · Salzburg mit 🚆) oder „Hybrid“ (Büro → Homeoffice). Eine Vorlage trägt den ganzen Tag mit einem Tipp ein.</string>
+    <string name="settings_template_new">+ Neue Vorlage</string>
+    <string name="settings_template_edit">Vorlage bearbeiten</string>
+    <string name="settings_template_name">Name (z. B. Bürotag)</string>
+    <string name="settings_template_add_step">+ Station</string>
+    <string name="settings_template_step">Station der Vorlage</string>
+    <string name="settings_rule_template">Tagesvorlage</string>
+    <string name="settings_rule_single">Einzelne Station</string>
+    <string name="settings_no_rule">kein Muster</string>
+    <string name="settings_defaults">Standards für neue Einträge</string>
+    <string name="settings_prefill_transport">Verkehrsmittel vorbelegen (letzte Fahrt zum selben Ort)</string>
+    <string name="settings_daily_participants">Im Alltag dabei</string>
+    <string name="settings_trip_participants">Auf Reisen dabei</string>
+
+    <!-- Erinnerung (Reise) -->
+    <string name="reminder_title_trip">Noch in %1$s?</string>
+    <string name="reminder_text_trip">Die Reise läuft weiter. Falls du heute heimgereist bist, tippe „Heimreise heute“.</string>
+    <string name="reminder_action_return_home">Heimreise heute</string>
+
+    <!-- Profil -->
+    <string name="profile_title">Profil &amp; Geburtstage</string>
+    <string name="profile_birth_date">Geburtsdatum</string>
+    <string name="profile_set_birth_date">festlegen</string>
+    <string name="profile_no_birth_date">Mit Geburtsdatum siehst du hier Länder bis zu runden Geburtstagen und wo du deine Geburtstage verbracht hast.</string>
+    <string name="profile_countries">Länderpunkte: %1$d</string>
+    <string name="profile_birthday_today">🎉 Heute ist der %1$d. Geburtstag!</string>
+    <plurals name="profile_age_next">
+        <item quantity="one">%1$d Jahre · nächster Geburtstag in %2$d Tag</item>
+        <item quantity="other">%1$d Jahre · nächster Geburtstag in %2$d Tagen</item>
+    </plurals>
+    <string name="profile_milestones">Länder bis zu runden Geburtstagen</string>
+    <string name="profile_milestone_reached">bis zum %1$d.</string>
+    <string name="profile_milestone_next">bis zum %1$d. (am %2$s) – bisher</string>
+    <plurals name="profile_countries_count">
+        <item quantity="one">%1$d Land</item>
+        <item quantity="other">%1$d Länder</item>
+    </plurals>
+    <string name="profile_birthdays">Wo warst du an deinen Geburtstagen?</string>
+    <string name="profile_birthdays_empty">Noch keine Einträge an Geburtstagen.</string>
+    <string name="profile_birthdays_abroad">Geburtstage im Ausland: %1$d</string>
+    <string name="profile_birthday_entry">%1$d · %2$d Jahre · %3$s</string>
+    <string name="profile_documented_since_title">Lückenlos erfasst seit</string>
+    <string name="profile_documented_since_hint">Länder ohne Datum gelten als vor %1$d besucht – sie zählen bei allen Geburtstags-Meilensteinen ab dem 1.1. dieses Jahres.</string>
+    <string name="profile_privacy">Geburtsdaten bleiben lokal auf deinem Gerät und sind nicht Teil des Codes auf GitHub.</string>
+
+    <!-- Ortssuche -->
+    <string name="search_online">Online suchen</string>
+    <string name="search_here">📍 Hier</string>
+    <string name="search_loading">Suche …</string>
+    <string name="search_saved">Gespeichert</string>
+    <string name="search_suggestions">Vorschläge</string>
+    <string name="search_import_failed">Der Ort konnte nicht übernommen werden – bitte nochmal versuchen.</string>
+    <string name="search_show_all">Alle %1$d Orte anzeigen</string>
+    <string name="search_online_results">OpenStreetMap</string>
+    <string name="search_no_results">Nichts gefunden.</string>
+    <string name="search_offline">Suche gerade nicht möglich – keine Internetverbindung?</string>
+    <string name="search_no_location">Standort nicht verfügbar – ist die Standortermittlung eingeschaltet?</string>
+    <string name="search_no_permission">Ohne Standort-Berechtigung geht „Hier“ nicht – du kannst den Ort aber suchen.</string>
+    <string name="search_attribution">Daten © OpenStreetMap-Mitwirkende (ODbL), Suche über Photon</string>
+
+    <!-- Orte -->
+    <string name="places_title">Orte</string>
+    <string name="places_tab_cities">Städte &amp; Gemeinden</string>
+    <string name="places_tab_locations">Örtlichkeiten</string>
+    <string name="places_all_countries">Alle Länder</string>
+    <string name="places_without_city">Ohne Stadt</string>
+    <string name="places_locations_count">%1$d Örtlichkeiten</string>
+    <string name="places_empty">Keine Orte für diesen Filter.</string>
+    <string name="place_kind_city">Stadt/Gemeinde</string>
+    <string name="place_kind_location">Örtlichkeit</string>
+    <string name="place_name_location">Name (z. B. Gasthof, Gipfel, Museum)</string>
+    <string name="place_parent_optional">Zugehörige Stadt (optional)</string>
+    <string name="places_days">%1$d Tage</string>
+    <string name="places_last">zuletzt %1$s</string>
+    <string name="places_no_coordinates">ohne Koordinaten</string>
+    <string name="place_coordinates">%1$s, %2$s</string>
+    <string name="place_edit">Bearbeiten</string>
+    <string name="place_edit_inline">✎ Ort bearbeiten</string>
+    <string name="place_long_press_hint">Tipp: Lange drücken, um einen gespeicherten Ort zu bearbeiten.</string>
+    <string name="place_link_osm">Mit OSM verknüpfen</string>
+    <string name="place_make_homebase">Als Homebase festlegen</string>
+    <string name="place_record">Orts-Akte</string>
+    <string name="editor_open_place_record">Orts-Akte öffnen ›</string>
+    <string name="place_figures">Kennzahlen</string>
+    <string name="place_figures_interval">Ø alle %1$s Tage</string>
+    <string name="place_figures_daily">fast täglich</string>
+    <string name="place_figures_last30">letzte 30 Tage: %1$d×</string>
+    <string name="place_figures_with">Mit %1$s: %2$d von %3$d Tagen</string>
+    <string name="place_stays">Aufenthalte</string>
+    <plurals name="place_stays_count">
+        <item quantity="one">%1$d Aufenthalt</item>
+        <item quantity="other">%1$d Aufenthalte</item>
+    </plurals>
+    <plurals name="place_nights">
+        <item quantity="one">%1$d Nacht</item>
+        <item quantity="other">%1$d Nächte</item>
+    </plurals>
+    <plurals name="place_days">
+        <item quantity="one">%1$d Tag</item>
+        <item quantity="other">%1$d Tage</item>
+    </plurals>
+    <string name="place_show_all">Alle %1$d anzeigen</string>
+    <string name="place_show_less">Weniger anzeigen</string>
+    <string name="place_record_days">An %1$d Tagen hier</string>
+    <string name="place_record_range">erstmals %1$s · zuletzt %2$s</string>
+    <string name="place_record_visits">Besuche: %1$d</string>
+    <string name="place_record_dates">Tage</string>
+    <string name="place_record_children">Örtlichkeiten in der Stadt (Besuche)</string>
+    <string name="place_in_city">in %1$s</string>
+    <string name="place_delete_confirm">Ort löschen? Bestehende Einträge zeigen ihn dann als „?“.</string>
+
+    <!-- Reisen -->
+    <string name="trips_title">Reisen</string>
+    <string name="trips_rename">✎ Reise benennen</string>
+    <string name="trips_name">Name der Reise (z. B. Linz-Workshop)</string>
+    <string name="trips_rename_hint">Leer lassen für den automatischen Namen aus den Städten.</string>
+    <string name="trips_add_past">+ Alte Reise nachtragen</string>
+    <string name="trips_empty">Noch keine Reisen. Starte eine über „Reise starten …“ am Heute-Screen oder trage alte Reisen nach.</string>
+    <string name="trips_year">%1$d · %2$d Reisen</string>
+    <string name="trips_days">%1$d Tage</string>
+    <string name="trips_ongoing">läuft gerade</string>
+    <string name="trips_entries">Einträge</string>
+    <string name="trips_days_title">Tag für Tag</string>
+    <string name="trips_day_n">Tag %1$d</string>
+    <string name="trips_destinations">Ziele</string>
+    <string name="trips_add_destination">+ weiteres Ziel</string>
+    <string name="trips_when">Wann?</string>
+    <string name="trips_exact">Genaues Datum</string>
+    <string name="trips_month">Monat</string>
+    <string name="trips_year_only">Nur Jahr</string>
+    <string name="trips_year_label">Jahr</string>
+
+    <!-- Timeline -->
+    <string name="timeline_title">Timeline</string>
+    <string name="timeline_empty">Noch keine Einträge.</string>
+
+    <!-- Länder -->
+    <string name="countries_summary">%1$s %2$d · %3$s %4$d · gemeinsam %5$d</string>
+    <string name="countries_lead">Nur %1$s: %2$d · nur %3$s: %4$d</string>
+    <string name="countries_of_total">von %1$d zählbaren Ländern</string>
+    <string name="countries_status_together">gemeinsam</string>
+    <string name="countries_status_both">beide, getrennt</string>
+    <string name="countries_status_only">nur %1$s</string>
+    <string name="countries_wishes">Wunschländer</string>
+    <string name="countries_all">Alle Länder</string>
+    <string name="countries_empty">Hier ist noch nichts.</string>
+    <string name="countries_since">seit %1$d</string>
+    <string name="countries_first_visit">%1$s erstmals: %2$s</string>
+    <string name="countries_last_visit">Zuletzt: %1$s</string>
+    <string name="countries_days">%1$s: %2$d Tage im Land</string>
+    <string name="countries_before_year">vor %1$d</string>
+    <string name="countries_undated_question">Schon dort gewesen, aber wann weißt du nicht mehr?</string>
+    <string name="countries_undated_hint">Zählt als Länderpunkt und auf der Karte und gilt als vor dem Jahr besucht, ab dem du lückenlos erfasst hast (siehe Profil). Erscheint nicht in Timeline, Reisen und Zeitraum-Statistik.</string>
+    <string name="countries_undated_entry">Ohne Datum erfasst: %1$s</string>
+    <string name="countries_undated_remove">Eintrag ohne Datum entfernen</string>
+    <string name="countries_not_visited">Noch nicht besucht</string>
+    <string name="countries_cities">Städte &amp; Gemeinden (%1$d)</string>
+    <string name="countries_all_cities">Alle %1$d anzeigen</string>
+    <string name="countries_unassigned">Dazu %1$d Örtlichkeiten ohne zugeordnete Stadt – unter Mehr → Orte zuordenbar.</string>
+    <string name="countries_trips">Reisen (%1$d)</string>
+    <string name="countries_undated_title">Ohne Datum</string>
+    <string name="countries_wish_add">☆ Auf Wunschliste</string>
+    <string name="countries_wish_remove">Von Wunschliste entfernen</string>
+
+    <!-- Karte -->
+    <string name="map_both">Beide</string>
+    <string name="map_all_years">Alle Jahre</string>
+    <string name="map_places">Orte</string>
+    <string name="map_routes">Routen</string>
+    <string name="map_detail">Detailkarte (online)</string>
+    <string name="map_visited">besucht</string>
+    <string name="map_days">Tage</string>
+
+    <!-- Statistik -->
+    <string name="stats_title">Statistik</string>
+    <string name="stats_period_year">%1$d im Überblick</string>
+    <string name="stats_period_last30">Letzte 30 Tage</string>
+    <string name="stats_period_custom">Zeitraum …</string>
+    <string name="stats_choose_year">Jahr</string>
+    <string name="stats_choose_month">Monat</string>
+    <string name="stats_recorded_days">Tage erfasst</string>
+    <string name="stats_countries">Länder</string>
+    <string name="stats_new_countries">neue Länder</string>
+    <string name="stats_new_cities">neue Städte</string>
+    <string name="stats_trips">Reisen</string>
+    <string name="stats_nights_away">Nächte auswärts</string>
+    <string name="stats_new_countries_list">Neu: %1$s</string>
+    <string name="stats_days_by_type">Tage nach Art</string>
+    <string name="stats_days_by_type_hint">Jeder Tag zählt einmal – bei mehreren Stationen nach Rangfolge (z. B. Büro vor Homeoffice).</string>
+    <string name="stats_work">Arbeitsorte je Monat</string>
+    <string name="stats_month">Monat</string>
+    <string name="stats_ho_only">Nur HO</string>
+    <string name="stats_office">Büro</string>
+    <string name="stats_hybrid">Hybrid</string>
+    <string name="stats_business">Dienstr.</string>
+    <string name="stats_total">Summe</string>
+    <string name="stats_work_hint">„Nur HO“ = Tage ausschließlich im Homeoffice (relevant für die Homeoffice-Pauschale). Hybrid-Tage zählen beim Büro mit.</string>
+    <string name="stats_vacation">Urlaub</string>
+    <string name="stats_vacation_split">%1$d Urlaubstage – %2$d im Inland, %3$d im Ausland</string>
+    <string name="stats_top_cities">Top-Städte</string>
+    <string name="stats_heatmap">Tag für Tag</string>
+
+    <!-- Daten & Sicherung -->
+    <string name="trash_title">Papierkorb</string>
+    <string name="trash_summary_empty">Keine gelöschten Einträge in den letzten 30 Tagen.</string>
+    <plurals name="trash_summary">
+        <item quantity="one">%1$d gelöschter Eintrag aus den letzten 30 Tagen.</item>
+        <item quantity="other">%1$d gelöschte Einträge aus den letzten 30 Tagen.</item>
+    </plurals>
+    <string name="trash_open">Papierkorb öffnen</string>
+    <string name="trash_hint">Gelöschte Stationen und Besuche bleiben 30 Tage hier und lassen sich einzeln wiederherstellen.</string>
+    <string name="trash_deleted_on">Gelöscht am %1$s</string>
+    <string name="trash_stay">Station</string>
+    <string name="trash_visit">Besuch</string>
+    <string name="trash_unknown_place">Unbekannter Ort</string>
+    <string name="trash_restore">Wiederherstellen</string>
+    <string name="trash_restored">Wiederhergestellt: %1$s</string>
+    <string name="safety_title">Sicherheitskopien</string>
+    <string name="safety_hint">Vor einem Import, vor „Zeitraum füllen“ ab 14 Tagen, vor dem Löschen unbenutzter Orte und vor einer Wiederherstellung legt Locus automatisch eine Kopie aller Daten an (die neuesten 5 bleiben, nur auf diesem Gerät).</string>
+    <string name="safety_empty">Noch keine Sicherheitskopie.</string>
+    <string name="safety_reason_import">Vor Import</string>
+    <string name="safety_reason_fill">Vor „Zeitraum füllen“</string>
+    <string name="safety_reason_cleanup">Vor Löschen unbenutzter Orte</string>
+    <string name="safety_reason_restore">Vor Wiederherstellung</string>
+    <string name="safety_restore">Wiederherstellen</string>
+    <string name="safety_restore_title">Stand wiederherstellen?</string>
+    <string name="safety_restore_confirm">Alle Stationen, Besuche, Orte und Vorlagen werden auf den Stand vom %1$s zurückgesetzt. Was du danach eingetragen oder geändert hast, geht verloren. Der aktuelle Stand wird vorher selbst als Sicherheitskopie abgelegt, du kannst also wieder zurück.</string>
+    <string name="safety_restored">Stand vom %1$s wiederhergestellt.</string>
+    <string name="data_title">Daten &amp; Sicherung</string>
+    <string name="data_backup">Sicherung</string>
+    <string name="data_last_backup">Letzte Sicherung: %1$s</string>
+    <string name="data_never">Noch keine Sicherung.</string>
+    <string name="data_auto_backup">Wöchentlich automatisch sichern</string>
+    <string name="data_backup_now">Jetzt sichern</string>
+    <string name="data_backup_hint">Sicherungen landen im Ordner „Download/Locus“ (die neuesten 5 bleiben). Sie bleiben auch erhalten, wenn die App deinstalliert wird.</string>
+    <string name="data_transfer">Export &amp; Import</string>
+    <string name="data_export">Exportieren …</string>
+    <string name="data_import">Importieren …</string>
+    <string name="data_import_hint">Der Import führt zusammen: Je Eintrag gewinnt der neuere Stand, nichts wird blind überschrieben. So lassen sich auch Daten zwischen Debug- und Release-App übertragen.</string>
+    <string name="data_import_confirm">Die Datei wird mit deinen Daten zusammengeführt. Neuere Stände aus der Datei ersetzen ältere, gelöschte Einträge werden übernommen.</string>
+    <string name="data_import_go">Zusammenführen</string>
+    <string name="data_saved">Gespeichert.</string>
+    <string name="data_saved_downloads">Gesichert als Download/Locus/%1$s</string>
+    <string name="data_imported">Import fertig: %1$d neu, %2$d aktualisiert, %3$d unverändert.</string>
+    <string name="data_failed">Das hat nicht geklappt: %1$s</string>
+
+    <!-- Mehr -->
+    <string name="countries_title">Länderpunkte</string>
+    <string name="more_title">Mehr</string>
+    <string name="more_placeholder">Rückblick, Orte und Einstellungen.</string>
+
+    <!-- Datenbank-Status -->
+    <string name="data_status_title">Datenbank</string>
+    <string name="data_status_persons">Personen: %1$s</string>
+    <string name="data_status_stay_types">Aufenthaltsarten: %1$d</string>
+    <string name="data_status_visit_categories">Besuchskategorien: %1$d</string>
+    <string name="data_status_countries">Zählbare Länder: %1$d</string>
+    <string name="data_status_entries">Orte: %1$d · Aufenthalte: %2$d</string>
+    <string name="more_group_analyze">Auswerten</string>
+    <string name="more_group_manage">Verwalten</string>
+    <string name="more_group_data">Daten</string>
+    <string name="about_title">Über Locus</string>
+    <string name="about_tagline">Wo warst du – und wann?</string>
+    <string name="about_version_title">App</string>
+    <string name="about_version">Version</string>
+    <string name="about_build_date">Build-Datum</string>
+    <string name="about_developer">Entwicklung</string>
+    <string name="about_privacy_title">Datenschutz</string>
+    <string name="about_privacy">Alle Einträge bleiben auf diesem Gerät. Online geht nur, was du selbst auslöst: die Ortssuche (Photon, OpenStreetMap), die Detailkarte (OpenFreeMap) und das Auflösen geteilter Google-Maps-Links. Sicherungen landen in „Download/Locus“ oder dort, wo du sie speicherst.</string>
+    <string name="about_licenses_title">Quellen &amp; Lizenzen</string>
+    <string name="about_licenses">Ländergrenzen: Natural Earth (gemeinfrei) · Karten und Orte: © OpenStreetMap-Mitwirkende (ODbL), OpenFreeMap, Photon von komoot · Schrift „Instrument Serif“: SIL Open Font License 1.1 · Kartenbibliothek: MapLibre (BSD) · AndroidX, Jetpack Compose, Kotlin, Hilt, Room (Apache 2.0)</string>
+    <string name="version_label">Version %1$s</string>
+</resources>

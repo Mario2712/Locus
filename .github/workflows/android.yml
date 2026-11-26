@@ -1,0 +1,159 @@
+name: Android CI
+
+# Varianten:
+# - Debug-APK (jeder Branch): Paket ...locus.debug, „Locus Debug“, Debug-Schlüssel aus dem Repo.
+#   Lässt sich parallel zur regulären App installieren, ohne sie zu berühren.
+# - Release-APK (main und Tags v*): Paket ...locus, „Locus“, Release-Schlüssel aus GitHub Secrets.
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Tests, Lint & Debug-APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build-Datum setzen
+        run: echo "LOCUS_BUILD_DATE=$(date -u +%Y-%m-%d)" >> "$GITHUB_ENV"
+
+      - name: Domain-Tests
+        run: ./gradlew :core:domain:test
+
+      - name: Daten-Tests (Room, Robolectric)
+        run: ./gradlew :core:data:testDebugUnitTest
+
+      - name: App-Unit-Tests
+        run: ./gradlew :app:testDebugUnitTest
+
+      - name: Lint
+        run: ./gradlew :app:lintDebug
+
+      - name: Debug-APK bauen
+        run: ./gradlew :app:assembleDebug
+
+      - name: Debug-APK prüfen (Signatur und Version)
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          APK=$(ls app/build/outputs/apk/debug/*.apk)
+          "$BT/apksigner" verify --print-certs "$APK" | grep -E "SHA-256|DN"
+          "$BT/aapt2" dump badging "$APK" | grep -E "^package:|sdkVersion|targetSdkVersion"
+
+      - name: Release-Build prüfen (unsigniert, inkl. R8)
+        run: ./gradlew :app:assembleRelease
+
+      - name: Debug-APK hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: locus-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Room-Schema prüfen
+        run: |
+          if [ -n "$(git status --porcelain core/data/schemas)" ]; then
+            echo "::warning::Room-Schema ist neu oder geändert und muss eingecheckt werden (Inhalt im Log)."
+            echo "SCHEMA_TAR_BASE64_BEGIN"
+            tar -czf - core/data/schemas | base64 -w0
+            echo
+            echo "SCHEMA_TAR_BASE64_END"
+          else
+            echo "Room-Schema ist aktuell."
+          fi
+
+      - name: Test- und Lint-Berichte hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: |
+            core/domain/build/reports/
+            core/data/build/reports/
+            app/build/reports/
+          if-no-files-found: ignore
+
+  release:
+    name: Signierte Release-APK
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build-Datum setzen
+        run: echo "LOCUS_BUILD_DATE=$(date -u +%Y-%m-%d)" >> "$GITHUB_ENV"
+
+      - name: Keystore aus Secrets wiederherstellen
+        env:
+          KEYSTORE_BASE64: ${{ secrets.LOCUS_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Secret LOCUS_KEYSTORE_BASE64 fehlt – siehe README (Release-Signatur)."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/locus-release.jks"
+          echo "LOCUS_KEYSTORE_PATH=$RUNNER_TEMP/locus-release.jks" >> "$GITHUB_ENV"
+
+      - name: Version bestimmen
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            BASE=$(grep '^locus.version=' gradle.properties | cut -d= -f2)
+            VERSION="${BASE}-main.${GITHUB_RUN_NUMBER}"
+          fi
+          echo "LOCUS_VERSION_NAME=$VERSION" >> "$GITHUB_ENV"
+          echo "Version: $VERSION"
+
+      - name: Release-APK bauen
+        env:
+          LOCUS_KEYSTORE_PASSWORD: ${{ secrets.LOCUS_KEYSTORE_PASSWORD }}
+          LOCUS_KEY_ALIAS: ${{ secrets.LOCUS_KEY_ALIAS }}
+          LOCUS_KEY_PASSWORD: ${{ secrets.LOCUS_KEY_PASSWORD }}
+        run: |
+          ./gradlew :app:assembleRelease
+          mv app/build/outputs/apk/release/app-release.apk "locus-${LOCUS_VERSION_NAME}.apk"
+
+      - name: Release-APK hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: locus-release-apk
+          path: locus-*.apk
+          if-no-files-found: error
+
+      - name: GitHub-Release erstellen
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: locus-*.apk
+          generate_release_notes: true

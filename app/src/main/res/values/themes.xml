@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Basis-Theme für das Fenster; das eigentliche Styling übernimmt Compose/Material 3. -->
+    <style name="Theme.Locus" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Startbildschirm: App-Icon auf Kartenpapier statt weißem Aufblitzen. -->
+    <style name="Theme.Locus.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.Locus</item>
+    </style>
+</resources>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug-Variante: eigener Name, damit sie neben der regulären App eindeutig erkennbar ist. -->
+<resources>
+    <string name="app_name">Locus Debug</string>
+</resources>
