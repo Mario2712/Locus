@@ -477,6 +477,7 @@
     <string name="place_link_osm">Mit OSM verknüpfen</string>
     <string name="place_make_homebase">Als Homebase festlegen</string>
     <string name="place_record">Orts-Akte</string>
+    <string name="editor_open_place_record">Orts-Akte öffnen ›</string>
     <string name="place_figures">Kennzahlen</string>
     <string name="place_figures_interval">Ø alle %1$s Tage</string>
     <string name="place_figures_daily">fast täglich</string>

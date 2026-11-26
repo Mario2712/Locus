@@ -119,84 +119,88 @@ fun LocusApp() {
         },
     ) { innerPadding ->
         val openDay: (LocalDate) -> Unit = { navController.navigate(DayRoute(it.toString())) }
-        NavHost(
-            navController = navController,
-            startDestination = TodayRoute,
-            modifier = Modifier.padding(innerPadding),
+        androidx.compose.runtime.CompositionLocalProvider(
+            io.github.mario2712.locus.ui.common.LocalOpenPlace provides { id: String -> navController.navigate(PlaceRoute(id)) },
         ) {
-            composable<TodayRoute> {
-                TodayScreen(
-                    onOpenCalendar = {
-                        activeTab = TopLevelDestination.CALENDAR
-                        navController.navigateTopLevel(CalendarRoute)
-                    },
-                    onOpenDay = openDay,
-                )
-            }
-            composable<CalendarRoute> { CalendarScreen(onOpenDay = openDay) }
-            composable<MapRoute> { MapScreen() }
-            composable<CountriesRoute> { CountriesScreen(onOpenCountry = { navController.navigate(CountryRoute(it)) }) }
-            composable<CountryRoute> { entry ->
-                CountryDetailScreen(
-                    iso2 = entry.toRoute<CountryRoute>().iso2,
-                    onBack = { navController.popBackStack() },
-                    onOpenPlace = { navController.navigate(PlaceRoute(it)) },
-                    onOpenTrip = { navController.navigate(TripRoute(it)) },
-                )
-            }
-            composable<MoreRoute> {
-                MoreScreen(
-                    onOpenSettings = { navController.navigate(SettingsRoute) },
-                    onOpenProfile = { navController.navigate(ProfileRoute) },
-                    onOpenTimeline = { navController.navigate(TimelineRoute) },
-                    onOpenTrips = { navController.navigate(TripsRoute) },
-                    onOpenPlaces = { navController.navigate(PlacesRoute) },
-                    onOpenStats = { navController.navigate(StatsRoute) },
-                    onOpenData = { navController.navigate(DataRoute) },
-                    onOpenAbout = { navController.navigate(io.github.mario2712.locus.ui.navigation.AboutRoute) },
-                )
-            }
-            composable<io.github.mario2712.locus.ui.navigation.AboutRoute> {
-                io.github.mario2712.locus.ui.more.AboutScreen(onBack = { navController.popBackStack() })
-            }
-            composable<DayRoute> { DayScreen(onBack = { navController.popBackStack() }) }
-            composable<SettingsRoute> { SettingsScreen(onBack = { navController.popBackStack() }) }
-            composable<StatsRoute> {
-                StatsScreen(
-                    onBack = { navController.popBackStack() }, onOpenDay = openDay,
-                    onOpenPlace = { navController.navigate(PlaceRoute(it)) },
-                    onOpenReview = { navController.navigate(io.github.mario2712.locus.ui.navigation.YearReviewRoute(it)) },
-                )
-            }
-            composable<io.github.mario2712.locus.ui.navigation.YearReviewRoute> {
-                io.github.mario2712.locus.ui.review.YearReviewScreen(onClose = { navController.popBackStack() })
-            }
-            composable<DataRoute> {
-                DataScreen(
-                    onBack = { navController.popBackStack() },
-                    onOpenTrash = { navController.navigate(io.github.mario2712.locus.ui.navigation.TrashRoute) },
-                )
-            }
-            composable<io.github.mario2712.locus.ui.navigation.TrashRoute> {
-                io.github.mario2712.locus.ui.data.TrashScreen(onBack = { navController.popBackStack() })
-            }
-            composable<ProfileRoute> { ProfileScreen(onBack = { navController.popBackStack() }) }
-            composable<TimelineRoute> { TimelineScreen(onBack = { navController.popBackStack() }, onOpenDay = openDay) }
-            composable<TripsRoute> {
-                TripsScreen(onBack = { navController.popBackStack() }, onOpenTrip = { navController.navigate(TripRoute(it)) })
-            }
-            composable<TripRoute> { entry ->
-                TripDetailScreen(entry.toRoute<TripRoute>().id, onBack = { navController.popBackStack() }, onOpenDay = openDay)
-            }
-            composable<PlacesRoute> {
-                PlacesScreen(onBack = { navController.popBackStack() }, onOpenPlace = { navController.navigate(PlaceRoute(it)) })
-            }
-            composable<PlaceRoute> {
-                PlaceDetailScreen(
-                    onBack = { navController.popBackStack() },
-                    onOpenDay = openDay,
-                    onOpenPlace = { navController.navigate(PlaceRoute(it)) },
-                )
+            NavHost(
+                navController = navController,
+                startDestination = TodayRoute,
+                modifier = Modifier.padding(innerPadding),
+            ) {
+                composable<TodayRoute> {
+                    TodayScreen(
+                        onOpenCalendar = {
+                            activeTab = TopLevelDestination.CALENDAR
+                            navController.navigateTopLevel(CalendarRoute)
+                        },
+                        onOpenDay = openDay,
+                    )
+                }
+                composable<CalendarRoute> { CalendarScreen(onOpenDay = openDay) }
+                composable<MapRoute> { MapScreen() }
+                composable<CountriesRoute> { CountriesScreen(onOpenCountry = { navController.navigate(CountryRoute(it)) }) }
+                composable<CountryRoute> { entry ->
+                    CountryDetailScreen(
+                        iso2 = entry.toRoute<CountryRoute>().iso2,
+                        onBack = { navController.popBackStack() },
+                        onOpenPlace = { navController.navigate(PlaceRoute(it)) },
+                        onOpenTrip = { navController.navigate(TripRoute(it)) },
+                    )
+                }
+                composable<MoreRoute> {
+                    MoreScreen(
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
+                        onOpenProfile = { navController.navigate(ProfileRoute) },
+                        onOpenTimeline = { navController.navigate(TimelineRoute) },
+                        onOpenTrips = { navController.navigate(TripsRoute) },
+                        onOpenPlaces = { navController.navigate(PlacesRoute) },
+                        onOpenStats = { navController.navigate(StatsRoute) },
+                        onOpenData = { navController.navigate(DataRoute) },
+                        onOpenAbout = { navController.navigate(io.github.mario2712.locus.ui.navigation.AboutRoute) },
+                    )
+                }
+                composable<io.github.mario2712.locus.ui.navigation.AboutRoute> {
+                    io.github.mario2712.locus.ui.more.AboutScreen(onBack = { navController.popBackStack() })
+                }
+                composable<DayRoute> { DayScreen(onBack = { navController.popBackStack() }) }
+                composable<SettingsRoute> { SettingsScreen(onBack = { navController.popBackStack() }) }
+                composable<StatsRoute> {
+                    StatsScreen(
+                        onBack = { navController.popBackStack() }, onOpenDay = openDay,
+                        onOpenPlace = { navController.navigate(PlaceRoute(it)) },
+                        onOpenReview = { navController.navigate(io.github.mario2712.locus.ui.navigation.YearReviewRoute(it)) },
+                    )
+                }
+                composable<io.github.mario2712.locus.ui.navigation.YearReviewRoute> {
+                    io.github.mario2712.locus.ui.review.YearReviewScreen(onClose = { navController.popBackStack() })
+                }
+                composable<DataRoute> {
+                    DataScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenTrash = { navController.navigate(io.github.mario2712.locus.ui.navigation.TrashRoute) },
+                    )
+                }
+                composable<io.github.mario2712.locus.ui.navigation.TrashRoute> {
+                    io.github.mario2712.locus.ui.data.TrashScreen(onBack = { navController.popBackStack() })
+                }
+                composable<ProfileRoute> { ProfileScreen(onBack = { navController.popBackStack() }) }
+                composable<TimelineRoute> { TimelineScreen(onBack = { navController.popBackStack() }, onOpenDay = openDay) }
+                composable<TripsRoute> {
+                    TripsScreen(onBack = { navController.popBackStack() }, onOpenTrip = { navController.navigate(TripRoute(it)) })
+                }
+                composable<TripRoute> { entry ->
+                    TripDetailScreen(entry.toRoute<TripRoute>().id, onBack = { navController.popBackStack() }, onOpenDay = openDay)
+                }
+                composable<PlacesRoute> {
+                    PlacesScreen(onBack = { navController.popBackStack() }, onOpenPlace = { navController.navigate(PlaceRoute(it)) })
+                }
+                composable<PlaceRoute> {
+                    PlaceDetailScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenDay = openDay,
+                        onOpenPlace = { navController.navigate(PlaceRoute(it)) },
+                    )
+                }
             }
         }
     }

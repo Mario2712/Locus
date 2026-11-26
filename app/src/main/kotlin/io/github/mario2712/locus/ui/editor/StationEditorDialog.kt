@@ -100,6 +100,7 @@ fun StationEditorDialog(
                     suggestedIds = suggestedPlaceIds,
                     anchorIds = (listOfNotNull(initial.placeId) + anchorPlaceIds).distinct(),
                 )
+                if (!initial.isNew) io.github.mario2712.locus.ui.common.OpenPlaceRecordButton(initial.placeId, onDismiss)
                 Text(stringResource(R.string.editor_transport), style = MaterialTheme.typography.labelLarge)
                 TransportChips(draft.transport) { draft = draft.copy(transport = it) }
                 SwitchRow(stringResource(R.string.editor_overnight), draft.overnight) { draft = draft.copy(overnight = it) }

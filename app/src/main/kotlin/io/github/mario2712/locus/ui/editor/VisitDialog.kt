@@ -51,6 +51,7 @@ fun VisitDialog(
                     preferLocations = true, suggestedIds = suggestedPlaceIds,
                     anchorIds = (listOfNotNull(initial.placeId) + anchorPlaceIds).distinct(),
                 )
+                if (!initial.isNew) io.github.mario2712.locus.ui.common.OpenPlaceRecordButton(initial.placeId, onDismiss)
                 Text(stringResource(R.string.visit_categories), style = MaterialTheme.typography.labelLarge)
                 CategoryChips(editor.activeCategories, draft.categoryIds) { draft = draft.copy(categoryIds = it) }
                 SwitchRow(stringResource(R.string.visit_counts), counts) { value ->
