@@ -129,10 +129,15 @@ object Trips {
         if (visit.date != start && visit.date != end) return true
         fun cityOf(id: String): String? = places[id]?.let { if (it.kind == io.github.mario2712.locus.domain.model.PlaceKind.CITY) it.id else it.parentPlaceId }
         fun countryOf(id: String): String? = places[id]?.let { ReferenceData.countableCountry(it.countryIso2)?.iso2 }
+        // Nur Ziele zählen – ein Transit (z. B. Abflughafen Salzburg) macht die Heimatregion nicht zur Reisestadt.
+        val destinations = tripStays.filter { it.typeId != Defaults.StayTypeIds.TRANSIT && it.typeId != Defaults.StayTypeIds.ON_THE_WAY }
         val visitCity = cityOf(visit.placeId)
-        if (visitCity != null && tripStays.any { cityOf(it.placeId) == visitCity }) return true
-        val homeCountry = homebases.at(visit.date)?.let(::countryOf) ?: return true
-        return countryOf(visit.placeId) != homeCountry
+        if (visitCity != null && destinations.any { cityOf(it.placeId) == visitCity }) return true
+        val visitCountry = countryOf(visit.placeId) ?: return false
+        val homeCountry = homebases.at(visit.date)?.let(::countryOf)
+            // Ohne bekannte Homebase an dem Tag: nur Besuche in einem Zielland gehören dazu.
+            ?: return visitCountry in destinations.mapNotNull { countryOf(it.placeId) }
+        return visitCountry != homeCountry
     }
 
     private fun build(
