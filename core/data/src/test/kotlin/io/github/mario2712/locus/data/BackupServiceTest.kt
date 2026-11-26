@@ -146,4 +146,21 @@ class BackupServiceTest : DbTestBase() {
         assertEquals("Museum", RoomPlaceRepository(db.placeDao(), meta).get("museum")!!.name)
         assertEquals(emptyList<Any>(), trash.observe().first())
     }
+
+    @Test
+    fun `Import uebernimmt Geburtsdaten auch auf einem frisch eingerichteten Geraet`() = runTest {
+        fill() // Debug-App: Person mit Geburtsdatum (now = 1_000)
+        val json = BackupService(db, meta).exportJson()
+
+        // Release-App: später installiert, Standard-Personen frisch angelegt
+        otherNow = 90_000L
+        DatabaseSeeder(
+            other, otherMeta, InMemorySettings(),
+            io.github.mario2712.locus.data.repository.RoomCatalogRepository(other.catalogDao(), otherMeta),
+            RoomVisitRepository(other.visitDao(), otherMeta),
+        ).seed()
+        BackupService(other, otherMeta).importJson(json)
+
+        assertEquals(d("1996-05-10"), RoomPersonRepository(other.personDao(), otherMeta).observeAll().first().first { it.isMe }.birthDate)
+    }
 }

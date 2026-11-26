@@ -29,6 +29,8 @@ class TripsTest {
         Place(home, "Hallein", PlaceKind.CITY, "AT", isHomebase = true),
         Place("salzburg", "Salzburg", PlaceKind.CITY, "AT"),
         Place("muc", "Flughafen München", PlaceKind.POI, "DE"),
+        Place("szg", "Flughafen Salzburg", PlaceKind.POI, "AT", parentPlaceId = "salzburg"),
+        Place("lokal", "Restaurant in Salzburg", PlaceKind.POI, "AT", parentPlaceId = "salzburg"),
         Place("ist", "Flughafen Istanbul", PlaceKind.POI, "TR"),
         Place("taschkent", "Taschkent", PlaceKind.CITY, "UZ"),
         Place("samarkand", "Samarkand", PlaceKind.CITY, "UZ"),
@@ -54,6 +56,21 @@ class TripsTest {
         assertEquals(listOf("muc", "ist", "taschkent"), repo.all.map { it.placeId })
         commands.reorder(listOf(repo.all[0].id, repo.all[2].id, repo.all[1].id))
         assertEquals(listOf("muc", "taschkent", "ist"), repo.all.map { it.placeId })
+    }
+
+    @Test
+    fun `Abflughafen macht die Heimatstadt nicht zur Reisestadt - Restaurant am Heimreiseabend zaehlt nicht`() = runTest {
+        commands.journey(
+            d("2025-06-01"), setOf(ME),
+            listOf(JourneyLeg("szg", setOf(TransportMode.CAR)), JourneyLeg("ljubljana", setOf(TransportMode.PLANE))),
+            StayTypeIds.VACATION,
+        )
+        commands.returnJourney(d("2025-06-04"), setOf(ME), listOf(JourneyLeg("szg", setOf(TransportMode.PLANE))), home, setOf(TransportMode.CAR), homeDayOffset = 0)
+        val dinner = Visit("v", "lokal", VisitCategoryIds.RESTAURANT, d("2025-06-04"), participants = setOf(ME))
+        val trip = Trips.derive(repo.all, listOf(dinner), places, ME, home, d("2026-11-21")).single()
+        assertEquals(listOf("SI"), trip.countryIso2s)
+        assertTrue(trip.visits.isEmpty())
+
     }
 
     @Test

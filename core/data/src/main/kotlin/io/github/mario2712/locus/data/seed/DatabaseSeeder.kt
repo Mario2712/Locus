@@ -26,7 +26,8 @@ class DatabaseSeeder @Inject constructor(
     private val visits: VisitRepository,
 ) {
     suspend fun seed() {
-        val m = meta.forSave(existingCreatedAt = null)
+        // Standard-Einträge mit Zeitstempel 0: Jede echte Änderung (auch aus einem Import) ist neuer und gewinnt.
+        val m = meta.forSave(existingCreatedAt = null).copy(createdAt = SEED_TIME, updatedAt = SEED_TIME)
         db.withTransaction {
             db.personDao().insertIfMissing(Defaults.persons.map { it.toEntity(m) })
             db.catalogDao().apply {
@@ -46,6 +47,26 @@ class DatabaseSeeder @Inject constructor(
             }
         }
         migrateSummitToNature()
+        resetSeedTimestamps()
+    }
+
+    /**
+     * Einmalig für bestehende Installationen: Standard-Einträge, die hier angelegt und nie geändert wurden,
+     * bekommen nachträglich Zeitstempel 0 – damit ein Import (z. B. Geburtsdaten aus der Debug-App) sie ersetzt.
+     */
+    private suspend fun resetSeedTimestamps() {
+        if (settings.isMigrationDone(MIGRATION_SEED_TIME)) return
+        val device = meta.deviceId()
+        db.withTransaction {
+            listOf("person", "stay_type", "visit_category", "region_collection").forEach { table ->
+                db.openHelper.writableDatabase.execSQL(
+                    "UPDATE $table SET created_at = $SEED_TIME, updated_at = $SEED_TIME " +
+                        "WHERE updated_at = created_at AND origin_device = ?",
+                    arrayOf<Any>(device),
+                )
+            }
+        }
+        settings.setMigrationDone(MIGRATION_SEED_TIME)
     }
 
     /** Einmalig: „Gipfel“ archivieren, Besuche auf „Natur / Wandern“ umstellen. */
@@ -63,5 +84,7 @@ class DatabaseSeeder @Inject constructor(
 
     private companion object {
         const val MIGRATION_SUMMIT = "summit-to-nature"
+        const val MIGRATION_SEED_TIME = "seed-timestamps-zero"
+        const val SEED_TIME = 0L
     }
 }
