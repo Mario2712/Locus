@@ -25,6 +25,7 @@ class VisitCommands(private val visits: VisitRepository) {
         participants: Set<PersonId>,
         countsOverride: Boolean? = null,
         liveTime: LocalTime? = null,
+        note: String? = null,
     ): Visit {
         require(categoryIds.isNotEmpty()) { "Ein Besuch braucht mindestens eine Kategorie" }
         val existing = visits.observeBetween(date, date).first()
@@ -34,12 +35,16 @@ class VisitCommands(private val visits: VisitRepository) {
             existing.copy(
                 extraCategoryIds = all - existing.categoryId,
                 countsForCountryPointsOverride = countsOverride ?: existing.countsForCountryPointsOverride,
+                // Zusammengeführt: Notizen aneinanderhängen statt die alte zu verlieren
+                note = listOfNotNull(existing.note?.takeIf { it.isNotBlank() }, note?.takeIf { it.isNotBlank() })
+                    .distinct().joinToString(" · ").ifEmpty { null },
             )
         } else {
             Visit(
                 id = newId(), placeId = placeId, categoryId = categoryIds.first(), date = date, time = liveTime,
                 participants = participants, countsForCountryPointsOverride = countsOverride,
                 extraCategoryIds = categoryIds - categoryIds.first(), source = EntrySource.MANUAL,
+                note = note?.takeIf { it.isNotBlank() },
             )
         }
         visits.upsert(visit)
