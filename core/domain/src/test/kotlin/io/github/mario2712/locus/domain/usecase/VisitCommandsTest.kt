@@ -28,6 +28,14 @@ class VisitCommandsTest {
     private val day = LocalDate.parse("2026-11-21")
 
     @Test
+    fun `Notiz eines neuen Besuchs wird gespeichert und beim Zusammenfuehren ergaenzt`() = runTest {
+        commands.add(day, "oper", setOf(VisitCategoryIds.RESTAURANT), setOf(ME), note = "Vorher essen")
+        assertEquals("Vorher essen", data.value.values.single().note)
+        commands.add(day, "oper", setOf(VisitCategoryIds.SHOPPING), setOf(ME), note = "Tosca")
+        assertEquals("Vorher essen · Tosca", data.value.values.single().note)
+    }
+
+    @Test
     fun `Einkaufen in Oberalm, spaeter noch essen - ein Besuch mit zwei Kategorien`() = runTest {
         commands.add(day, "oberalm", setOf(VisitCategoryIds.SHOPPING), setOf(ME))
         commands.add(day, "oberalm", setOf(VisitCategoryIds.RESTAURANT), setOf(ME))

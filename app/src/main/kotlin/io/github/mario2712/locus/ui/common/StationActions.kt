@@ -138,6 +138,7 @@ class StationActions @Inject constructor(
             visitCommands.add(
                 date = draft.date, placeId = requireNotNull(draft.placeId), categoryIds = draft.categoryIds,
                 participants = draft.participants, countsOverride = draft.countsOverride, liveTime = liveTime,
+                note = draft.note.trim().takeIf { it.isNotEmpty() },
             )
         } else {
             visits.upsert(draft.toVisit())
