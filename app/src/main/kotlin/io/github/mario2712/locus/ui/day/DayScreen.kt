@@ -11,7 +11,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -43,27 +42,29 @@ fun DayScreen(onBack: () -> Unit, viewModel: DayViewModel = hiltViewModel()) {
         viewModel.messages.collect { snackbar.showMessage(it, context, viewModel::undo) }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(Format.longDate(state.date)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(painterResource(R.drawable.ic_back), stringResource(R.string.action_back))
-                    }
-                },
-            )
-        },
-        snackbarHost = { SnackbarHost(snackbar) },
-    ) { padding ->
-        Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            state.holiday?.let {
-                Text(stringResource(R.string.today_holiday, it), color = MaterialTheme.colorScheme.tertiary)
+    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(Format.longDate(state.date)) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(painterResource(R.drawable.ic_back), stringResource(R.string.action_back))
+                        }
+                    },
+                )
+            },
+        ) { padding ->
+            Column(
+                Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                state.holiday?.let {
+                    Text(stringResource(R.string.today_holiday, it), color = MaterialTheme.colorScheme.tertiary)
+                }
+                DayPanel(state, viewModel)
             }
-            DayPanel(state, viewModel)
         }
+        io.github.mario2712.locus.ui.common.TopMessageHost(snackbar, Modifier.align(androidx.compose.ui.Alignment.TopCenter))
     }
 }

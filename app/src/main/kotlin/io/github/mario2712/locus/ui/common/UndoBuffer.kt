@@ -7,7 +7,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import io.github.mario2712.locus.BuildConfig
 import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -30,13 +29,11 @@ class UndoBuffer @Inject constructor(
      * passiert erst beim Rückgängigmachen – so bleibt das Speichern selbst schnell.
      */
     suspend fun record(from: LocalDate, to: LocalDate, block: suspend () -> UiMessage): UiMessage = mutex.withLock {
-        val started = System.nanoTime()
         val (beforeStays, beforeVisits) = coroutineScope {
             val s = async { stays.observeBetween(from, to).first() }
             val v = async { visits.observeBetween(from, to).first() }
             s.await().associateBy { it.id } to v.await().associateBy { it.id }
         }
-        val snapshotDone = System.nanoTime()
         val message = block()
         val changed = when (message) {
             UiMessage.Saved, UiMessage.Deleted, is UiMessage.Conflict -> true
@@ -55,11 +52,7 @@ class UndoBuffer @Inject constructor(
             (afterVisits.keys - beforeVisits.keys).forEach { visits.delete(it) }
             beforeVisits.values.filter { afterVisits[it.id] != it }.forEach { visits.upsert(it) }
         }
-        val timing = if (BuildConfig.DEBUG) {
-            val ms = { a: Long, b: Long -> (b - a) / 1_000_000 }
-            "${ms(started, System.nanoTime())} ms (Vorher-Stand ${ms(started, snapshotDone)} ms, Speichern ${ms(snapshotDone, System.nanoTime())} ms)"
-        } else null
-        UiMessage.Undoable(message, timing)
+        UiMessage.Undoable(message)
     }
 
     /** Macht die letzte Änderung rückgängig. @return `true`, wenn es etwas rückgängig zu machen gab. */

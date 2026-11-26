@@ -29,7 +29,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -82,87 +81,90 @@ fun CalendarScreen(
         viewModel.messages.collect { snackbar.showMessage(it, context, viewModel::undo) }
     }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
-        Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = viewModel::previousMonth) {
-                    Icon(painterResource(R.drawable.ic_chevron_left), stringResource(R.string.calendar_previous))
-                }
-                Text(
-                    Format.month(state.month.atDay(1)) + " ▾",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f).clickable { pickMonth = true }.padding(vertical = 8.dp),
-                )
-                if (state.month != currentMonth) {
-                    TextButton(onClick = { viewModel.setMonth(currentMonth) }) { Text(stringResource(R.string.calendar_today)) }
-                }
-                IconButton(onClick = viewModel::nextMonth) {
-                    Icon(painterResource(R.drawable.ic_chevron_right), stringResource(R.string.calendar_next))
-                }
-            }
-
-            // Wischen: nach links = nächster Monat, nach rechts = vorheriger Monat
-            var dragTotal by remember { mutableStateOf(0f) }
-            Box(
-                Modifier.pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragStart = { dragTotal = 0f },
-                        onHorizontalDrag = { change, amount -> dragTotal += amount; change.consume() },
-                        onDragEnd = {
-                            val threshold = 80.dp.toPx()
-                            if (dragTotal < -threshold) viewModel.nextMonth() else if (dragTotal > threshold) viewModel.previousMonth()
-                            dragTotal = 0f
-                        },
-                    )
-                },
+    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
+        Scaffold { padding ->
+            Column(
+                Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                MonthGrid(
-                    days = state.days,
-                    selection = state.selection,
-                    onTap = { date -> if (!viewModel.extendSelection(date)) onOpenDay(date) },
-                    onLongPress = viewModel::startSelection,
-                )
-            }
-
-            val selection = state.selection
-            if (selection != null) {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            stringResource(
-                                R.string.calendar_selection,
-                                Format.shortDate(selection.start),
-                                Format.shortDate(selection.endInclusive),
-                            ),
-                        )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(onClick = { showFill = true }) { Text(stringResource(R.string.calendar_fill)) }
-                            OutlinedButton(onClick = viewModel::clearSelection) { Text(stringResource(R.string.action_cancel)) }
-                        }
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = viewModel::previousMonth) {
+                        Icon(painterResource(R.drawable.ic_chevron_left), stringResource(R.string.calendar_previous))
+                    }
+                    Text(
+                        Format.month(state.month.atDay(1)) + " ▾",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.weight(1f).clickable { pickMonth = true }.padding(vertical = 8.dp),
+                    )
+                    if (state.month != currentMonth) {
+                        TextButton(onClick = { viewModel.setMonth(currentMonth) }) { Text(stringResource(R.string.calendar_today)) }
+                    }
+                    IconButton(onClick = viewModel::nextMonth) {
+                        Icon(painterResource(R.drawable.ic_chevron_right), stringResource(R.string.calendar_next))
                     }
                 }
-            } else {
-                Text(
-                    stringResource(R.string.calendar_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
 
-            if (state.legend.isNotEmpty()) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    state.legend.forEach { (name, color) ->
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            TypeDot(color, 10.dp)
-                            Text(name, style = MaterialTheme.typography.bodySmall)
+                // Wischen: nach links = nächster Monat, nach rechts = vorheriger Monat
+                var dragTotal by remember { mutableStateOf(0f) }
+                Box(
+                    Modifier.pointerInput(Unit) {
+                        detectHorizontalDragGestures(
+                            onDragStart = { dragTotal = 0f },
+                            onHorizontalDrag = { change, amount -> dragTotal += amount; change.consume() },
+                            onDragEnd = {
+                                val threshold = 80.dp.toPx()
+                                if (dragTotal < -threshold) viewModel.nextMonth() else if (dragTotal > threshold) viewModel.previousMonth()
+                                dragTotal = 0f
+                            },
+                        )
+                    },
+                ) {
+                    MonthGrid(
+                        days = state.days,
+                        selection = state.selection,
+                        onTap = { date -> if (!viewModel.extendSelection(date)) onOpenDay(date) },
+                        onLongPress = viewModel::startSelection,
+                    )
+                }
+
+                val selection = state.selection
+                if (selection != null) {
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                stringResource(
+                                    R.string.calendar_selection,
+                                    Format.shortDate(selection.start),
+                                    Format.shortDate(selection.endInclusive),
+                                ),
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(onClick = { showFill = true }) { Text(stringResource(R.string.calendar_fill)) }
+                                OutlinedButton(onClick = viewModel::clearSelection) { Text(stringResource(R.string.action_cancel)) }
+                            }
+                        }
+                    }
+                } else {
+                    Text(
+                        stringResource(R.string.calendar_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                if (state.legend.isNotEmpty()) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        state.legend.forEach { (name, color) ->
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                TypeDot(color, 10.dp)
+                                Text(name, style = MaterialTheme.typography.bodySmall)
+                            }
                         }
                     }
                 }
             }
         }
+        io.github.mario2712.locus.ui.common.TopMessageHost(snackbar, Modifier.align(androidx.compose.ui.Alignment.TopCenter))
     }
 
     if (pickMonth) {

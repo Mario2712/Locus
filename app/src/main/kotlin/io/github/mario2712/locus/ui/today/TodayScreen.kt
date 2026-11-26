@@ -18,7 +18,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -74,78 +73,81 @@ fun TodayScreen(
         notificationsGranted = it
     }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
-        Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(Format.longDate(state.day.date), style = MaterialTheme.typography.headlineSmall)
-            state.day.holiday?.let {
-                Text(stringResource(R.string.today_holiday, it), color = MaterialTheme.colorScheme.tertiary)
-            }
-
-            if (state.reminderEnabled && !notificationsGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                SectionCard(stringResource(R.string.today_notifications_title)) {
-                    Text(stringResource(R.string.today_notifications_text))
-                    Button(onClick = { permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }) {
-                        Text(stringResource(R.string.today_notifications_allow))
-                    }
+    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
+        Scaffold { padding ->
+            Column(
+                Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(Format.longDate(state.day.date), style = MaterialTheme.typography.headlineSmall)
+                state.day.holiday?.let {
+                    Text(stringResource(R.string.today_holiday, it), color = MaterialTheme.colorScheme.tertiary)
                 }
-            }
 
-            DayPanel(state.day, viewModel)
-
-            if (state.memories.isNotEmpty()) {
-                SectionCard(stringResource(R.string.today_memories)) {
-                    state.memories.forEach { m ->
-                        val flags = m.countries.mapNotNull { ReferenceData.country(it)?.flag }.joinToString("")
-                        val where = (m.placeIds + m.visitPlaceIds).distinct().take(4).joinToString(" · ") { state.day.editor.placeName(it) }
-                        androidx.compose.foundation.layout.Column(
-                            androidx.compose.ui.Modifier.fillMaxWidth().clickable { onOpenDay(m.date) }.padding(vertical = 6.dp),
-                        ) {
-                            Text(
-                                pluralStringResource(R.plurals.today_years_ago, m.yearsAgo, m.yearsAgo) + " · " + m.date.year,
-                                style = MaterialTheme.typography.labelLarge,
-                            )
-                            Text(listOf(flags, where).filter { it.isNotBlank() }.joinToString(" "), style = MaterialTheme.typography.bodyMedium)
+                if (state.reminderEnabled && !notificationsGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    SectionCard(stringResource(R.string.today_notifications_title)) {
+                        Text(stringResource(R.string.today_notifications_text))
+                        Button(onClick = { permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }) {
+                            Text(stringResource(R.string.today_notifications_allow))
                         }
                     }
                 }
-            }
 
-            SectionCard(stringResource(R.string.today_week)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    state.week.forEach { day ->
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                day.date.dayOfWeek.getDisplayName(TextStyle.SHORT, io.github.mario2712.locus.ui.common.Format.locale),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (day.isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
-                                val color = day.colorArgb
-                                if (color != null) TypeDot(color, 16.dp) else Text("·", color = MaterialTheme.colorScheme.outline)
+                DayPanel(state.day, viewModel)
+
+                if (state.memories.isNotEmpty()) {
+                    SectionCard(stringResource(R.string.today_memories)) {
+                        state.memories.forEach { m ->
+                            val flags = m.countries.mapNotNull { ReferenceData.country(it)?.flag }.joinToString("")
+                            val where = (m.placeIds + m.visitPlaceIds).distinct().take(4).joinToString(" · ") { state.day.editor.placeName(it) }
+                            androidx.compose.foundation.layout.Column(
+                                androidx.compose.ui.Modifier.fillMaxWidth().clickable { onOpenDay(m.date) }.padding(vertical = 6.dp),
+                            ) {
+                                Text(
+                                    pluralStringResource(R.plurals.today_years_ago, m.yearsAgo, m.yearsAgo) + " · " + m.date.year,
+                                    style = MaterialTheme.typography.labelLarge,
+                                )
+                                Text(listOf(flags, where).filter { it.isNotBlank() }.joinToString(" "), style = MaterialTheme.typography.bodyMedium)
                             }
                         }
                     }
                 }
-                if (state.weekCounts.isNotEmpty()) {
-                    Text(state.weekCounts.joinToString(" · ") { (name, count) -> "$count× $name" })
+
+                SectionCard(stringResource(R.string.today_week)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        state.week.forEach { day ->
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    day.date.dayOfWeek.getDisplayName(TextStyle.SHORT, io.github.mario2712.locus.ui.common.Format.locale),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (day.isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Box(Modifier.size(20.dp), contentAlignment = Alignment.Center) {
+                                    val color = day.colorArgb
+                                    if (color != null) TypeDot(color, 16.dp) else Text("·", color = MaterialTheme.colorScheme.outline)
+                                }
+                            }
+                        }
+                    }
+                    if (state.weekCounts.isNotEmpty()) {
+                        Text(state.weekCounts.joinToString(" · ") { (name, count) -> "$count× $name" })
+                    }
+                    if (state.missingDays > 0) {
+                        TextButton(onClick = onOpenCalendar) {
+                            Text(context.resources.getQuantityString(R.plurals.today_missing, state.missingDays, state.missingDays))
+                        }
+                    }
                 }
-                if (state.missingDays > 0) {
-                    TextButton(onClick = onOpenCalendar) {
-                        Text(context.resources.getQuantityString(R.plurals.today_missing, state.missingDays, state.missingDays))
+
+                SectionCard(stringResource(R.string.today_country_points, state.countries.size)) {
+                    if (state.countries.isEmpty()) {
+                        Text(stringResource(R.string.today_no_countries))
+                    } else {
+                        Text(state.countries.joinToString(" ") { it.flag }, style = MaterialTheme.typography.headlineSmall)
                     }
                 }
             }
-
-            SectionCard(stringResource(R.string.today_country_points, state.countries.size)) {
-                if (state.countries.isEmpty()) {
-                    Text(stringResource(R.string.today_no_countries))
-                } else {
-                    Text(state.countries.joinToString(" ") { it.flag }, style = MaterialTheme.typography.headlineSmall)
-                }
-            }
         }
+        io.github.mario2712.locus.ui.common.TopMessageHost(snackbar, Modifier.align(androidx.compose.ui.Alignment.TopCenter))
     }
 }
