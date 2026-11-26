@@ -135,7 +135,7 @@ class CalendarViewModel @Inject constructor(
         if (days >= io.github.mario2712.locus.backup.SafetyBackups.FILL_MIN_DAYS) {
             safety.create(io.github.mario2712.locus.backup.SafetyBackups.Reason.FILL)
         }
-        messageChannel.send(editing.undo.record { editing.fill(range.start, range.endInclusive, me, draft) })
+        messageChannel.send(editing.undo.record(range.start, range.endInclusive) { editing.fill(range.start, range.endInclusive, me, draft) })
         clearSelection()
     }
 

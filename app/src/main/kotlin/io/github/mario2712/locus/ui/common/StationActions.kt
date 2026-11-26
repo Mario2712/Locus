@@ -28,7 +28,7 @@ sealed interface UiMessage {
     data object Undone : UiMessage
 
     /** Meldung zu einer Änderung, die sich per „Rückgängig“ zurücknehmen lässt. */
-    data class Undoable(val inner: UiMessage) : UiMessage
+    data class Undoable(val inner: UiMessage, val debugTiming: String? = null) : UiMessage
 }
 
 /** Gemeinsame Schreib-Abläufe der Screens (Stationen, Reisen, Besuche) inkl. Warnungen. */

@@ -10,7 +10,7 @@ fun UiMessage.text(context: Context): String = when (this) {
     UiMessage.Deleted -> context.getString(R.string.msg_deleted)
     UiMessage.DayNotEmpty -> context.getString(R.string.msg_day_not_empty)
     UiMessage.Undone -> context.getString(R.string.msg_undone)
-    is UiMessage.Undoable -> inner.text(context)
+    is UiMessage.Undoable -> inner.text(context) + (debugTiming?.let { " · $it" } ?: "")
 }
 
 /** Zeigt die Meldung; bei rückgängig machbaren Änderungen mit Knopf „Rückgängig“. */

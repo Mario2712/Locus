@@ -148,9 +148,17 @@ abstract class BaseDayViewModel(
 
     private fun send(message: UiMessage) = messageChannel.trySend(message)
 
-    /** Änderung mit „Rückgängig“-Möglichkeit ausführen und melden. */
-    private suspend fun sendUndoable(block: suspend () -> UiMessage) {
-        send(actions.undo.record(block))
+    /**
+     * Führt eine Änderung mit „Rückgängig“ aus. Verglichen wird nur der Bereich um diesen Tag
+     * (Vortag bis [extraTo] bzw. Folgetag) und – falls angegeben – [alsoDates], etwa ein geändertes Datum.
+     */
+    private suspend fun sendUndoable(
+        vararg alsoDates: LocalDate,
+        extraTo: LocalDate = date.plusDays(1),
+        block: suspend () -> UiMessage,
+    ) {
+        val dates = alsoDates.toList() + date.minusDays(1) + extraTo
+        send(actions.undo.record(dates.min(), dates.max(), block))
     }
 
     /** Letzte Änderung zurücknehmen. */
@@ -185,7 +193,7 @@ abstract class BaseDayViewModel(
         startTime = live(),
     )
 
-    fun saveStation(draft: StayDraft) = viewModelScope.launch { sendUndoable { actions.saveStation(draft) } }
+    fun saveStation(draft: StayDraft) = viewModelScope.launch { sendUndoable(draft.startDate, draft.endDate) { actions.saveStation(draft) } }
 
     /**
      * Neue Station vor bzw. nach [anchor] einfügen. Vorschlag: selber Tag wie [anchor], wählbar auch Vortag
@@ -209,13 +217,13 @@ abstract class BaseDayViewModel(
     fun deleteStation(id: String) = viewModelScope.launch { sendUndoable { actions.deleteStation(id) } }
 
     fun journey(draft: JourneyDraft) = viewModelScope.launch {
-        sendUndoable { actions.journey(date, draft.participants, draft.legs, draft.typeId, live()) }
+        sendUndoable(extraTo = date.plusDays(JOURNEY_DAYS)) { actions.journey(date, draft.participants, draft.legs, draft.typeId, live()) }
     }
 
     fun returnHome(state: DayState, draft: io.github.mario2712.locus.ui.editor.ReturnDraft) = viewModelScope.launch {
         val arrival = date.plusDays(draft.homeDayOffset.toLong())
         val home = state.editor.homebaseAt(arrival) ?: state.editor.homebase ?: return@launch
-        sendUndoable { actions.returnJourney(date, defaultParticipants(state), draft.stops, home.id, draft.homeTransport, draft.homeDayOffset, live()) }
+        sendUndoable(extraTo = date.plusDays(JOURNEY_DAYS)) { actions.returnJourney(date, defaultParticipants(state), draft.stops, home.id, draft.homeTransport, draft.homeDayOffset, live()) }
     }
 
     fun newVisitDraft(state: DayState, placeId: String? = null) =
@@ -224,8 +232,13 @@ abstract class BaseDayViewModel(
     fun renameTrip(trip: io.github.mario2712.locus.domain.trips.TripSummary, title: String) =
         viewModelScope.launch { send(actions.renameTrip(trip, title)) }
 
-    fun saveVisit(draft: VisitDraft) = viewModelScope.launch { sendUndoable { actions.saveVisit(draft, live()) } }
+    fun saveVisit(draft: VisitDraft) = viewModelScope.launch { sendUndoable(draft.date) { actions.saveVisit(draft, live()) } }
     fun deleteVisit(id: String) = viewModelScope.launch { sendUndoable { actions.deleteVisit(id) } }
 
     suspend fun createPlace(draft: PlaceDraft): Place = editorCatalog.createPlace(draft)
+
+    private companion object {
+        /** Reichweite von Hin- und Rückreise (Ankunft an Folgetagen) für „Rückgängig“. */
+        const val JOURNEY_DAYS = 7L
+    }
 }
