@@ -124,7 +124,10 @@ private fun PersonCard(profile: PersonProfile, state: ProfileUiState, onEditBirt
 
         HorizontalDivider()
         Text(stringResource(R.string.profile_milestones), style = MaterialTheme.typography.labelLarge)
+        val documentedSince = LocalDate.of(state.editor.defaults.documentedSinceYear, 1, 1)
         profile.milestones.forEach { milestone ->
+            // Vor Beginn der lückenlosen Erfassung wäre „0 Länder“ irreführend
+            val beforeRecords = milestone.reached && milestone.date.isBefore(documentedSince)
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -132,6 +135,13 @@ private fun PersonCard(profile: PersonProfile, state: ProfileUiState, onEditBirt
             ) {
                 androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
                     Text(stringResource(R.string.profile_milestone_reached, milestone.age))
+                    if (beforeRecords) {
+                        Text(
+                            stringResource(R.string.profile_milestone_before_records),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     if (!milestone.reached) {
                         Text(
                             stringResource(R.string.profile_milestone_next, Format.fullDate(milestone.date)),
@@ -141,7 +151,8 @@ private fun PersonCard(profile: PersonProfile, state: ProfileUiState, onEditBirt
                     }
                 }
                 Text(
-                    context.resources.getQuantityString(R.plurals.profile_countries_count, milestone.countries, milestone.countries),
+                    if (beforeRecords) "–"
+                    else context.resources.getQuantityString(R.plurals.profile_countries_count, milestone.countries, milestone.countries),
                     color = if (milestone.reached) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.primary,
                     maxLines = 1,
                 )

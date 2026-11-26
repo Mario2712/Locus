@@ -427,6 +427,7 @@
     </plurals>
     <string name="profile_milestones">Länder bis zu runden Geburtstagen</string>
     <string name="profile_milestone_reached">bis zum %1$d.</string>
+    <string name="profile_milestone_before_records">vor Erfassungsbeginn</string>
     <string name="profile_milestone_next">am %1$s · bisher</string>
     <plurals name="profile_countries_count">
         <item quantity="one">%1$d Land</item>
