@@ -116,7 +116,7 @@ class BackupServiceTest : DbTestBase() {
         val visits = RoomVisitRepository(db.visitDao(), meta)
         stays.upsert(stays.get("s1")!!.copy(note = "geändert"))
         visits.delete("v1")
-        stays.upsert(Stay("s2", "hallein", StayTypeIds.OFFICE, d("2026-11-18")))
+        stays.upsert(Stay("s2", "hallein", StayTypeIds.OFFICE, d("2026-11-18"), participants = setOf(Defaults.ME)))
 
         now = 60_000L
         service.restore(snapshot)
