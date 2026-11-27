@@ -6,7 +6,6 @@ import io.github.mario2712.locus.domain.places.PlaceSearch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
@@ -41,7 +40,7 @@ class PhotonPlaceSearch(
             connection.setRequestProperty("User-Agent", userAgent)
             connection.setRequestProperty("Accept", "application/json")
             val code = connection.responseCode
-            if (code !in 200..299) throw IOException("HTTP $code")
+            if (code !in 200..299) throw SearchHttpException(code)
             connection.inputStream.bufferedReader().use { it.readText() }
         } finally {
             connection.disconnect()
