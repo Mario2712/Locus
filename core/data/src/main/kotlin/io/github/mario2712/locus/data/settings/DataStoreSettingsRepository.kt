@@ -52,6 +52,7 @@ class DataStoreSettingsRepository @Inject constructor(
                     ?.takeIf { it.isNotEmpty() } ?: defaults.tripParticipants,
                 documentedSinceYear = prefs[DOCUMENTED_SINCE] ?: defaults.documentedSinceYear,
                 sortByUsage = prefs[SORT_BY_USAGE] ?: defaults.sortByUsage,
+                sharedStayTypeIds = prefs[SHARED_STAY_TYPES] ?: defaults.sharedStayTypeIds,
             )
         }
         .distinctUntilChanged()
@@ -63,6 +64,7 @@ class DataStoreSettingsRepository @Inject constructor(
             prefs[TRIP_PARTICIPANTS] = defaults.tripParticipants.mapTo(linkedSetOf()) { it.value }
             prefs[DOCUMENTED_SINCE] = defaults.documentedSinceYear
             prefs[SORT_BY_USAGE] = defaults.sortByUsage
+            prefs[SHARED_STAY_TYPES] = defaults.sharedStayTypeIds
         }
     }
 
@@ -92,6 +94,7 @@ class DataStoreSettingsRepository @Inject constructor(
         val TRIP_PARTICIPANTS = stringSetPreferencesKey("trip_participants")
         val DOCUMENTED_SINCE = intPreferencesKey("documented_since_year")
         val SORT_BY_USAGE = booleanPreferencesKey("sort_by_usage")
+        val SHARED_STAY_TYPES = stringSetPreferencesKey("shared_stay_types")
         val MIGRATIONS_DONE = stringSetPreferencesKey("migrations_done")
         val REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
         val REMINDER_MINUTES = intPreferencesKey("reminder_minutes")

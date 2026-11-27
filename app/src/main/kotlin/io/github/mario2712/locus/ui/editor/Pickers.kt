@@ -478,7 +478,7 @@ fun PlaceCreateDialog(
                     FilterChip(kind != PlaceKind.CITY, { kind = PlaceKind.POI }, label = { Text(stringResource(R.string.place_kind_location)) })
                 }
                 OutlinedTextField(
-                    value = name, onValueChange = { name = it }, singleLine = true,
+                    value = name, onValueChange = { name = it.replace("\n", " ") }, maxLines = 4,
                     label = { Text(stringResource(if (kind == PlaceKind.CITY) R.string.place_name else R.string.place_name_location)) },
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -490,7 +490,9 @@ fun PlaceCreateDialog(
                 }
                 OutlinedTextField(
                     value = alias, onValueChange = { alias = it }, singleLine = true,
-                    label = { Text(stringResource(R.string.place_alias)) }, modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.place_alias)) },
+                    supportingText = { Text(stringResource(R.string.place_alias_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedButton(onClick = { showCountries = true }, modifier = Modifier.fillMaxWidth()) {
                     Text("${country.flag} ${country.nameDe}")

@@ -73,7 +73,9 @@
     <string name="editor_note">Notiz</string>
 
     <string name="place_name">Name (z. B. Hallein)</string>
-    <string name="place_alias">Kurzname (optional, z. B. Zuhause)</string>
+    <string name="place_alias">Kurzname (optional)</string>
+    <string name="place_alias_hint">z. B. „Zuhause“ – wird überall statt des Namens angezeigt</string>
+    <string name="place_alias_suggest">Langer Name: Ein Kurzname (z. B. „Feuerwehrschule Linz“) macht Chips, Timeline und Statistik lesbarer.</string>
     <string name="place_country">Land</string>
     <string name="place_region_optional">Bundesland (optional)</string>
     <string name="place_favorite">Als Favorit merken</string>
@@ -479,6 +481,11 @@
     <string name="place_link_osm">Mit OSM verknüpfen</string>
     <string name="place_make_homebase">Als Homebase festlegen</string>
     <string name="place_record">Orts-Akte</string>
+    <string name="catalog_shared">Standardmäßig gemeinsam</string>
+    <string name="catalog_shared_hint">Neue Stationen dieser Art werden mit den Reise-Teilnehmern (z. B. Ich &amp; Johanna) vorbelegt. Während einer Reise gelten immer die Reisenden.</string>
+    <string name="catalog_shared_tag">gemeinsam</string>
+    <string name="day_templates">Vorlagen</string>
+    <string name="day_template_hint">Antippen übernimmt alle Schritte (bei begonnenem Tag hinten angehängt), lange drücken zeigt die Schritte.</string>
     <string name="editor_open_place_record">Orts-Akte öffnen ›</string>
     <string name="place_figures">Kennzahlen</string>
     <string name="place_figures_interval">Ø alle %1$s Tage</string>

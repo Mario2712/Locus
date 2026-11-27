@@ -53,10 +53,15 @@ fun PlaceEditDialog(place: Place, cities: List<Place>, onDismiss: () -> Unit, on
                             ?: stringResource(R.string.place_parent_optional))
                     }
                 }
-                OutlinedTextField(draft.name, { draft = draft.copy(name = it) }, singleLine = true,
+                // Lange Namen umbrechen statt seitlich zu scrollen
+                OutlinedTextField(draft.name, { draft = draft.copy(name = it.replace("\n", " ")) }, maxLines = 4,
                     label = { Text(stringResource(R.string.place_name)) }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(draft.alias.orEmpty(), { draft = draft.copy(alias = it.takeIf { a -> a.isNotBlank() }) }, singleLine = true,
-                    label = { Text(stringResource(R.string.place_alias)) }, modifier = Modifier.fillMaxWidth())
+                    label = { Text(stringResource(R.string.place_alias)) },
+                    supportingText = {
+                        Text(stringResource(if (draft.alias == null && draft.name.length > LONG_NAME) R.string.place_alias_suggest else R.string.place_alias_hint))
+                    },
+                    modifier = Modifier.fillMaxWidth())
                 val country = ReferenceData.countableCountry(draft.countryIso2)
                 OutlinedButton(onClick = { pickCountry = true }, modifier = Modifier.fillMaxWidth()) {
                     Text("${country?.flag ?: ""} ${country?.nameDe ?: draft.countryIso2}")
@@ -88,3 +93,6 @@ fun PlaceEditDialog(place: Place, cities: List<Place>, onDismiss: () -> Unit, on
     }
 }
 
+
+/** Ab dieser Länge schlägt der Dialog einen Kurznamen vor. */
+private const val LONG_NAME = 35

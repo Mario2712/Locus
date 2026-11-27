@@ -44,6 +44,8 @@ data class SettingsDto(
     val reminderEnabled: Boolean = true,
     val reminderMinutes: Int = 20 * 60 + 30,
     val autoBackup: Boolean = true,
+    /** Arten „standardmäßig gemeinsam“; `null` in älteren Sicherungen = unverändert lassen. */
+    val sharedStayTypeIds: List<String>? = null,
 )
 
 @Serializable

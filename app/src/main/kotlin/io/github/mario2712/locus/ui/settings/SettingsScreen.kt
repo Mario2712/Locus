@@ -117,7 +117,14 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
                 }
             }
 
-            StayTypesCard(editor.stayTypes, viewModel::saveStayType, viewModel::reorderStayTypes) { viewModel.newCustomId("stay") }
+            StayTypesCard(
+                editor.stayTypes, viewModel::saveStayType, viewModel::reorderStayTypes,
+                shared = editor.defaults.sharedStayTypeIds,
+                onShared = { id, on ->
+                    val d = editor.defaults
+                    viewModel.setEntryDefaults(d.copy(sharedStayTypeIds = if (on) d.sharedStayTypeIds + id else d.sharedStayTypeIds - id))
+                },
+            ) { viewModel.newCustomId("stay") }
             VisitCategoriesCard(editor.visitCategories, viewModel::saveVisitCategory, viewModel::reorderVisitCategories) {
                 viewModel.newCustomId("visit")
             }

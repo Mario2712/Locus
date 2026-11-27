@@ -99,4 +99,24 @@ class StayCommandsTest {
         assertEquals(1, next.sortIndex)
         assertEquals(t("12:03"), next.startTime)
     }
+
+    @Test
+    fun `Vorlage am begonnenen Tag wird angehaengt, doppelter Startort entfaellt, Zuhause gemeinsam`() = runTest {
+        val day = LocalDate.parse("2026-11-27")
+        commands.addStation(day, setOf(ME), StayTypeIds.FREE, "home")
+        val steps = listOf(
+            io.github.mario2712.locus.domain.model.TemplateStep(StayTypeIds.FREE, "home"),
+            io.github.mario2712.locus.domain.model.TemplateStep(StayTypeIds.TRANSIT, "bahnhof"),
+            io.github.mario2712.locus.domain.model.TemplateStep(StayTypeIds.OFFICE, "buero"),
+            io.github.mario2712.locus.domain.model.TemplateStep(StayTypeIds.FREE, "home"),
+        )
+        val defaults = io.github.mario2712.locus.domain.model.EntryDefaults()
+        commands.insertTemplate(day, ME, steps) { step -> defaults.participantsFor(step.stayTypeId) }
+
+        val chain = repo.all
+        assertEquals(listOf("home", "bahnhof", "buero", "home"), chain.map { it.placeId })
+        assertEquals(listOf(0, 1, 2, 3), chain.map { it.sortIndex })
+        assertEquals(setOf(ME), chain[2].participants)
+        assertEquals(setOf(ME, JOHANNA), chain[3].participants) // „Frei / Zuhause“ standardmäßig gemeinsam
+    }
 }

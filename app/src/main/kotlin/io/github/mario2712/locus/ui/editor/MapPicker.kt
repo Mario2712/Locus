@@ -359,8 +359,8 @@ fun MapPlaceCreateDialog(
                 }
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it; nameEdited = true },
-                    singleLine = true,
+                    onValueChange = { name = it.replace("\n", " "); nameEdited = true },
+                    maxLines = 4,
                     label = { Text(stringResource(if (kind == PlaceKind.CITY) R.string.place_name else R.string.place_name_location)) },
                     modifier = Modifier.fillMaxWidth(),
                 )

@@ -103,6 +103,8 @@ fun StayTypesCard(
     types: List<StayType>,
     onSave: (StayType) -> Unit,
     onReorder: (List<StayType>) -> Unit,
+    shared: Set<String> = emptySet(),
+    onShared: (String, Boolean) -> Unit = { _, _ -> },
     newId: () -> String,
 ) {
     var edit by remember { mutableStateOf<StayType?>(null) }
@@ -121,6 +123,7 @@ fun StayTypesCard(
                     listOfNotNull(
                         groupLabel(type.group),
                         if (!type.countsForCountryPoints) stringResource(R.string.catalog_no_points) else null,
+                        if (type.id in shared) stringResource(R.string.catalog_shared_tag) else null,
                         if (type.isArchived) stringResource(R.string.catalog_hidden) else null,
                     ).joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
@@ -139,6 +142,7 @@ fun StayTypesCard(
     }
     edit?.let { type ->
         var draft by remember(type.id) { mutableStateOf(type) }
+        var isShared by remember(type.id) { mutableStateOf(type.id in shared) }
         AlertDialog(
             onDismissRequest = { edit = null },
             title = { Text(stringResource(R.string.catalog_type)) },
@@ -165,12 +169,18 @@ fun StayTypesCard(
                         }
                     }
                     SwitchRow(stringResource(R.string.catalog_counts), draft.countsForCountryPoints) { draft = draft.copy(countsForCountryPoints = it) }
+                    SwitchRow(stringResource(R.string.catalog_shared), isShared) { isShared = it }
+                    Text(stringResource(R.string.catalog_shared_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     SwitchRow(stringResource(R.string.catalog_archived), draft.isArchived) { draft = draft.copy(isArchived = it) }
                     Text(stringResource(R.string.catalog_archive_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
             confirmButton = {
-                TextButton(enabled = draft.name.isNotBlank(), onClick = { onSave(draft.copy(name = draft.name.trim())); edit = null }) {
+                TextButton(enabled = draft.name.isNotBlank(), onClick = {
+                    onSave(draft.copy(name = draft.name.trim()))
+                    if (isShared != (type.id in shared)) onShared(type.id, isShared)
+                    edit = null
+                }) {
                     Text(stringResource(R.string.action_save))
                 }
             },

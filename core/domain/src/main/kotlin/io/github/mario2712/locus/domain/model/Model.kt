@@ -319,7 +319,13 @@ data class EntryDefaults(
     val documentedSinceYear: Int = 2014,
     /** Arten und Kategorien in Auswahllisten nach Häufigkeit (letzte 12 Monate) statt fester Reihenfolge. */
     val sortByUsage: Boolean = false,
-)
+    /** Arten, bei denen neue Stationen standardmäßig gemeinsam erfasst werden (mit den Reise-Teilnehmern). */
+    val sharedStayTypeIds: Set<String> = setOf(Defaults.StayTypeIds.FREE),
+) {
+    /** Teilnehmer einer neuen Station dieser Art außerhalb einer Reise. */
+    fun participantsFor(typeId: String?, fallback: Set<PersonId> = dailyParticipants): Set<PersonId> =
+        if (typeId != null && typeId in sharedStayTypeIds) tripParticipants else fallback
+}
 
 /** Einstellungen der Abend-Erinnerung (gerätelokal, nicht synchronisiert). */
 data class ReminderSettings(

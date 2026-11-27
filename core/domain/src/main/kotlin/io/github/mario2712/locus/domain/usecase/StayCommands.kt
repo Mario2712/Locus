@@ -98,6 +98,35 @@ class StayCommands(
     }
 
     /**
+     * Vorlage einfügen: An einem leeren Tag alle Schritte; sonst hinten angehängt, wobei der erste Schritt
+     * entfällt, wenn er der letzten Station des Tages entspricht (gleicher Ort und gleiche Art).
+     * Teilnehmer je Schritt über [participantsFor] (z. B. „Frei / Zuhause“ gemeinsam).
+     */
+    suspend fun insertTemplate(
+        date: LocalDate,
+        person: PersonId,
+        steps: List<TemplateStep>,
+        source: EntrySource = EntrySource.PATTERN,
+        participantsFor: (TemplateStep) -> Set<PersonId>,
+    ): List<Stay> {
+        val existing = dayStays(date, person).sortedBy { it.sortIndex }
+        val last = existing.lastOrNull()
+        val toAdd = if (last != null && steps.firstOrNull()?.let { it.placeId == last.placeId && it.stayTypeId == last.typeId } == true) {
+            steps.drop(1)
+        } else steps
+        val start = (last?.sortIndex ?: -1) + 1
+        val created = toAdd.mapIndexed { index, step ->
+            Stay(
+                id = newId(), placeId = step.placeId, typeId = step.stayTypeId, startDate = date,
+                sortIndex = start + index, participants = participantsFor(step) + person, source = source,
+                overnight = step.overnight, transport = step.transport,
+            )
+        }
+        created.forEach { stays.upsert(it) }
+        return created
+    }
+
+    /**
      * Reise starten oder fortsetzen: Wegpunkte werden als „Transit“ (ohne Länderpunkt) angelegt,
      * das letzte Teilstück ist das Ziel mit Übernachtung (neue Basis).
      * Beispiel: München (Abflug, 🚗) → Y (Umstieg, ✈️, +1 Tag) → X (✈️, +1 Tag, Urlaub).

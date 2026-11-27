@@ -166,20 +166,27 @@ abstract class BaseDayViewModel(
     private fun live() = liveTimeFor(date, today)
 
     /** Teilnehmer für neue Einträge: während einer Reise die Reisenden, sonst Alltags-Standard. */
-    fun defaultParticipants(state: DayState): Set<io.github.mario2712.locus.domain.model.PersonId> =
-        (state.baseAtEnd ?: state.baseAtStart)?.participants ?: state.editor.defaults.dailyParticipants
+    fun defaultParticipants(state: DayState, typeId: String? = null): Set<io.github.mario2712.locus.domain.model.PersonId> =
+        (state.baseAtEnd ?: state.baseAtStart)?.participants ?: state.editor.defaults.participantsFor(typeId)
+
+    /** Vorlage übernehmen (leerer Tag: ganz, sonst hinten angehängt). */
+    fun applyTemplate(template: io.github.mario2712.locus.domain.model.DayTemplate, state: DayState) = viewModelScope.launch {
+        sendUndoable {
+            actions.insertTemplate(date, Defaults.ME, template.steps) { step -> defaultParticipants(state, step.stayTypeId) }
+        }
+    }
 
     fun prefillTransport(placeId: String?): Set<TransportMode> =
         if (placeId == null || !lastInputs.editor.defaults.prefillTransport) emptySet()
         else DayInsights.lastTransportTo(placeId, lastInputs.stays)
 
     fun confirmSuggestion(suggestion: DaySuggestion, state: DayState) = viewModelScope.launch {
-        sendUndoable { actions.applyTemplate(date, state.editor.defaults.dailyParticipants, suggestion.steps) }
+        sendUndoable { actions.insertTemplate(date, Defaults.ME, suggestion.steps) { step -> defaultParticipants(state, step.stayTypeId) } }
     }
 
     fun quickStation(combo: StayCombo, state: DayState) = viewModelScope.launch {
         sendUndoable { actions.addStation(
-                date, defaultParticipants(state), combo.stayTypeId, combo.placeId,
+                date, defaultParticipants(state, combo.stayTypeId), combo.stayTypeId, combo.placeId,
                 prefillTransport(combo.placeId), overnight = false, liveTime = live(),
             )
         }
@@ -188,7 +195,7 @@ abstract class BaseDayViewModel(
     fun newStationDraft(state: DayState, typeId: String? = null) = StayDraft(
         startDate = date,
         typeId = typeId,
-        participants = defaultParticipants(state),
+        participants = defaultParticipants(state, typeId),
         overnight = state.editor.defaultOvernight(typeId),
         startTime = live(),
     )
