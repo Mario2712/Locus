@@ -150,7 +150,7 @@ private sealed interface OnlineState {
     data object Idle : OnlineState
     data object Loading : OnlineState
     data class Results(val items: List<PlaceCandidate>) : OnlineState
-    data class Error(val message: Int) : OnlineState
+    data class Error(val message: Int, val arg: Int? = null) : OnlineState
 }
 
 /**
@@ -197,6 +197,7 @@ fun PlacePickerDialog(
         online = when (result) {
             is SearchResult.Ok -> if (result.value.isEmpty()) OnlineState.Error(R.string.search_no_results) else OnlineState.Results(result.value)
             SearchResult.Offline -> OnlineState.Error(R.string.search_offline)
+            is SearchResult.Rejected -> OnlineState.Error(R.string.search_rejected, result.code)
             SearchResult.NoLocation -> OnlineState.Error(R.string.search_no_location)
         }
     }
@@ -260,7 +261,7 @@ fun PlacePickerDialog(
                             }
                         }
                         is OnlineState.Error -> item {
-                            Text(stringResource(state.message), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(vertical = 8.dp))
+                            Text(state.arg?.let { stringResource(state.message, it) } ?: stringResource(state.message), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(vertical = 8.dp))
                         }
                         is OnlineState.Results -> {
                             item {

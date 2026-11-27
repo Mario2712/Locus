@@ -15,6 +15,8 @@ import javax.inject.Singleton
 sealed interface SearchResult<out T> {
     data class Ok<T>(val value: T) : SearchResult<T>
     data object Offline : SearchResult<Nothing>
+    /** Suchdienst erreichbar, lehnt aber ab (z. B. 403, 429, 503). */
+    data class Rejected(val code: Int) : SearchResult<Nothing>
     data object NoLocation : SearchResult<Nothing>
 }
 
@@ -70,6 +72,9 @@ class PlaceSearchController @Inject constructor(
 
     fun hasLocationPermission(): Boolean = location.hasPermission()
 
+    private fun failure(e: Exception): SearchResult<Nothing> =
+        (e as? io.github.mario2712.locus.data.places.SearchHttpException)?.let { SearchResult.Rejected(it.code) } ?: SearchResult.Offline
+
     /** Online-Suche; Treffer nahe [near] (z. B. dem letzten Ort des Tages) bevorzugt, sonst nahe dem Standort. */
     suspend fun search(query: String, near: Pair<Double, Double>? = null): SearchResult<List<PlaceCandidate>> = try {
         val point = near ?: location.takeIf { it.hasPermission() }?.let { runCatching { it.current() }.getOrNull() }?.let { it.latitude to it.longitude }
@@ -80,7 +85,7 @@ class PlaceSearchController @Inject constructor(
         )
     } catch (e: Exception) {
         if (e is kotlinx.coroutines.CancellationException) throw e
-        SearchResult.Offline
+        failure(e)
     }
 
     /**
@@ -102,7 +107,7 @@ class PlaceSearchController @Inject constructor(
             )
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
-            SearchResult.Offline
+            failure(e)
         }
     }
 
@@ -144,7 +149,7 @@ class PlaceSearchController @Inject constructor(
         )
     } catch (e: Exception) {
         if (e is kotlinx.coroutines.CancellationException) throw e
-        SearchResult.Offline
+        failure(e)
     }
 
     /** Land zum Punkt ohne Internet (Fallback, wenn die Rückwärtssuche nichts liefert). */

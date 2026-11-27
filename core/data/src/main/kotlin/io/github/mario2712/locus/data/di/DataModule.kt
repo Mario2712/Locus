@@ -54,7 +54,15 @@ object DatabaseModule {
         PreferenceDataStoreFactory.create { context.preferencesDataStoreFile("settings") }
 
     @Provides @Singleton
-    fun placeSearch(): PlaceSearch = PhotonPlaceSearch(userAgent = "Locus-Android/1.0")
+    fun placeSearch(@ApplicationContext context: Context): PlaceSearch {
+        // Aussagekräftige Kennung, wie sie Photon und Nominatim verlangen (ohne persönliche Daten)
+        val version = runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "dev"
+        val userAgent = "Locus/$version (Android; +https://github.com/Mario2712/Locus)"
+        return io.github.mario2712.locus.data.places.FallbackPlaceSearch(
+            PhotonPlaceSearch(userAgent),
+            io.github.mario2712.locus.data.places.NominatimPlaceSearch(userAgent),
+        )
+    }
 
     @Provides @Singleton
     fun timeProvider(): TimeProvider = TimeProvider(System::currentTimeMillis)
