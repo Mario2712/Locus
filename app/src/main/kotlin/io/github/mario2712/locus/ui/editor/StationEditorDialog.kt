@@ -60,6 +60,7 @@ fun StationEditorDialog(
     onInsert: ((before: Boolean) -> Unit)? = null,
 ) {
     var draft by remember { mutableStateOf(initial) }
+    var participantsTouched by remember { mutableStateOf(false) }
     var showDetails by remember { mutableStateOf(initial.startTime != null || initial.endTime != null || initial.note.isNotEmpty()) }
     var picker by remember { mutableStateOf<PickerTarget?>(null) }
     val noTime = stringResource(R.string.editor_no_time)
@@ -89,9 +90,14 @@ fun StationEditorDialog(
                 }
                 Text(stringResource(R.string.editor_type), style = MaterialTheme.typography.labelLarge)
                 TypeChips(editor.activeStayTypes, draft.typeId) { typeId ->
+                    // Neue Station, Personen noch auf dem Standard (keine Reise): bei Art-Wechsel mitziehen,
+                    // z. B. „Frei / Zuhause“ → gemeinsam
+                    val followDefault = draft.isNew && !participantsTouched &&
+                        draft.participants == editor.defaults.participantsFor(draft.typeId)
                     draft = draft.copy(
                         typeId = typeId,
                         overnight = if (draft.isNew) editor.defaultOvernight(typeId) else draft.overnight,
+                        participants = if (followDefault) editor.defaults.participantsFor(typeId) else draft.participants,
                     )
                 }
                 Text(stringResource(R.string.editor_place), style = MaterialTheme.typography.labelLarge)
@@ -106,7 +112,7 @@ fun StationEditorDialog(
                 SwitchRow(stringResource(R.string.editor_overnight), draft.overnight) { draft = draft.copy(overnight = it) }
 
                 Text(stringResource(R.string.editor_participants), style = MaterialTheme.typography.labelLarge)
-                ParticipantChips(editor.persons, draft.participants) { draft = draft.copy(participants = it) }
+                ParticipantChips(editor.persons, draft.participants) { draft = draft.copy(participants = it); participantsTouched = true }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = showDetails, onCheckedChange = { showDetails = it })

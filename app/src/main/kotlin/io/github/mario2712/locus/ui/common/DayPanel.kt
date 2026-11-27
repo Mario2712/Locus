@@ -2,6 +2,9 @@ package io.github.mario2712.locus.ui.common
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -44,6 +47,7 @@ fun DayPanel(state: DayState, viewModel: BaseDayViewModel) {
     var journeyMode by remember { mutableStateOf<JourneyMode?>(null) }
     var showReturnHome by remember { mutableStateOf(false) }
     var reorder by remember { mutableStateOf(false) }
+    var previewTemplate by remember { mutableStateOf<io.github.mario2712.locus.domain.model.DayTemplate?>(null) }
     val editor = state.editor
     val homeName = (editor.homebaseAt(state.date) ?: editor.homebase)?.displayName ?: stringResource(R.string.chain_home)
 
@@ -122,6 +126,24 @@ fun DayPanel(state: DayState, viewModel: BaseDayViewModel) {
             }
         }
 
+        // Vorlagen: die vom Muster vorgeschlagene zuerst, dann in eigener Reihenfolge
+        val templates = remember(editor.templates, suggestion?.templateName) {
+            editor.templates.sortedWith(compareBy({ it.name != suggestion?.templateName }, { it.sortOrder }))
+        }
+        if (templates.isNotEmpty()) {
+            Text(stringResource(R.string.day_templates), style = MaterialTheme.typography.labelLarge)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                templates.forEach { template ->
+                    TemplateChip(
+                        label = template.name,
+                        color = editor.typeColor(template.steps.last().stayTypeId),
+                        onClick = { viewModel.applyTemplate(template, state) },
+                        onLongClick = { previewTemplate = template },
+                    )
+                }
+            }
+        }
+
         Text(
             stringResource(if (state.stations.isEmpty()) R.string.day_where_to else R.string.day_next),
             style = MaterialTheme.typography.labelLarge,
@@ -176,6 +198,36 @@ fun DayPanel(state: DayState, viewModel: BaseDayViewModel) {
     }
 
     // Dialoge
+    previewTemplate?.let { template ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { previewTemplate = null },
+            title = { Text(template.name) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    template.steps.forEach { step ->
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            TypeDot(editor.typeColor(step.stayTypeId))
+                            Text(
+                                listOfNotNull(
+                                    step.transport.joinToString("") { it.emoji }.takeIf { it.isNotEmpty() },
+                                    "${editor.typeName(step.stayTypeId)} · ${editor.placeName(step.placeId)}",
+                                ).joinToString(" "),
+                            )
+                        }
+                    }
+                    Text(stringResource(R.string.day_template_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { viewModel.applyTemplate(template, state); previewTemplate = null }) {
+                    Text(stringResource(R.string.today_confirm))
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { previewTemplate = null }) { Text(stringResource(R.string.action_cancel)) }
+            },
+        )
+    }
     stationDraft?.let { draft ->
         StationEditorDialog(
             initial = draft,
@@ -236,5 +288,28 @@ fun DayPanel(state: DayState, viewModel: BaseDayViewModel) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.error,
         )
+    }
+}
+
+/** Chip für eine Vorlage: Tippen übernimmt, langes Drücken zeigt die Schritte. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun TemplateChip(label: String, color: Long, onClick: () -> Unit, onLongClick: () -> Unit) {
+    androidx.compose.material3.Surface(
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        modifier = Modifier.padding(vertical = 4.dp)
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+    ) {
+        Row(
+            Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text("📋")
+            Text(label, style = MaterialTheme.typography.labelLarge)
+            TypeDot(color)
+        }
     }
 }

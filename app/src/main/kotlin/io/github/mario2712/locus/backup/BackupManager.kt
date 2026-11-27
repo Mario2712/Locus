@@ -46,6 +46,7 @@ class BackupManager @Inject constructor(
             reminderEnabled = r.enabled,
             reminderMinutes = r.time.hour * 60 + r.time.minute,
             autoBackup = b.autoBackup,
+            sharedStayTypeIds = d.sharedStayTypeIds.sorted(),
         )
     }
 
@@ -59,6 +60,7 @@ class BackupManager @Inject constructor(
                 tripParticipants = s.tripParticipants.map { io.github.mario2712.locus.domain.model.PersonId(it) }.toSet().ifEmpty { current.tripParticipants },
                 documentedSinceYear = s.documentedSinceYear,
                 sortByUsage = s.sortByUsage,
+                sharedStayTypeIds = s.sharedStayTypeIds?.toSet() ?: current.sharedStayTypeIds,
             ),
         )
         settings.setReminder(io.github.mario2712.locus.domain.model.ReminderSettings(s.reminderEnabled, java.time.LocalTime.of(s.reminderMinutes / 60, s.reminderMinutes % 60)))

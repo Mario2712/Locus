@@ -98,6 +98,15 @@ class StationActions @Inject constructor(
     suspend fun applyTemplate(date: LocalDate, participants: Set<PersonId>, steps: List<TemplateStep>): UiMessage =
         if (commands.applyTemplate(date, participants, steps).isEmpty()) UiMessage.DayNotEmpty else UiMessage.Saved
 
+    /** Vorlage übernehmen: leerer Tag → alle Schritte, sonst hinten anhängen (siehe [StayCommands.insertTemplate]). */
+    suspend fun insertTemplate(
+        date: LocalDate,
+        person: PersonId,
+        steps: List<TemplateStep>,
+        participantsFor: (TemplateStep) -> Set<PersonId>,
+    ): UiMessage =
+        if (commands.insertTemplate(date, person, steps, participantsFor = participantsFor).isEmpty()) UiMessage.DayNotEmpty else UiMessage.Saved
+
     suspend fun journey(
         date: LocalDate,
         participants: Set<PersonId>,
